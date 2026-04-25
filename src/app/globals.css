@@ -1,0 +1,340 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Cinzel:wght@400;500&display=swap");
+@import "tailwindcss";
+
+:root {
+  --primary-gold: #b3a384;
+  --bg-light: #f9f7f4;
+  --text-gray: #7d7d7d;
+  --text-black: #1a1a1a;
+  --border-light: #eeeeee;
+  --white: #ffffff;
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Cinzel", serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--white);
+  color: var(--text-black);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+.font-display {
+  font-family: var(--font-display);
+}
+
+.container-custom {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container-custom {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+/* ── Header ────────────────────────────────────────── */
+.header-top {
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border-light);
+  padding: 15px 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid #ddd;
+  padding-left: 15px;
+  width: 100%;
+  max-width: 400px;
+  height: 44px;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-gray);
+  outline: none;
+}
+
+.search-btn {
+  background: var(--primary-gold);
+  color: white;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+
+.nav-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border-light);
+  padding: 12px 0;
+}
+
+.nav-link {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: #a49a8b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  color: #1a1a1a;
+}
+
+/* ── Dropdown Menus ── */
+.nav-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  min-width: 220px;
+  border: 1px solid #eee;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: none;
+  z-index: 100;
+  padding: 10px 0;
+}
+.nav-item:hover > .dropdown-panel {
+  display: block;
+}
+
+.dropdown-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 25px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #a49a8b;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.dropdown-link:hover {
+  background: #fdfdfd;
+  color: #1a1a1a;
+}
+
+.nested-panel {
+  position: absolute;
+  top: -10px;
+  left: 100%;
+  background: white;
+  min-width: 200px;
+  border: 1px solid #eee;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: none;
+  padding: 10px 0;
+}
+.dropdown-item-wrap:hover > .nested-panel {
+  display: block;
+}
+
+/* ── Hero ────────────────────────────────────────── */
+.hero-btn-wrap {
+  display: flex;
+  gap: 24px;
+  margin-top: auto;
+}
+
+.pill-btn {
+  padding: 16px 48px;
+  border-radius: 50px;
+  font-size: 13px;
+  text-transform: capitalize;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  font-weight: 400;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  min-width: 220px;
+  display: inline-block;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.pill-btn-beige {
+  background: rgba(179, 163, 132, 0.65);
+  color: var(--white);
+  border-color: rgba(179, 163, 132, 0);
+}
+
+.pill-btn-white {
+  background: var(--white);
+  color: #1a1a1a;
+  border-color: var(--white);
+}
+
+.pill-btn-beige:hover {
+  background: rgba(179, 163, 132, 0.85);
+  transform: translateY(-2px);
+}
+.pill-btn-white:hover {
+  background: #fdfdfd;
+  transform: translateY(-2px);
+}
+
+/* ── Masonry ────────────────────────────────────── */
+.masonry-grid {
+  columns: 2;
+  column-gap: 15px;
+}
+
+@media (min-width: 768px) {
+  .masonry-grid {
+    columns: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .masonry-grid {
+    columns: 4;
+  }
+}
+
+@media (min-width: 1600px) {
+  .masonry-grid {
+    columns: 5;
+  }
+}
+
+@media (min-width: 2000px) {
+  .masonry-grid {
+    columns: 6;
+  }
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 15px;
+}
+
+.img-hover {
+  transition: transform 0.6s ease;
+}
+.img-hover:hover {
+  transform: scale(1.03);
+}
+
+/* ── Footer ─────────────────────────────────────── */
+.footer-main {
+  background: var(--bg-light);
+  padding: 80px 0 40px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ── Admin Details ──────────────────────────────── */
+.admin-card {
+  background: white;
+  border: 1px solid #eee;
+  padding: 24px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  margin-top: 5px;
+  outline: none;
+}
+.admin-input:focus {
+  border-color: var(--primary-gold);
+}
+
+/* ── Page Hero ── */
+.page-hero {
+  position: relative;
+  height: 60vh;
+  min-height: 400px;
+  background: #f9f7f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200px;
+}
+.page-hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+/* ── Section Pad ── */
+.section-pad {
+  padding: 80px 0;
+}
+.container-xl {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.gold-divider {
+  width: 40px;
+  height: 1px;
+  background: #b3a384;
+  margin: 0 auto;
+}
+
+/* ── Lightbox ── */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+/* ── Custom Editorial Animations ── */
+@keyframes subtle-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.15);
+  }
+}
+.animate-subtle-zoom {
+  animation: subtle-zoom 20s ease-in-out infinite alternate;
+}
