@@ -4,40 +4,89 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "The Label",
-  description: "Ahmed The Label - Exclusive editorial collection by Ahmed Elakad.",
+  description:
+    "Ahmed The Label - Exclusive editorial collection by Ahmed Elakad.",
 };
 
 export default async function TheLabelPage() {
   const content = await getContent();
   const page = content.theLabelPage ?? {};
   const gallery = page.gallery ?? [];
-  const heroImage = page.heroImage || "/images/1 (75).jpg";
+  const heroImage =
+    page.heroImage ||
+    "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
 
   return (
     <main className="bg-white">
-      <div className="relative h-[35vh] sm:h-[40vh] lg:h-[45vh] min-h-[220px] sm:min-h-[280px] flex items-center justify-center">
+      {/* ── Hero ── */}
+      <div className="relative h-[40vh] sm:h-[50vh] lg:h-[60vh] min-h-[260px] flex items-center justify-center overflow-hidden">
         <img
           src={heroImage}
           alt="Ahmed The Label"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 text-center px-4 mt-16 sm:mt-20">
-          <h1 className="font-display text-3xl sm:text-4xl md:text-6xl text-white uppercase tracking-[0.15em] sm:tracking-[0.2em] leading-none mb-3 sm:mb-4">
+        {/* dark gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/50" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 mt-14 sm:mt-16 w-full">
+          <p className="font-serif text-white/70 text-xs sm:text-sm tracking-[0.35em] uppercase mb-3 sm:mb-4">
+            Ahmed Elakad
+          </p>
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-[0.18em] sm:tracking-[0.25em] leading-none mb-4 sm:mb-6">
             THE LABEL
           </h1>
-          <div className="h-px w-14 sm:w-20 bg-white/40 mx-auto"></div>
+          {/* decorative rule */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="h-px w-10 sm:w-16 bg-white/40" />
+            <div className="w-1 h-1 rounded-full bg-white/50" />
+            <div className="h-px w-10 sm:w-16 bg-white/40" />
+          </div>
         </div>
       </div>
 
-      <section className="py-8 sm:py-12 container-custom">
+      {/* ── Intro strip ── */}
+      <div className="w-full border-b border-gray-100 py-6 sm:py-8 flex items-center justify-center">
+        <p className="font-serif italic text-gray-400 text-sm sm:text-base tracking-wide text-center px-6">
+          Exclusive editorial pieces — crafted for the modern woman
+        </p>
+      </div>
+
+      {/* ── Gallery ── */}
+      <section className="py-10 sm:py-16 w-full max-w-screen-xl mx-auto px-4 sm:px-8 lg:px-12">
         {gallery.length > 0 ? (
           <MasonryGallery images={gallery} />
         ) : (
-          <div className="text-center py-16 sm:py-24">
-            <p className="font-serif italic text-gray-400">
-              The collection is currently being curated.
-            </p>
+          /* fallback: show the 4 known Cloudinary images in a clean grid */
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
+            {[
+              {
+                src: "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg",
+                alt: "Collection piece 1",
+              },
+              {
+                src: "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524406/1_104_h6cgdb.jpg",
+                alt: "Collection piece 2",
+              },
+              {
+                src: "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524311/1_79_ulp8m9.jpg",
+                alt: "Collection piece 3",
+              },
+              {
+                src: "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524220/1_49_izmifp.jpg",
+                alt: "Collection piece 4",
+              },
+            ].map((img, i) => (
+              <div
+                key={i}
+                className="break-inside-avoid mb-3 sm:mb-4 overflow-hidden group"
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-auto block object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              </div>
+            ))}
           </div>
         )}
       </section>
