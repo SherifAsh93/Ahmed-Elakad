@@ -1,28 +1,37 @@
 import fs from "fs";
 import path from "path";
-import { kv } from "@vercel/kv";
+import { put, list, del } from "@vercel/blob";
 
 export type SiteContent = Record<string, any>;
 
 const CONTENT_FILE = path.join(process.cwd(), "src", "data", "content.json");
-const KV_KEY = "site_content";
+const BLOB_FILENAME = "content.json";
 
-/**
- * PRODUCTION-FIRST Content Fetching
- * Prioritizes Vercel KV for the live site.
- */
+async function getBlobUrl(): Promise<string | null> {
+  try {
+    const { blobs } = await list();
+    const found = blobs.find((b) => b.pathname === BLOB_FILENAME);
+    return found?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getContent(): Promise<SiteContent> {
-  // 1. Try Vercel KV (Production)
-  if (process.env.KV_REST_API_URL) {
+  // 1. Try Vercel Blob (Production)
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const remoteContent = await kv.get<SiteContent>(KV_KEY);
-      if (remoteContent) return remoteContent;
+      const url = await getBlobUrl();
+      if (url) {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return await res.json();
+      }
     } catch (e) {
-      console.error("Error reading Vercel KV:", e);
+      console.error("Error reading Vercel Blob:", e);
     }
   }
 
-  // 2. Fallback to Local File (Development)
+  // 2. Fallback to local file (Development)
   try {
     if (!fs.existsSync(CONTENT_FILE)) return {};
     const raw = fs.readFileSync(CONTENT_FILE, "utf-8");
@@ -33,27 +42,32 @@ export async function getContent(): Promise<SiteContent> {
   }
 }
 
-/**
- * PRODUCTION-FIRST Content Saving
- */
 export async function saveContent(content: SiteContent): Promise<void> {
-  // 1. Always save to Vercel KV if available
-  if (process.env.KV_REST_API_URL) {
+  // 1. Save to Vercel Blob if available
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      await kv.set(KV_KEY, content);
+      // Delete old blob first to avoid duplicates
+      const url = await getBlobUrl();
+      if (url) await del(url);
+
+      // Upload new content
+      await put(BLOB_FILENAME, JSON.stringify(content, null, 2), {
+        access: "public",
+        contentType: "application/json",
+        addRandomSuffix: false,
+      });
     } catch (e) {
-      console.error("Error saving to Vercel KV:", e);
+      console.error("Error saving to Vercel Blob:", e);
+      throw e;
     }
   }
 
-  // 2. Also save to local file in development only (Vercel has no writable FS)
+  // 2. Also save locally in development
   if (process.env.NODE_ENV !== "production") {
     try {
-      const raw = JSON.stringify(content, null, 2);
-      fs.writeFileSync(CONTENT_FILE, raw, "utf-8");
+      fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), "utf-8");
     } catch (e) {
       console.error("Error saving local content:", e);
-      throw e;
     }
   }
 }
