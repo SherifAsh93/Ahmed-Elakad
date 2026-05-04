@@ -16,22 +16,20 @@ export interface SiteContent {
     metaDescription?: string;
   };
   about?: {
-    metaTitle?: string;
-    metaDescription?: string;
     title?: string;
     subtitle?: string;
     bio?: string[];
     portraitImage?: string;
     sideImage?: string;
-  };
-  collections?: Array<{
-    slug: string;
-    title: string;
-    images: string[];
-    category: string;
     metaTitle?: string;
     metaDescription?: string;
-  }>;
+  };
+  bridal?: {
+    gallery?: string[];
+  };
+  couture?: {
+    gallery?: string[];
+  };
   theLabelPage?: {
     metaTitle?: string;
     metaDescription?: string;

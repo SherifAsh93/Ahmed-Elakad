@@ -10,8 +10,8 @@ type Section =
   | "site"
   | "home"
   | "about"
-  | "label"
-  | "collections"
+  | "bridal"
+  | "couture"
   | "contact"
   | "social"
   | "media";
@@ -724,7 +724,6 @@ export default function AdminDashboard() {
   const [allImages, setAllImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedColIdx, setSelectedColIdx] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -784,38 +783,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const addCollection = () => {
-    if (!content) return;
-    const newCol = {
-      title: "New Collection",
-      slug: `new-collection-${Date.now()}`,
-      images: [],
-      category: "bridal",
-    };
-    const newCols = [...(content.collections ?? []), newCol];
-    set("collections", newCols);
-    setSelectedColIdx(newCols.length - 1);
-  };
-
-  const deleteCollection = (idx: number) => {
-    if (!confirm("Are you sure you want to delete this collection?")) return;
-    const newCols = (content?.collections ?? []).filter(
-      (_: any, i: number) => i !== idx, // eslint-disable-line @typescript-eslint/no-explicit-any
-    );
-    set("collections", newCols);
-    setSelectedColIdx(-1);
-    setActiveSection("site");
-  };
-
   if (!content) return null;
-
-  const collections = content.collections ?? [];
-  const bridalCollections = collections.filter(
-    (c: any) => c.category === "bridal",
-  );
-  const labelCollections = collections.filter(
-    (c: any) => c.category === "label",
-  );
 
   return (
     <div className="flex min-h-screen bg-[#fcfaf9]">
@@ -881,8 +849,10 @@ export default function AdminDashboard() {
                 "site",
                 "home",
                 "about",
-                "label",
+                "bridal",
+                "couture",
                 "contact",
+                "social",
                 "media",
               ] as Section[]
             ).map((s) => (
@@ -890,88 +860,25 @@ export default function AdminDashboard() {
                 key={s}
                 onClick={() => {
                   setActiveSection(s);
-                  setSelectedColIdx(-1);
                   setSidebarOpen(false);
                 }}
                 className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
-                  activeSection === s && selectedColIdx === -1
+                  activeSection === s
                     ? "bg-black text-white shadow-lg"
                     : "text-gray-500 hover:bg-gray-50 hover:text-black"
                 }`}
               >
-                {s === "label"
-                  ? "THE LABEL"
-                  : s === "about"
-                    ? "THE DESIGNER"
-                    : s === "media"
-                      ? "MEDIA LIBRARY"
-                      : s.toUpperCase().replace(/([A-Z])/g, " $1")}
+                {s === "about"
+                  ? "ABOUT US"
+                  : s === "media"
+                    ? "MEDIA LIBRARY"
+                    : s === "site"
+                      ? "GLOBAL SETTINGS"
+                      : s === "social"
+                        ? "SOCIAL SETTINGS"
+                        : s.toUpperCase()}
               </button>
             ))}
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center py-6">
-            <div className="pb-6 flex justify-center items-center gap-6">
-              <p className="text-[10px] tracking-[4px] uppercase text-[#b3a384] font-black">
-                Bridal Collections
-              </p>
-              <button
-                onClick={addCollection}
-                className="text-[22px] text-gray-400 hover:text-black transition-colors cursor-pointer hover:scale-125"
-              >
-                +
-              </button>
-            </div>
-            <div className="space-y-2">
-              {bridalCollections.map((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                const idx = collections.indexOf(c);
-                return (
-                  <button
-                    key={c.slug}
-                    onClick={() => {
-                      setActiveSection("collections");
-                      setSelectedColIdx(idx);
-                      setSidebarOpen(false);
-                    }}
-                    className={`group w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
-                      activeSection === "collections" && selectedColIdx === idx
-                        ? "bg-black text-white shadow-lg"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-black"
-                    }`}
-                  >
-                    {c.title}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-2 flex-1 flex flex-col justify-center">
-            <p className="text-[10px] tracking-[4px] uppercase text-[#b3a384] font-black pb-4 text-center">
-              The Label / Evening
-            </p>
-            <div className="space-y-2">
-              {labelCollections.map((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                const idx = collections.indexOf(c);
-                return (
-                  <button
-                    key={c.slug}
-                    onClick={() => {
-                      setActiveSection("collections");
-                      setSelectedColIdx(idx);
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
-                      activeSection === "collections" && selectedColIdx === idx
-                        ? "bg-black text-white shadow-lg"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-black"
-                    }`}
-                  >
-                    {c.title}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </nav>
 
@@ -1005,12 +912,12 @@ export default function AdminDashboard() {
                 Management Module
               </p>
               <h2 className="text-2xl md:text-3xl font-display uppercase tracking-widest text-black">
-                {selectedColIdx !== -1
-                  ? collections[selectedColIdx].title
-                  : activeSection === "label"
-                    ? "THE LABEL"
-                    : activeSection === "about"
-                      ? "THE DESIGNER"
+                {activeSection === "about"
+                  ? "ABOUT US"
+                  : activeSection === "site"
+                    ? "GLOBAL SETTINGS"
+                    : activeSection === "social"
+                      ? "SOCIAL SETTINGS"
                       : activeSection.toUpperCase()}
               </h2>
             </div>
@@ -1236,140 +1143,30 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* LABEL SETTINGS */}
-          {activeSection === "label" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  The Label Page SEO
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <input
-                    value={content.theLabelPage?.metaTitle ?? ""}
-                    onChange={(e) =>
-                      set("theLabelPage.metaTitle", e.target.value)
-                    }
-                    className="admin-input cursor-text"
-                    placeholder="Page Title (Browser Tab)"
-                  />
-                  <input
-                    value={content.theLabelPage?.metaDescription ?? ""}
-                    onChange={(e) =>
-                      set("theLabelPage.metaDescription", e.target.value)
-                    }
-                    className="admin-input cursor-text"
-                    placeholder="Meta Description"
-                  />
-                </div>
-              </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <SingleImageEditor
-                  label="OFFICIAL PAGE HERO"
-                  image={content.theLabelPage?.heroImage ?? ""}
-                  allImages={allImages}
-                  onUploadComplete={refreshImages}
-                  onChange={(src) => set("theLabelPage.heroImage", src)}
-                />
-              </div>
+
+          {/* BRIDAL SETTINGS */}
+          {activeSection === "bridal" && (
+            <div className="space-y-12 animate-in slide-in-from-bottom-5">
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
                 <GalleryEditor
-                  label="LABEL EDITORIAL GALLERY"
-                  images={content.theLabelPage?.gallery ?? []}
+                  label="BRIDAL EDITORIAL GALLERY"
+                  images={content.bridal?.gallery ?? []}
                   allImages={allImages}
-                  onUploadComplete={refreshImages}
-                  onChange={(imgs) => set("theLabelPage.gallery", imgs)}
+                  onChange={(imgs) => set("bridal.gallery", imgs)}
                 />
               </div>
             </div>
           )}
 
-          {/* COLLECTIONS SETTINGS */}
-          {activeSection === "collections" && collections[selectedColIdx] && (
+          {/* COUTURE SETTINGS */}
+          {activeSection === "couture" && (
             <div className="space-y-12 animate-in slide-in-from-bottom-5">
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 mb-16 border-b pb-12">
-                  <div className="space-y-8 flex-1">
-                    <div>
-                      <label className="text-xs uppercase tracking-[3px] text-gray-300 font-bold block mb-3">
-                        CATALOG TITLE
-                      </label>
-                      <input
-                        value={collections[selectedColIdx].title}
-                        onChange={(e) => {
-                          const n = [...collections];
-                          n[selectedColIdx].title = e.target.value;
-                          set("collections", n);
-                        }}
-                        className="admin-input font-display text-2xl md:text-3xl py-2 cursor-text"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                      <div>
-                        <label className="text-xs uppercase tracking-[3px] text-gray-300 font-bold block mb-3">
-                          URL SLUG (ID)
-                        </label>
-                        <input
-                          value={collections[selectedColIdx].slug}
-                          onChange={(e) => {
-                            const n = [...collections];
-                            n[selectedColIdx].slug = e.target.value;
-                            set("collections", n);
-                          }}
-                          className="admin-input text-sm font-mono lowercase cursor-text"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs uppercase tracking-[3px] text-gray-300 font-bold block mb-3">
-                          CATEGORY
-                        </label>
-                        <select
-                          value={
-                            collections[selectedColIdx].category ?? "bridal"
-                          }
-                          onChange={(e) => {
-                            const n = [...collections];
-                            n[selectedColIdx].category = e.target.value;
-                            set("collections", n);
-                          }}
-                          className="admin-input text-xs font-bold uppercase tracking-widest cursor-pointer"
-                        >
-                          <option value="bridal">BRIDAL</option>
-                          <option value="label">THE LABEL / EVENING</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => deleteCollection(selectedColIdx)}
-                    className="text-red-400 text-[9px] tracking-[4px] uppercase font-bold hover:bg-red-50 px-6 py-2 rounded transition-colors self-start xl:self-end cursor-pointer"
-                  >
-                    DESTROY COLLECTION
-                  </button>
-                </header>
-                <div className="mb-12">
-                  <label className="text-xs uppercase tracking-[3px] text-gray-300 font-bold block mb-4">
-                    Collection SEO
-                  </label>
-                  <input
-                    value={collections[selectedColIdx].metaDescription ?? ""}
-                    onChange={(e) => {
-                      const n = [...collections];
-                      n[selectedColIdx].metaDescription = e.target.value;
-                      set("collections", n);
-                    }}
-                    className="admin-input text-sm cursor-text"
-                    placeholder="SEO Description specifically for this collection..."
-                  />
-                </div>
                 <GalleryEditor
-                  label="CATALOG ASSETS"
-                  images={collections[selectedColIdx].images ?? []}
+                  label="COUTURE EDITORIAL GALLERY"
+                  images={content.couture?.gallery ?? []}
                   allImages={allImages}
-                  onChange={(imgs) => {
-                    const newCols = [...collections];
-                    newCols[selectedColIdx].images = imgs;
-                    set("collections", newCols);
-                  }}
+                  onChange={(imgs) => set("couture.gallery", imgs)}
                 />
               </div>
             </div>
@@ -1510,7 +1307,7 @@ export default function AdminDashboard() {
           {activeSection === "social" && (
             <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
               <div className="space-y-12">
-                {["instagram", "facebook", "whatsapp", "pinterest"].map((s) => (
+                {["instagram", "facebook", "whatsapp", "pinterest", "youtube"].map((s) => (
                   <div key={s} className="relative">
                     <label className="text-[10px] uppercase tracking-[5px] text-gray-400 font-bold mb-4 block">
                       {s}
