@@ -10,4 +10,6 @@ cloudinary.config({
 export default cloudinary;
 
 /** The Cloudinary folder where all site images are stored */
-export const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER ?? "ahmed-elakad";
+export const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER ?? "Ahmed Elakad";
+
+

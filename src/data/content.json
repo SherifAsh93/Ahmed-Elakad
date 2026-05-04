@@ -3,13 +3,13 @@
     "brandName": "Ahmed Elakad",
     "labelName": "Ahmed The Label",
     "description": "Luxury couture portfolio.",
-    "logo": "/logo.png"
+    "logo": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1777839570/main_logo_q0hdny.png"
   },
   "homepage": {
     "heroImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
     "featuredImages": [
-      "/images/1 (4).jpg",
-      "/images/1 (21).jpg",
+      "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
+      "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524440/1_109_stxmvq.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524475/1_120_hctnr3.jpg",
@@ -29,15 +29,15 @@
     "bio": [
       "Ahmed Elakad is a couture designer celebrated for his mastery of fabric and silhouette."
     ],
-    "portraitImage": "/ahmed.jpg",
-    "sideImage": "/images/1 (100).jpg"
+    "portraitImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1777842462/ahmed_vojozh.jpg",
+    "sideImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg"
   },
   "collections": [
     {
       "slug": "bridal-2026",
       "title": "2026 Brides",
       "images": [
-        "/images/1 (121).jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524406/1_104_h6cgdb.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524250/1_62_xyfhzc.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524376/1_93_bwhnxa.jpg"
@@ -61,7 +61,8 @@
       "images": [
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524316/1_81_ipiuhz.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524311/1_79_ulp8m9.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524311/1_80_acbhle.jpg"
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524311/1_80_acbhle.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524394/1_97_vi2pva.jpg"
       ],
       "category": "bridal"
     },
@@ -69,10 +70,10 @@
       "slug": "bridal-2023",
       "title": "2023 Brides",
       "images": [
-        "/images/1 (121).jpg",
-        "/images/1 (122).jpg",
-        "/images/1 (115).jpg",
-        "/images/1 (104).jpg"
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524415/1_101_sfy85o.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524270/1_69_uifmu1.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524212/1_47_kskcsv.jpg"
       ],
       "category": "bridal"
     },
@@ -80,10 +81,10 @@
       "slug": "evening",
       "title": "Evening Collection",
       "images": [
-        "/images/1 (120).jpg",
-        "/images/1 (113).jpg",
-        "/images/1 (114).jpg",
-        "/images/1 (121).jpg"
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524134/1_349_aizbbk.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524297/1_72_l8hftw.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524477/1_118_fnjez1.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524335/1_85_qwjxlv.jpg"
       ],
       "category": "label"
     },
@@ -104,7 +105,8 @@
       "images": [
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523989/1_324_le4car.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523985/1_323_lfwhth.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523991/1_322_uv8brc.jpg"
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523991/1_322_uv8brc.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524138/1_347_nsnsdz.jpg"
       ],
       "category": "label"
     },
@@ -112,12 +114,9 @@
       "slug": "label-2024",
       "title": "2024 Collection (The Label)",
       "images": [
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523925/1_304_lalt5r.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523922/1_309_ghmvx9.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524347/1_90_r8oors.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524250/1_62_xyfhzc.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524475/1_120_hctnr3.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524250/1_61_bbku85.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524056/1_336_bhmr3g.jpg"
       ],
       "category": "label"
@@ -128,14 +127,14 @@
       "images": [
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523570/1_222_rtpbm3.jpg",
         "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523595/1_226_zji2ar.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523602/1_227_gxc3f2.jpg",
-        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523593/1_229_tlujbu.jpg"
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524138/1_347_nsnsdz.jpg",
+        "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524178/1_342_fstgip.jpg"
       ],
       "category": "label"
     }
   ],
   "theLabelPage": {
-    "heroImage": "/images/1 (75).jpg",
+    "heroImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg",
     "gallery": []
   },
   "contact": {
@@ -146,7 +145,7 @@
     ],
     "email": "Ahmedelakadcouture@gmail.com",
     "location": "Cairo, Egypt",
-    "heroImage": "/images/1 (200).jpg"
+    "heroImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524470/1_119_fbgkz0.jpg"
   },
   "social": {
     "instagram": "https://www.instagram.com/ahmedelakad_/",

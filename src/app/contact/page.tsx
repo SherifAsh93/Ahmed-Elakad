@@ -1,17 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent } from "@/lib/content";
+import { optimizeImage } from "@/lib/utils";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: "Contact Ahmed Elakad Couture for inquiries and appointments.",
-};
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function ContactPage() {
   const content = await getContent();
   const contact = content.contact ?? {};
   const phones: string[] = contact.phones ?? [];
-  const heroImage = contact.heroImage || "/images/1 (200).jpg";
+  const heroImage = optimizeImage(contact.heroImage || "/images/1 (200).jpg");
   const whatsappNumber = "201101548030";
 
   return (

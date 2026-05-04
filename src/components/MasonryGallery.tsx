@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { optimizeImage } from "@/lib/utils";
 
 interface GalleryImage {
   src: string;
@@ -16,7 +17,7 @@ export default function MasonryGallery({
   const [visible, setVisible] = useState(48);
   const [colCount, setColCount] = useState(4);
 
-  const srcs = images.map((img) => (typeof img === "string" ? img : img.src));
+  const srcs = images.map((img) => optimizeImage(typeof img === "string" ? img : img.src));
 
   useEffect(() => {
     const update = () => {

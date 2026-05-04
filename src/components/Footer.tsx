@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SiteContent } from "@/lib/content";
+import { optimizeImage } from "@/lib/utils";
 
 export default function Footer({ content }: { content: SiteContent }) {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export default function Footer({ content }: { content: SiteContent }) {
         <div className="mb-16">
           <Link href="/">
             <img 
-              src={content.siteInfo?.logo ?? "/logo.png"} 
+              src={optimizeImage(content.siteInfo?.logo ?? "https://res.cloudinary.com/dzppk5ylt/image/upload/v1777839570/main_logo_q0hdny.png")} 
               alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"} 
               className="h-[100px] w-auto object-contain" 
             />

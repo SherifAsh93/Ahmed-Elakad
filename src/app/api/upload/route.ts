@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify Cloudinary is configured
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_SECRET) {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
       return NextResponse.json(
-        { error: "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET." },
+        { error: "Cloudinary configuration is incomplete." },
         { status: 500 }
       );
     }
@@ -33,15 +33,15 @@ export async function POST(req: NextRequest) {
       const cleanName = file.name
         .replace(/\.[^/.]+$/, "") // remove extension
         .replace(/[^a-zA-Z0-9\-_]/g, "_");
-      const publicId = `${CLOUDINARY_FOLDER}/${timestamp}-${cleanName}`;
-
+      
       const buffer = Buffer.from(await file.arrayBuffer());
 
       // Upload to Cloudinary via stream
       const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            public_id: publicId,
+            folder: CLOUDINARY_FOLDER,
+            public_id: `${timestamp}-${cleanName}`,
             resource_type: "image",
             overwrite: true,
           },

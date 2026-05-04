@@ -1,6 +1,10 @@
 import { getContent } from "@/lib/content";
 import MasonryGallery from "@/components/MasonryGallery";
+import { optimizeImage } from "@/lib/utils";
 import type { Metadata } from "next";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "The Label",
@@ -12,9 +16,10 @@ export default async function TheLabelPage() {
   const content = await getContent();
   const page = content.theLabelPage ?? {};
   const gallery = page.gallery ?? [];
-  const heroImage =
+  const heroImage = optimizeImage(
     page.heroImage ||
-    "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
+    "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg"
+  );
 
   const fallbackImages = [
     {
@@ -69,24 +74,7 @@ export default async function TheLabelPage() {
 
       {/* ── Gallery ── */}
       <section className="py-10 sm:py-16 w-full max-w-screen-xl mx-auto px-4 sm:px-8 lg:px-12">
-        {gallery.length > 0 ? (
-          <MasonryGallery images={gallery} />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {fallbackImages.map((img, i) => (
-              <div
-                key={i}
-                className="overflow-hidden group w-full aspect-[3/4]"
-              >
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <MasonryGallery images={gallery.length > 0 ? gallery : fallbackImages} />
       </section>
     </main>
   );

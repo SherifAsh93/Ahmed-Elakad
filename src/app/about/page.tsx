@@ -1,4 +1,5 @@
 import { getContent } from "@/lib/content";
+import { optimizeImage } from "@/lib/utils";
 
 export default async function AboutPage() {
   const content = await getContent();
@@ -11,7 +12,7 @@ export default async function AboutPage() {
       <div className="h-[120px] sm:h-[160px] lg:h-[200px] w-full shrink-0"></div>
 
       <div className="flex-1 py-8 sm:py-12">
-        <div className="container-custom max-w-7xl mx-auto">
+        <div className="container-custom max-w-7xl auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
             
             {/* Primary Portrait */}
@@ -21,7 +22,7 @@ export default async function AboutPage() {
               </p>
               <div className="aspect-[3/4] w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px] overflow-hidden bg-gray-50 shadow-2xl rounded-sm">
                 <img 
-                  src={about.portraitImage || "/ahmed.jpg"} 
+                  src={optimizeImage(about.portraitImage ?? "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg")} 
                   alt="Ahmed Elakad" 
                   className="w-full h-full object-cover" 
                 />
@@ -49,7 +50,7 @@ export default async function AboutPage() {
                 <div className="h-20 w-px bg-[#b3a384]/20 mb-8 hidden lg:block"></div>
                 <div className="aspect-[4/5] w-full max-w-[200px] sm:max-w-[240px] lg:max-w-[280px] overflow-hidden bg-gray-50 shadow-xl opacity-90 hover:opacity-100 transition-opacity rounded-sm">
                   <img 
-                    src={about.sideImage} 
+                    src={optimizeImage(about.sideImage)} 
                     alt="Editorial Detail" 
                     className="w-full h-full object-cover" 
                   />

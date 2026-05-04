@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
@@ -38,12 +37,10 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-6">
-            <Image
-              src="/logo.png"
+            <img
+              src="https://res.cloudinary.com/dzppk5ylt/image/upload/v1777839570/main_logo_q0hdny.png"
               alt="Ahmed Elakad"
-              width={80}
-              height={80}
-              className="brightness-[2] invert opacity-90"
+              className="w-20 h-20 brightness-[2] invert opacity-90"
             />
           </div>
           <p className="font-display text-2xl text-white tracking-widest">

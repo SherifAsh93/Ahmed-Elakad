@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-
-import imageCompression from "browser-image-compression";
+import { SiteContent } from "@/lib/content";
+import { thumbnailImage } from "@/lib/utils";
 
 type Section =
   | "site"
@@ -21,24 +21,37 @@ function ImagePicker({
   allImages,
   onSelect,
   onClose,
+  onUploadComplete,
   inline = false,
+  multi = true, // Default to multi-selection for better efficiency
 }: {
   allImages: string[];
-  onSelect: (src: string) => void;
+  onSelect: (srcs: string[]) => void;
   onClose?: () => void;
+  onUploadComplete?: () => void;
   inline?: boolean;
+  multi?: boolean;
 }) {
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
   const [pasteUrl, setPasteUrl] = useState("");
   const [urlError, setUrlError] = useState("");
   const [urlPreviewOk, setUrlPreviewOk] = useState(false);
+
+  useEffect(() => {
+    if (pasteUrl.includes("console.cloudinary.com") || pasteUrl.includes("collection.cloudinary.com")) {
+      setUrlError("You pasted a Cloudinary Console link. Please right-click the image in Cloudinary and select 'Copy image address' instead.");
+      setUrlPreviewOk(false);
+    } else {
+      setUrlError("");
+    }
+  }, [pasteUrl]);
   const [activeTab, setActiveTab] = useState<"browse" | "url">("browse");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
-  const perPage = 12; // Reduced for faster loading
+  const [errorImages, setErrorImages] = useState<Set<string>>(new Set());
+  const perPage = 48; // Increased for faster bulk browsing
   const filtered = allImages.filter((img) =>
-    search ? img.toLowerCase().includes(search.toLowerCase()) : true,
+    img && !errorImages.has(img)
   );
   const total = Math.ceil(filtered.length / perPage);
   const displayed = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -73,17 +86,7 @@ function ImagePicker({
         const originalFile = files[i];
 
         setUploadStatus(`Optimizing ${i + 1}/${total}...`);
-        let fileToUpload: File | Blob = originalFile;
-        if (originalFile.type.startsWith("image/")) {
-          try {
-            fileToUpload = await imageCompression(
-              originalFile,
-              compressionOptions,
-            );
-          } catch (e) {
-            console.warn("Compression failed:", e);
-          }
-        }
+        const fileToUpload = originalFile;
 
         setUploadStatus(`Uploading ${i + 1}/${total}...`);
         const singleFormData = new FormData();
@@ -101,8 +104,14 @@ function ImagePicker({
         }
       }
 
-      setUploadStatus("All Uploaded!");
-      setTimeout(() => window.location.reload(), 800);
+      setUploadStatus("Upload Successful!");
+      if (onUploadComplete) {
+        onUploadComplete();
+        setUploadStatus("Updating Library...");
+        setTimeout(() => setUploadStatus(null), 3000);
+      } else {
+        setTimeout(() => window.location.reload(), 2000);
+      }
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : "Upload failed.");
@@ -113,44 +122,30 @@ function ImagePicker({
   const handlePasteUrl = () => {
     const url = pasteUrl.trim();
     if (!url) return;
-    try {
-      const parsed = new URL(url);
-      // Warn about collection/console links that aren't direct images
-      if (
-        parsed.hostname === "console.cloudinary.com" ||
-        parsed.hostname === "collection.cloudinary.com"
-      ) {
-        setUrlError(
-          "This is a Cloudinary console/collection link, not a direct image URL. Copy the image URL instead (right-click image → Copy image address).",
-        );
-        return;
-      }
-      if (
-        !/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(url) &&
-        !url.includes("res.cloudinary.com")
-      ) {
-        setUrlError(
-          "URL should point to a direct image file (jpg, png, webp...) or a res.cloudinary.com URL",
-        );
-        return;
-      }
-      setUrlError("");
-      onSelect(url);
-      onClose?.();
-    } catch {
-      setUrlError("Please enter a valid URL");
-    }
+    onSelect([url]);
+    setPasteUrl("");
+    if (onClose) onClose();
   };
 
   const handleSelectImage = (src: string) => {
-    setSelectedImage(src);
+    if (!multi) {
+      setSelectedImages(new Set([src]));
+      return;
+    }
+    setSelectedImages((prev) => {
+      const next = new Set(prev);
+      if (next.has(src)) next.delete(src);
+      else next.add(src);
+      return next;
+    });
   };
 
   const handleConfirmSelection = () => {
-    if (selectedImage) {
-      onSelect(selectedImage);
-      setSelectedImage(null);
-      onClose?.();
+    const urls = Array.from(selectedImages);
+    if (urls.length > 0) {
+      onSelect(urls);
+      setSelectedImages(new Set());
+      if (onClose) onClose();
     }
   };
 
@@ -165,7 +160,7 @@ function ImagePicker({
       }
     >
       <div
-        className={`bg-white w-full max-w-7xl flex flex-col overflow-hidden ${inline ? "h-[800px] border border-gray-200 rounded-lg shadow-sm" : "h-[92vh] rounded-2xl shadow-2xl"}`}
+        className={`bg-white w-full max-w-[98vw] flex flex-col overflow-hidden ${inline ? "h-[800px] border border-gray-200 rounded-lg shadow-sm" : "h-[94vh] rounded-3xl shadow-2xl"}`}
       >
         {/* Progress Bar */}
         {isUploading && (
@@ -177,30 +172,36 @@ function ImagePicker({
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 border-b gap-4 bg-white">
+        {/* Header - Forced Massive Padding */}
+        <div 
+          className="flex flex-col md:flex-row md:items-center justify-between py-16 border-b gap-8 bg-white relative"
+          style={{ paddingLeft: '100px', paddingRight: '100px' }}
+        >
           <div className="flex flex-col">
-            <h3 className="font-display text-2xl uppercase tracking-[4px]">
+            <h3 className="font-display text-3xl uppercase tracking-[6px] text-black mb-1">
               Image Manager
             </h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-[3px] mt-1">
-              {uploadStatus || `${allImages.length} images in Cloudinary`}
-            </p>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <p className="text-[9px] text-gray-400 uppercase tracking-[4px] font-bold">
+                {uploadStatus || `${allImages.length} assets synced from cloud`}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Tab Switcher */}
-            <div className="flex border border-gray-200 rounded-lg overflow-hidden mr-2">
+            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 mr-2">
               <button
                 onClick={() => setActiveTab("browse")}
-                className={`text-[10px] font-bold uppercase tracking-[2px] px-5 py-2.5 transition-all ${activeTab === "browse" ? "bg-black text-white" : "bg-white text-gray-400 hover:text-black"}`}
+                className={`text-[9px] font-black uppercase tracking-[3px] px-6 py-3 transition-all rounded-lg ${activeTab === "browse" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
               >
                 ☁️ Browse
               </button>
               <button
                 onClick={() => setActiveTab("url")}
-                className={`text-[10px] font-bold uppercase tracking-[2px] px-5 py-2.5 transition-all ${activeTab === "url" ? "bg-black text-white" : "bg-white text-gray-400 hover:text-black"}`}
+                className={`text-[9px] font-black uppercase tracking-[3px] px-6 py-3 transition-all rounded-lg ${activeTab === "url" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
               >
-                🔗 Paste URL
+                🔗 External
               </button>
             </div>
             <input
@@ -218,10 +219,11 @@ function ImagePicker({
             >
               {uploadStatus ? "PLEASE WAIT" : "↑ UPLOAD"}
             </label>
+            {/* Close Button with more margin */}
             {!inline && onClose && (
               <button
                 onClick={onClose}
-                className="text-gray-300 hover:text-black transition-colors font-bold p-2 text-xl ml-2"
+                className="text-gray-300 hover:text-black transition-colors font-bold p-3 text-2xl ml-6 absolute -top-2 -right-4 md:static"
               >
                 ✕
               </button>
@@ -232,22 +234,11 @@ function ImagePicker({
         {/* Tab: Browse */}
         {activeTab === "browse" && (
           <>
-            {/* Search Bar */}
-            <div className="px-8 py-4 bg-[#faf9f7] border-b">
-              <input
-                type="text"
-                placeholder="Search images by filename..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(0);
-                }}
-                className="w-full bg-white border border-gray-200 rounded-xl px-5 py-3 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black/10 transition-all"
-              />
-            </div>
-
-            {/* Image Grid */}
-            <div className="overflow-y-auto px-8 py-6 flex-1 bg-gray-50 flex flex-col">
+            {/* Image Grid - Forced Massive Padding */}
+            <div 
+              className="overflow-y-auto py-16 flex-1 bg-gray-50 flex flex-col"
+              style={{ paddingLeft: '100px', paddingRight: '100px' }}
+            >
               {allImages.length === 0 && !isUploading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl m-4 py-20">
                   <span className="text-5xl mb-6">☁️</span>
@@ -259,9 +250,9 @@ function ImagePicker({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-5">
                   {displayed.map((src) => {
-                    const isSelected = selectedImage === src;
+                    const isSelected = selectedImages.has(src);
                     const isLoading = loadingImages.has(src);
                     return (
                       <div
@@ -281,12 +272,16 @@ function ImagePicker({
                         {/* Image */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={src}
+                          src={thumbnailImage(src)}
                           alt=""
                           className="w-full h-full object-cover"
                           loading="lazy"
                           onLoadStart={() => handleImageLoadStart(src)}
                           onLoad={() => handleImageLoad(src)}
+                          onError={() => {
+                            setErrorImages(prev => new Set(prev).add(src));
+                            handleImageLoad(src);
+                          }}
                         />
 
                         {/* Overlay */}
@@ -309,8 +304,8 @@ function ImagePicker({
 
                         {/* Selection Text */}
                         {isSelected && (
-                          <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center">
-                            <p className="text-[10px] text-white uppercase tracking-[2px] font-bold drop-shadow-lg bg-black/50 px-3 py-1 rounded">
+                          <div className="absolute inset-0 bg-black/10 flex items-center justify-center pointer-events-none">
+                            <p className="text-[10px] text-white uppercase tracking-[2px] font-black drop-shadow-lg bg-black/50 px-3 py-1.5 rounded-full border border-white/20">
                               SELECTED
                             </p>
                           </div>
@@ -322,61 +317,79 @@ function ImagePicker({
               )}
             </div>
 
-            {/* Selection Confirm Bar */}
-            {selectedImage && (
-              <div className="bg-gradient-to-r from-black to-[#b3a384] px-8 py-6 border-t flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedImage}
-                    alt="Preview"
-                    className="w-16 h-20 object-cover rounded-lg shadow-md"
-                  />
+            {/* Selection Confirm Bar - Forced Massive Padding */}
+            {selectedImages.size > 0 && (
+              <div 
+                className="bg-gradient-to-r from-black via-[#222] to-[#b3a384] py-12 border-t flex items-center justify-between shadow-[0_-20px_40px_rgba(0,0,0,0.1)]"
+                style={{ paddingLeft: '100px', paddingRight: '100px' }}
+              >
+                <div className="flex items-center gap-10">
+                  <div className="relative flex -space-x-12">
+                    {Array.from(selectedImages).slice(0, 3).map((img, i) => (
+                      <div key={img} className="relative transition-transform hover:-translate-y-4" style={{ zIndex: 10 - i }}>
+                        <img
+                          src={img}
+                          alt="Preview"
+                          className="w-20 h-24 object-cover rounded-xl shadow-2xl ring-2 ring-white/20"
+                        />
+                      </div>
+                    ))}
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg z-20 -ml-4 mt-auto mb-2 border-2 border-black">
+                      <span className="text-[12px] text-black font-black">{selectedImages.size}</span>
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-white text-sm font-bold uppercase tracking-[2px]">
-                      Image Selected
+                    <p className="text-white text-base font-black uppercase tracking-[3px]">
+                      {selectedImages.size} Assets Selected
                     </p>
-                    <p className="text-white/70 text-[10px] uppercase tracking-[1px] mt-1">
-                      Click confirm to add this image
+                    <p className="text-white/50 text-[10px] uppercase tracking-[2px] mt-2 font-bold">
+                      Ready to apply to your section
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   <button
-                    onClick={() => setSelectedImage(null)}
-                    className="text-white text-[10px] font-bold uppercase tracking-[2px] px-6 py-3 border-2 border-white/30 rounded-lg hover:border-white transition-all"
+                    onClick={() => setSelectedImages(new Set())}
+                    className="text-white text-[10px] font-black uppercase tracking-[3px] px-8 py-4 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95"
                   >
-                    CANCEL
+                    CLEAR ALL
                   </button>
                   <button
                     onClick={handleConfirmSelection}
-                    className="text-black text-[10px] font-bold uppercase tracking-[2px] px-8 py-3 bg-white rounded-lg hover:bg-[#b3a384] hover:text-white transition-all shadow-lg"
+                    className="text-black text-[10px] font-black uppercase tracking-[4px] px-12 py-4 bg-white rounded-full hover:bg-[#b3a384] hover:text-white transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-95"
                   >
-                    CONFIRM & ADD
+                    CONFIRM & SAVE ALL
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Pagination */}
+            {/* Pagination - Forced Massive Padding */}
             {total > 1 && (
-              <div className="flex items-center justify-center gap-6 px-8 py-5 border-t bg-white">
+              <div 
+                className="flex items-center justify-center gap-16 py-12 border-t bg-white"
+                style={{ paddingLeft: '100px', paddingRight: '100px' }}
+              >
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="px-6 py-2.5 border-2 rounded-lg text-[10px] uppercase tracking-[2px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-20 font-bold"
+                  className="px-8 py-3 border border-gray-200 rounded-full text-[10px] uppercase tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
                 >
-                  ← PREV
+                  PREVIOUS
                 </button>
-                <span className="text-xs font-bold tracking-[4px] text-gray-500">
-                  {page + 1} / {total}
-                </span>
+                <div className="flex items-center gap-3">
+                   <span className="w-1 h-1 rounded-full bg-gray-200" />
+                   <span className="text-[10px] font-black tracking-[6px] text-black">
+                     {page + 1} <span className="text-gray-300 mx-1">/</span> {total}
+                   </span>
+                   <span className="w-1 h-1 rounded-full bg-gray-200" />
+                </div>
                 <button
                   onClick={() => setPage((p) => Math.min(total - 1, p + 1))}
                   disabled={page >= total - 1}
-                  className="px-6 py-2.5 border-2 rounded-lg text-[10px] uppercase tracking-[2px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-20 font-bold"
+                  className="px-8 py-3 border border-gray-200 rounded-full text-[10px] uppercase tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
                 >
-                  NEXT →
+                  NEXT PAGE
                 </button>
               </div>
             )}
@@ -484,15 +497,17 @@ function GalleryEditor({
   images,
   allImages,
   onChange,
+  onUploadComplete,
   label,
 }: {
   images: string[];
   allImages: string[];
   onChange: (imgs: string[]) => void;
+  onUploadComplete?: () => void;
   label: string;
 }) {
   const [picker, setPicker] = useState(false);
-  const add = (src: string) => onChange([...images, src]);
+  const add = (srcs: string[]) => onChange([...images, ...srcs]);
   const remove = (i: number) => onChange(images.filter((_, idx) => idx !== i));
   return (
     <div>
@@ -528,10 +543,20 @@ function GalleryEditor({
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={src}
+                  src={thumbnailImage(src)}
                   alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent && !parent.querySelector('.error-msg')) {
+                      const div = document.createElement('div');
+                      div.className = 'error-msg w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-500 text-center p-2 border border-red-200';
+                      div.innerHTML = '<span class="text-lg">⚠️</span><span class="text-[8px] font-bold mt-1 uppercase">Broken</span>';
+                      parent.appendChild(div);
+                    }
+                  }}
                 />
               )}
               <button
@@ -554,6 +579,7 @@ function GalleryEditor({
         <ImagePicker
           allImages={allImages}
           onSelect={add}
+          onUploadComplete={onUploadComplete}
           onClose={() => setPicker(false)}
         />
       )}
@@ -566,11 +592,13 @@ function SingleImageEditor({
   image,
   allImages,
   onChange,
+  onUploadComplete,
   label,
 }: {
   image: string;
   allImages: string[];
   onChange: (src: string) => void;
+  onUploadComplete?: () => void;
   label: string;
 }) {
   const [picker, setPicker] = useState(false);
@@ -604,10 +632,20 @@ function SingleImageEditor({
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={image}
+              src={thumbnailImage(image)}
               alt="Preview"
               className="w-full h-full object-cover transition-transform hover:scale-110 duration-700"
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                if (parent && !parent.querySelector('.error-msg')) {
+                  const div = document.createElement('div');
+                  div.className = 'error-msg w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-500 text-center p-2 border border-red-200';
+                  div.innerHTML = '<span class="text-2xl mb-1">⚠️</span><span class="text-[10px] font-bold uppercase">Broken</span>';
+                  parent.appendChild(div);
+                }
+              }}
             />
           )
         ) : (
@@ -619,7 +657,9 @@ function SingleImageEditor({
       {picker && (
         <ImagePicker
           allImages={allImages}
-          onSelect={onChange}
+          multi={false}
+          onSelect={(urls) => onChange(urls[0])}
+          onUploadComplete={onUploadComplete}
           onClose={() => setPicker(false)}
         />
       )}
@@ -681,28 +721,39 @@ function BioParagraphEditor({
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<Section>("site");
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<SiteContent | null>(null);
   const [allImages, setAllImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedColIdx, setSelectedColIdx] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/content").then((r) => r.json()),
-      fetch("/api/images").then((r) => r.json()),
-    ])
-      .then(([c, imgs]) => {
-        setContent(c);
-        setAllImages(imgs.images ?? []);
-        setLoading(false);
-      })
-      .catch(() => router.push("/admin"));
+  const fetchData = useCallback(async () => {
+    try {
+      const [c, imgs] = await Promise.all([
+        fetch("/api/content").then((r) => r.json()),
+        fetch("/api/images").then((r) => r.json()),
+      ]);
+      setContent(c);
+      setAllImages(imgs.images ?? []);
+      setLoading(false);
+    } catch (e) {
+      router.push("/admin");
+    }
   }, [router]);
 
-  const set = useCallback((path: string, value: any) => {
-    setContent((prev: any) => {
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const refreshImages = async () => {
+    const res = await fetch("/api/images");
+    const data = await res.json();
+    setAllImages(data.images || []);
+  };
+
+  const set = useCallback((path: string, value: unknown) => {
+    setContent((prev: SiteContent | null) => {
       const clone = JSON.parse(JSON.stringify(prev));
       const parts = path.split(".");
       let curr = clone;
@@ -735,6 +786,7 @@ export default function AdminDashboard() {
   };
 
   const addCollection = () => {
+    if (!content) return;
     const newCol = {
       title: "New Collection",
       slug: `new-collection-${Date.now()}`,
@@ -748,22 +800,15 @@ export default function AdminDashboard() {
 
   const deleteCollection = (idx: number) => {
     if (!confirm("Are you sure you want to delete this collection?")) return;
-    const newCols = content.collections.filter(
-      (_: any, i: number) => i !== idx,
+    const newCols = (content?.collections ?? []).filter(
+      (_: any, i: number) => i !== idx, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
     set("collections", newCols);
     setSelectedColIdx(-1);
     setActiveSection("site");
   };
 
-  if (loading)
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#f9f7f4] z-50">
-        <div className="text-center font-display uppercase tracking-[8px] text-gray-800 animate-pulse">
-          Initializing Terminal...
-        </div>
-      </div>
-    );
+  if (!content) return null;
 
   const collections = content.collections ?? [];
   const bridalCollections = collections.filter(
@@ -775,25 +820,49 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-[#fcfaf9]">
-      {/* Mobile Sidebar Toggle */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed bottom-6 right-6 z-[60] md:hidden bg-black text-white p-4 rounded-full shadow-2xl active:scale-90 transition-transform"
-      >
-        {sidebarOpen ? "✕ CLOSE" : "☰ MENU"}
-      </button>
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[50] md:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Header Bar */}
+      <div className="fixed top-0 inset-x-0 bg-white border-b h-16 flex items-center justify-between px-6 z-[45] md:hidden shadow-sm">
+        <p className="font-display tracking-[2px] uppercase text-xs font-bold">
+          Ahmed Elakad
+        </p>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="text-[10px] tracking-[2px] font-bold uppercase bg-black text-white px-4 py-2 rounded"
+        >
+          MENU
+        </button>
+      </div>
+
+      {/* Mobile Floating Save Button */}
+      {!sidebarOpen && (
+        <button
+          onClick={save}
+          disabled={saving}
+          className="fixed bottom-6 right-6 z-[40] md:hidden bg-[#b3a384] text-white px-8 py-4 rounded-full shadow-2xl active:scale-95 transition-all font-bold text-xs tracking-[3px] uppercase flex items-center gap-3 border-2 border-white/20"
+        >
+          {saving ? "..." : "✓ SAVE"}
+        </button>
+      )}
 
       {/* Sidebar */}
       <aside
-        className={`w-96 bg-white border-r px-10 py-14 flex flex-col fixed md:sticky top-0 h-screen overflow-y-auto shadow-[10px_0_30px_rgba(0,0,0,0.03)] z-[55] transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`w-80 bg-white border-r px-6 py-12 flex flex-col fixed md:sticky top-0 h-screen overflow-y-auto shadow-[10px_0_30px_rgba(0,0,0,0.02)] z-[55] transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="mb-16 text-center">
-          <div className="bg-black text-white inline-block px-6 py-3 mb-6">
-            <p className="font-display tracking-[4px] uppercase text-base">
+        <div className="mb-12 text-center">
+          <div className="bg-black text-white inline-block px-5 py-2 mb-4">
+            <p className="font-display tracking-[3px] uppercase text-sm">
               COUTURE CMS
             </p>
           </div>
-          <p className="text-[11px] text-gray-400 uppercase tracking-[6px] font-bold">
+          <p className="text-[10px] text-gray-300 uppercase tracking-[5px] font-bold">
             Ahmed Elakad
           </p>
         </div>
@@ -820,10 +889,10 @@ export default function AdminDashboard() {
                   setSelectedColIdx(-1);
                   setSidebarOpen(false);
                 }}
-                className={`w-full px-6 py-5 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
+                className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
                   activeSection === s && selectedColIdx === -1
-                    ? "bg-black text-white shadow-lg translate-x-1"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                    ? "bg-black text-white shadow-lg"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-black"
                 }`}
               >
                 {s === "label"
@@ -850,7 +919,7 @@ export default function AdminDashboard() {
               </button>
             </div>
             <div className="space-y-2">
-              {bridalCollections.map((c: any) => {
+              {bridalCollections.map((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 const idx = collections.indexOf(c);
                 return (
                   <button
@@ -860,10 +929,10 @@ export default function AdminDashboard() {
                       setSelectedColIdx(idx);
                       setSidebarOpen(false);
                     }}
-                    className={`group w-full px-6 py-5 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
+                    className={`group w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
                       activeSection === "collections" && selectedColIdx === idx
-                        ? "bg-black text-white shadow-lg translate-x-1"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                        ? "bg-black text-white shadow-lg"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-black"
                     }`}
                   >
                     {c.title}
@@ -878,7 +947,7 @@ export default function AdminDashboard() {
               The Label / Evening
             </p>
             <div className="space-y-2">
-              {labelCollections.map((c: any) => {
+              {labelCollections.map((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 const idx = collections.indexOf(c);
                 return (
                   <button
@@ -888,10 +957,10 @@ export default function AdminDashboard() {
                       setSelectedColIdx(idx);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full px-6 py-5 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
+                    className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
                       activeSection === "collections" && selectedColIdx === idx
-                        ? "bg-black text-white shadow-lg translate-x-1"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-black"
+                        ? "bg-black text-white shadow-lg"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-black"
                     }`}
                   >
                     {c.title}
@@ -924,26 +993,25 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-12 lg:p-24 overflow-y-auto bg-[#fcfaf9]">
-        <div className="max-w-5xl mx-auto animate-in fade-in duration-700">
-          <header className="mb-20 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+      <main className="flex-1 p-4 pt-24 md:p-8 lg:p-12 overflow-y-auto bg-[#fcfaf9]">
+        <div className="max-w-6xl mx-auto animate-in fade-in duration-700">
+          <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b pb-8 border-gray-100">
             <div>
-              <p className="text-[10px] tracking-[6px] uppercase text-[#b3a384] font-bold mb-3">
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-2 opacity-80">
                 Management Module
               </p>
-              <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-black">
+              <h2 className="text-2xl md:text-3xl font-display uppercase tracking-widest text-black">
                 {selectedColIdx !== -1
                   ? collections[selectedColIdx].title
                   : activeSection === "label"
                     ? "THE LABEL"
                     : activeSection === "about"
                       ? "THE DESIGNER"
-                      : activeSection}
+                      : activeSection.toUpperCase()}
               </h2>
             </div>
-            <div className="h-px flex-1 bg-gray-200 mx-10 mb-5 hidden lg:block"></div>
-            <div className="text-[10px] tracking-[4px] uppercase text-gray-300 font-bold mb-5 whitespace-nowrap">
-              Status: Ready
+            <div className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-1 whitespace-nowrap bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+              System Status: <span className="text-green-600">Online</span>
             </div>
           </header>
 
@@ -1072,6 +1140,7 @@ export default function AdminDashboard() {
                   label="MAIN HERO BACKGROUND"
                   image={content.homepage?.heroImage ?? ""}
                   allImages={allImages}
+                  onUploadComplete={refreshImages}
                   onChange={(src) => set("homepage.heroImage", src)}
                 />
               </div>
@@ -1080,6 +1149,7 @@ export default function AdminDashboard() {
                   label="FEATURED COLLECTION PREVIEW"
                   images={content.homepage?.featuredImages ?? []}
                   allImages={allImages}
+                  onUploadComplete={refreshImages}
                   onChange={(imgs) => set("homepage.featuredImages", imgs)}
                 />
               </div>
@@ -1148,6 +1218,7 @@ export default function AdminDashboard() {
                     label="SECONDARY EDITORIAL"
                     image={content.about?.sideImage ?? ""}
                     allImages={allImages}
+                    onUploadComplete={refreshImages}
                     onChange={(src) => set("about.sideImage", src)}
                   />
                 </div>
@@ -1192,6 +1263,7 @@ export default function AdminDashboard() {
                   label="OFFICIAL PAGE HERO"
                   image={content.theLabelPage?.heroImage ?? ""}
                   allImages={allImages}
+                  onUploadComplete={refreshImages}
                   onChange={(src) => set("theLabelPage.heroImage", src)}
                 />
               </div>
@@ -1200,6 +1272,7 @@ export default function AdminDashboard() {
                   label="LABEL EDITORIAL GALLERY"
                   images={content.theLabelPage?.gallery ?? []}
                   allImages={allImages}
+                  onUploadComplete={refreshImages}
                   onChange={(imgs) => set("theLabelPage.gallery", imgs)}
                 />
               </div>
@@ -1353,6 +1426,7 @@ export default function AdminDashboard() {
                   label="CONTACT HERO BACKGROUND"
                   image={content.contact?.heroImage ?? ""}
                   allImages={allImages}
+                  onUploadComplete={refreshImages}
                   onChange={(src) => set("contact.heroImage", src)}
                 />
               </div>
@@ -1402,7 +1476,7 @@ export default function AdminDashboard() {
                           <input
                             value={p}
                             onChange={(e) => {
-                              const ph = [...content.contact.phones];
+                              const ph = [...(content.contact?.phones ?? [])];
                               ph[i] = e.target.value;
                               set("contact.phones", ph);
                             }}
@@ -1410,7 +1484,7 @@ export default function AdminDashboard() {
                           />
                           <button
                             onClick={() => {
-                              const ph = content.contact.phones.filter(
+                              const ph = (content.contact?.phones ?? []).filter(
                                 (_: any, idx: number) => idx !== i,
                               );
                               set("contact.phones", ph);
@@ -1442,7 +1516,7 @@ export default function AdminDashboard() {
                         {s[0]}
                       </div>
                       <input
-                        value={content.social?.[s] ?? ""}
+                        value={(content.social && (content.social as any)[s]) ?? ""}
                         onChange={(e) => set(`social.${s}`, e.target.value)}
                         className="admin-input flex-1 py-4 text-base italic text-gray-600"
                         placeholder={`Enter ${s} profile link...`}
@@ -1456,12 +1530,13 @@ export default function AdminDashboard() {
 
           {/* MEDIA LIBRARY */}
           {activeSection === "media" && (
-            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-0">
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-0 min-h-[600px]">
               <ImagePicker
                 allImages={allImages}
-                onSelect={(url) => {
-                  navigator.clipboard.writeText(url);
-                  alert("Image URL copied to clipboard!");
+                onUploadComplete={refreshImages}
+                onSelect={(urls) => {
+                  navigator.clipboard.writeText(urls.join("\n"));
+                  alert(`${urls.length} Image URL(s) copied to clipboard!`);
                 }}
                 inline={true}
               />

@@ -2,6 +2,9 @@ import { getContent } from "@/lib/content";
 import MasonryGallery from "@/components/MasonryGallery";
 import { notFound } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function CollectionSlugPage({
   params,
 }: {
@@ -9,7 +12,8 @@ export default async function CollectionSlugPage({
 }) {
   const { slug } = await params;
   const content = await getContent();
-  const col = (content.collections ?? []).find((c: any) => c.slug === slug);
+  const collections = content.collections ?? [];
+  const col = collections.find((c) => c.slug === slug);
   if (!col) return notFound();
 
   return (
