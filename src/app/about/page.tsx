@@ -11,8 +11,8 @@ export default async function AboutPage() {
       {/* Navbar spacer — smaller on mobile */}
       <div className="h-[120px] sm:h-[160px] lg:h-[200px] w-full shrink-0"></div>
 
-      <div className="flex-1 py-8 sm:py-12">
-        <div className="container-custom max-w-7xl auto">
+      <div className="flex-1 py-4 sm:py-12">
+        <div className="container-custom max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
             
             {/* Primary Portrait */}

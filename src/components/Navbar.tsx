@@ -40,7 +40,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
   return (
     <header className="w-full absolute top-0 left-0 z-50">
       {/* ── Row 1: Logo ────────────────────────── */}
-      <div className="py-6 bg-[#efe9e3]/80 backdrop-blur-md">
+      <div className="py-4 sm:py-6 bg-[#efe9e3]/80 backdrop-blur-md">
         <div className="container-custom flex justify-between items-center">
           <Link href="/" className="md:ml-12 lg:ml-20">
             <img
