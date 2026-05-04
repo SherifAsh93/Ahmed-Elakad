@@ -4,7 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SiteContent } from "@/lib/content";
-import { thumbnailImage } from "@/lib/utils";
+
+// Module-level thumbnail cache populated from server-signed URLs
+const thumbMap = new Map<string, string>();
+function getThumb(url: string): string {
+  return thumbMap.get(url) || url;
+}
 
 type Section =
   | "site"
@@ -49,7 +54,7 @@ function ImagePicker({
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [errorImages, setErrorImages] = useState<Set<string>>(new Set());
-  const perPage = 48; // Increased for faster bulk browsing
+  const perPage = 24;
   const filtered = allImages.filter((img) =>
     img && !errorImages.has(img)
   );
@@ -160,7 +165,7 @@ function ImagePicker({
       }
     >
       <div
-        className={`bg-white w-full max-w-[98vw] flex flex-col overflow-hidden ${inline ? "h-[800px] border border-gray-200 rounded-lg shadow-sm" : "h-[94vh] rounded-3xl shadow-2xl"}`}
+        className={`bg-white w-full max-w-[98vw] flex flex-col overflow-hidden ${inline ? "h-[calc(100vh-12rem)] min-h-[400px] border border-gray-200 rounded-lg shadow-sm" : "h-[94vh] rounded-3xl shadow-2xl"}`}
       >
         {/* Progress Bar */}
         {isUploading && (
@@ -172,12 +177,12 @@ function ImagePicker({
           </div>
         )}
 
-        {/* Header - Forced Massive Padding */}
+        {/* Header - Responsive Padding */}
         <div 
-          className="flex flex-col md:flex-row md:items-center justify-between px-6 md:px-[100px] py-10 md:py-16 border-b gap-8 bg-white relative"
+          className="flex flex-col md:flex-row md:items-center justify-between px-4 sm:px-6 md:px-12 lg:px-[100px] py-4 sm:py-6 md:py-10 border-b gap-3 sm:gap-6 bg-white relative"
         >
           <div className="flex flex-col">
-            <h3 className="font-display text-3xl uppercase tracking-[6px] text-black mb-1">
+            <h3 className="font-display text-lg sm:text-2xl md:text-3xl uppercase tracking-[2px] sm:tracking-[3px] md:tracking-[6px] text-black mb-1">
               Image Manager
             </h3>
             <div className="flex items-center gap-2">
@@ -189,16 +194,16 @@ function ImagePicker({
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Tab Switcher */}
-            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 mr-2">
+            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 mr-2 flex-wrap gap-1 md:gap-0">
               <button
                 onClick={() => setActiveTab("browse")}
-                className={`text-[9px] font-black uppercase tracking-[3px] px-6 py-3 transition-all rounded-lg ${activeTab === "browse" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
+                className={`text-[9px] font-black uppercase tracking-[2px] md:tracking-[3px] px-3 py-2 md:px-6 md:py-3 transition-all rounded-lg ${activeTab === "browse" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
               >
                 ☁️ Browse
               </button>
               <button
                 onClick={() => setActiveTab("url")}
-                className={`text-[9px] font-black uppercase tracking-[3px] px-6 py-3 transition-all rounded-lg ${activeTab === "url" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
+                className={`text-[9px] font-black uppercase tracking-[2px] md:tracking-[3px] px-3 py-2 md:px-6 md:py-3 transition-all rounded-lg ${activeTab === "url" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
               >
                 🔗 External
               </button>
@@ -233,10 +238,9 @@ function ImagePicker({
         {/* Tab: Browse */}
         {activeTab === "browse" && (
           <>
-            {/* Image Grid - Forced Massive Padding */}
+            {/* Image Grid - Responsive Padding */}
             <div 
-              className="overflow-y-auto py-16 flex-1 bg-gray-50 flex flex-col"
-              style={{ paddingLeft: '100px', paddingRight: '100px' }}
+              className="overflow-y-auto py-4 sm:py-8 md:py-16 flex-1 bg-gray-50 flex flex-col px-2 sm:px-4 md:px-12 lg:px-[100px]"
             >
               {allImages.length === 0 && !isUploading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl m-4 py-20">
@@ -249,7 +253,7 @@ function ImagePicker({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-5">
                   {displayed.map((src) => {
                     const isSelected = selectedImages.has(src);
                     const isLoading = loadingImages.has(src);
@@ -271,10 +275,11 @@ function ImagePicker({
                         {/* Image */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={thumbnailImage(src)}
+                          src={getThumb(src)}
                           alt=""
                           className="w-full h-full object-cover"
-                          loading="lazy"
+                          loading={page === 0 ? "eager" : "lazy"}
+                          decoding="async"
                           onLoadStart={() => handleImageLoadStart(src)}
                           onLoad={() => handleImageLoad(src)}
                           onError={() => {
@@ -293,7 +298,7 @@ function ImagePicker({
                         />
 
                         {/* Checkbox */}
-                        <div className="absolute top-3 right-3 w-6 h-6 rounded border-2 flex items-center justify-center transition-all bg-white/90 border-black">
+                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center transition-all bg-white/90 border-black">
                           {isSelected && (
                             <span className="text-black text-sm font-bold">
                               ✓
@@ -319,10 +324,9 @@ function ImagePicker({
             {/* Selection Confirm Bar - Forced Massive Padding */}
             {selectedImages.size > 0 && (
               <div 
-                className="bg-gradient-to-r from-black via-[#222] to-[#b3a384] py-12 border-t flex items-center justify-between shadow-[0_-20px_40px_rgba(0,0,0,0.1)]"
-                style={{ paddingLeft: '100px', paddingRight: '100px' }}
+                className="bg-gradient-to-r from-black via-[#222] to-[#b3a384] py-4 sm:py-6 md:py-12 px-4 sm:px-6 md:px-12 lg:px-[100px] border-t flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 shadow-[0_-20px_40px_rgba(0,0,0,0.1)]"
               >
-                <div className="flex items-center gap-10">
+                <div className="flex items-center gap-6 md:gap-10 w-full md:w-auto">
                   <div className="relative flex -space-x-12">
                     {Array.from(selectedImages).slice(0, 3).map((img, i) => (
                       <div key={img} className="relative transition-transform hover:-translate-y-4" style={{ zIndex: 10 - i }}>
@@ -349,15 +353,15 @@ function ImagePicker({
                 <div className="flex gap-4">
                   <button
                     onClick={() => setSelectedImages(new Set())}
-                    className="text-white text-[10px] font-black uppercase tracking-[3px] px-8 py-4 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95"
+                    className="text-white text-[9px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[3px] px-6 py-3 md:px-8 md:py-4 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap"
                   >
-                    CLEAR ALL
+                    CLEAR
                   </button>
                   <button
                     onClick={handleConfirmSelection}
-                    className="text-black text-[10px] font-black uppercase tracking-[4px] px-12 py-4 bg-white rounded-full hover:bg-[#b3a384] hover:text-white transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-95"
+                    className="text-black text-[9px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[4px] px-8 py-3 md:px-12 md:py-4 bg-white rounded-full hover:bg-[#b3a384] hover:text-white transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-95 whitespace-nowrap"
                   >
-                    CONFIRM & SAVE ALL
+                    CONFIRM & SAVE
                   </button>
                 </div>
               </div>
@@ -366,15 +370,14 @@ function ImagePicker({
             {/* Pagination - Forced Massive Padding */}
             {total > 1 && (
               <div 
-                className="flex items-center justify-center gap-16 py-12 border-t bg-white"
-                style={{ paddingLeft: '100px', paddingRight: '100px' }}
+                className="flex items-center justify-center gap-4 sm:gap-6 md:gap-16 py-4 sm:py-6 md:py-12 px-4 md:px-12 lg:px-[100px] border-t bg-white"
               >
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="px-8 py-3 border border-gray-200 rounded-full text-[10px] uppercase tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
+                  className="px-6 py-2 md:px-8 md:py-3 border border-gray-200 rounded-full text-[9px] md:text-[10px] uppercase tracking-[2px] md:tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
                 >
-                  PREVIOUS
+                  PREV
                 </button>
                 <div className="flex items-center gap-3">
                    <span className="w-1 h-1 rounded-full bg-gray-200" />
@@ -386,9 +389,9 @@ function ImagePicker({
                 <button
                   onClick={() => setPage((p) => Math.min(total - 1, p + 1))}
                   disabled={page >= total - 1}
-                  className="px-8 py-3 border border-gray-200 rounded-full text-[10px] uppercase tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
+                  className="px-6 py-2 md:px-8 md:py-3 border border-gray-200 rounded-full text-[9px] md:text-[10px] uppercase tracking-[2px] md:tracking-[3px] hover:bg-black hover:text-white hover:border-black transition-all disabled:opacity-10 font-black shadow-sm hover:shadow-xl active:scale-95"
                 >
-                  NEXT PAGE
+                  NEXT
                 </button>
               </div>
             )}
@@ -521,7 +524,7 @@ function GalleryEditor({
           + ADD IMAGE
         </button>
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
         {images.map((src, i) => {
           // Safeguard against bad URLs from previous versions, or console links
           const isBadUrl =
@@ -542,7 +545,7 @@ function GalleryEditor({
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={thumbnailImage(src)}
+                  src={getThumb(src)}
                   alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -631,7 +634,7 @@ function SingleImageEditor({
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={thumbnailImage(image)}
+              src={getThumb(image)}
               alt="Preview"
               className="w-full h-full object-cover transition-transform hover:scale-110 duration-700"
               loading="lazy"
@@ -734,6 +737,10 @@ export default function AdminDashboard() {
       ]);
       setContent(c);
       setAllImages(imgs.images ?? []);
+      // Populate server-signed thumbnail map
+      if (imgs.thumbnails) {
+        Object.entries(imgs.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
+      }
       setLoading(false);
     } catch (e) {
       router.push("/admin");
@@ -748,6 +755,9 @@ export default function AdminDashboard() {
     const res = await fetch("/api/images");
     const data = await res.json();
     setAllImages(data.images || []);
+    if (data.thumbnails) {
+      Object.entries(data.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
+    }
   };
 
   const set = useCallback((path: string, value: unknown) => {
@@ -904,7 +914,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 pt-24 md:p-8 lg:p-12 overflow-y-auto bg-[#fcfaf9]">
+      <main className="flex-1 p-3 pt-20 sm:p-4 sm:pt-24 md:p-8 lg:p-12 overflow-y-auto bg-[#fcfaf9]">
         <div className="max-w-6xl mx-auto animate-in fade-in duration-700">
           <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b pb-8 border-gray-100">
             <div>
@@ -1115,24 +1125,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
                   <SingleImageEditor
-                    label="PRIMARY PORTRAIT"
+                    label="HERO BACKGROUND IMAGE"
                     image={content.about?.portraitImage ?? ""}
                     allImages={allImages}
+                    onUploadComplete={refreshImages}
                     onChange={(src) => set("about.portraitImage", src)}
                   />
-                </div>
-                <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                  <SingleImageEditor
-                    label="SECONDARY EDITORIAL"
-                    image={content.about?.sideImage ?? ""}
-                    allImages={allImages}
-                    onUploadComplete={refreshImages}
-                    onChange={(src) => set("about.sideImage", src)}
-                  />
-                </div>
               </div>
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
                 <BioParagraphEditor
@@ -1307,7 +1307,7 @@ export default function AdminDashboard() {
           {activeSection === "social" && (
             <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
               <div className="space-y-12">
-                {["instagram", "facebook", "whatsapp", "pinterest", "youtube"].map((s) => (
+                {["facebook", "instagram", "whatsapp"].map((s) => (
                   <div key={s} className="relative">
                     <label className="text-[10px] uppercase tracking-[5px] text-gray-400 font-bold mb-4 block">
                       {s}
