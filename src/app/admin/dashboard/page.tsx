@@ -174,8 +174,7 @@ function ImagePicker({
 
         {/* Header - Forced Massive Padding */}
         <div 
-          className="flex flex-col md:flex-row md:items-center justify-between py-16 border-b gap-8 bg-white relative"
-          style={{ paddingLeft: '100px', paddingRight: '100px' }}
+          className="flex flex-col md:flex-row md:items-center justify-between px-6 md:px-[100px] py-10 md:py-16 border-b gap-8 bg-white relative"
         >
           <div className="flex flex-col">
             <h3 className="font-display text-3xl uppercase tracking-[6px] text-black mb-1">
@@ -562,7 +561,7 @@ function GalleryEditor({
               <button
                 title="Remove"
                 onClick={() => remove(i)}
-                className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 z-10 transition-opacity shadow-lg cursor-pointer"
+                className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10 transition-opacity shadow-lg cursor-pointer"
               >
                 ✕
               </button>
@@ -708,7 +707,7 @@ function BioParagraphEditor({
           />
           <button
             onClick={() => remove(i)}
-            className="absolute top-4 right-4 bg-red-500 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+            className="absolute top-4 right-4 bg-red-500 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-lg"
           >
             ✕
           </button>
