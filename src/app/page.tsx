@@ -23,13 +23,13 @@ export default async function HomePage() {
         <div className="absolute bottom-10 sm:bottom-16 inset-x-0 flex justify-center z-10 w-full px-6">
           <div className="hero-btn-wrap w-full max-w-sm sm:max-w-none sm:w-auto">
             <Link
-              href="/collections/bridal-2026"
+              href="/bridal"
               className="pill-btn pill-btn-beige"
             >
               Find Your Dress
             </Link>
             <Link
-              href="/the-label"
+              href="/couture"
               className="pill-btn pill-btn-white"
             >
               Shop The Label
