@@ -41,7 +41,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
           </Link>
 
           {/* Desktop Nav - Centered */}
-          <nav className="hidden md:flex flex-1 justify-center items-center gap-10">
+          <nav className="hidden md:flex flex-1 justify-center items-center">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -85,7 +85,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
         className={`absolute top-full left-0 w-full bg-white z-[55] md:hidden transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] origin-top overflow-hidden ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
           }`}
       >
-        <nav className="flex flex-col py-8 items-center text-center">
+        <nav className="flex flex-col py-8 items-center text-center gap-3">
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             return (

@@ -19,7 +19,8 @@ type Section =
   | "couture"
   | "contact"
   | "social"
-  | "media";
+  | "media"
+  | "messages";
 
 // ── Image Picker Modal ───────────────────
 function ImagePicker({
@@ -725,6 +726,7 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<Section>("site");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [allImages, setAllImages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -737,6 +739,13 @@ export default function AdminDashboard() {
       ]);
       setContent(c);
       setAllImages(imgs.images ?? []);
+      
+      // Fetch messages
+      fetch("/api/admin/messages")
+        .then(r => r.json())
+        .then(data => setMessages(Array.isArray(data) ? data : []))
+        .catch(err => console.error("Error fetching messages:", err));
+
       // Populate server-signed thumbnail map
       if (imgs.thumbnails) {
         Object.entries(imgs.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
@@ -864,6 +873,7 @@ export default function AdminDashboard() {
                 "contact",
                 "social",
                 "media",
+                "messages",
               ] as Section[]
             ).map((s) => (
               <button
@@ -886,7 +896,9 @@ export default function AdminDashboard() {
                       ? "GLOBAL SETTINGS"
                       : s === "social"
                         ? "SOCIAL SETTINGS"
-                        : s.toUpperCase()}
+                        : s === "messages"
+                          ? "MESSAGES"
+                          : s.toUpperCase()}
               </button>
             ))}
           </div>
@@ -1341,6 +1353,95 @@ export default function AdminDashboard() {
                 }}
                 inline={true}
               />
+            </div>
+          )}
+
+          {/* MESSAGES SECTION */}
+          {activeSection === "messages" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-xl font-display uppercase tracking-widest text-black">Contact Submissions</h3>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1 font-bold">
+                    {messages.length} messages received
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    fetch("/api/admin/messages")
+                      .then(r => r.json())
+                      .then(data => setMessages(Array.isArray(data) ? data : []));
+                  }}
+                  className="text-[10px] font-black uppercase tracking-[2px] px-6 py-2 border border-black hover:bg-black hover:text-white transition-all rounded"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {messages.length === 0 ? (
+                <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-20 text-center text-gray-300 uppercase tracking-[4px] font-bold">
+                  No messages yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((msg: any) => (
+                    <div key={msg.id} className="admin-card border-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] p-8 bg-white hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all animate-in slide-in-from-bottom-2">
+                      <div className="flex flex-col md:flex-row justify-between gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 mb-4">
+                            <h4 className="font-serif text-2xl text-stone-800">{msg.name}</h4>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-stone-50 px-2 py-1 border border-stone-100">
+                              {new Date(msg.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <p className="text-sm font-light text-stone-500">
+                              <span className="font-bold text-stone-400 uppercase tracking-tighter text-[10px] mr-2">Email:</span>
+                              <a href={`mailto:${msg.email}`} className="text-stone-800 hover:text-[#b3a384] underline underline-offset-4 decoration-stone-200">
+                                {msg.email}
+                              </a>
+                            </p>
+                            <p className="text-sm font-light text-stone-500">
+                              <span className="font-bold text-stone-400 uppercase tracking-tighter text-[10px] mr-2">Phone:</span>
+                              <span className="text-stone-800">{msg.phone || "N/A"}</span>
+                            </p>
+                          </div>
+                          <div className="bg-stone-50 p-6 border-l-4 border-[#b3a384] rounded-r">
+                            <p className="text-stone-700 leading-relaxed font-light whitespace-pre-wrap italic">
+                              &quot;{msg.message}&quot;
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex md:flex-col gap-3 shrink-0">
+                          {msg.phone && (
+                            <a
+                              href={`https://wa.me/${msg.phone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-[#25D366] text-white px-6 py-4 rounded text-[10px] uppercase tracking-[2px] font-black hover:bg-[#128C7E] transition-all text-center flex items-center justify-center gap-2"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                              </svg>
+                              WhatsApp
+                            </a>
+                          )}
+                          <a
+                            href={`mailto:${msg.email}`}
+                            className="bg-black text-white px-6 py-4 rounded text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all text-center flex items-center justify-center gap-2"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect width="20" height="16" x="2" y="4" rx="2" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                            Reply Email
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
