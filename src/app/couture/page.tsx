@@ -24,7 +24,7 @@ export default async function CouturePage() {
           Exclusive Collections
         </p>
       </div>
-      <div className="px-3 sm:px-6 md:px-10 pb-12 sm:pb-16 max-w-screen-xl mx-auto">
+      <div className="px-5 sm:px-8 md:px-10 pb-12 sm:pb-16 max-w-screen-xl mx-auto">
         <MasonryGallery images={coutureImages} />
       </div>
     </main>

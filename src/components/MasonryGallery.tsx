@@ -69,7 +69,7 @@ export default function MasonryGallery({
     columns[i % colCount].push(src);
   });
 
-  const gap = colCount === 2 ? "8px" : "12px";
+  const gap = colCount === 2 ? "12px" : "16px";
 
   return (
     <>

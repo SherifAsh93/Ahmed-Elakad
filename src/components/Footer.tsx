@@ -14,7 +14,7 @@ export default function Footer({ content }: { content: SiteContent }) {
 
   return (
     <footer className="w-full bg-[#0d0d0d] text-white pt-16 pb-10">
-      <div className="w-full max-w-[1440px] mx-auto px-8 sm:px-16 lg:px-24 flex flex-col items-center">
+      <div className="w-full max-w-[1440px] mx-auto px-5 sm:px-16 lg:px-24 flex flex-col items-center">
 
         {/* Top accent line */}
         <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-[#b3a384] to-transparent mb-12" />

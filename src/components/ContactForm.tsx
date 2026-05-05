@@ -35,8 +35,8 @@ export default function ContactForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
-      <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-5 md:space-y-6">
+      <div className="space-y-4 md:space-y-5">
         <div>
           <input
             type="text"
@@ -45,7 +45,7 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full bg-white border-none px-6 py-6 outline-none focus:bg-stone-50 transition-colors font-light text-stone-700 placeholder:text-stone-300 text-base shadow-sm"
+            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
           />
         </div>
         <div>
@@ -56,7 +56,7 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full bg-white border-none px-6 py-6 outline-none focus:bg-stone-50 transition-colors font-light text-stone-700 placeholder:text-stone-300 text-base shadow-sm"
+            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
           />
         </div>
         <div>
@@ -66,42 +66,42 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full bg-white border-none px-6 py-6 outline-none focus:bg-stone-50 transition-colors font-light text-stone-700 placeholder:text-stone-300 text-base shadow-sm"
+            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
           />
         </div>
         <div>
           <textarea
             placeholder="Message"
             required
-            rows={8}
+            rows={6}
             disabled={status === "loading"}
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            className="w-full bg-white border-none px-6 py-6 outline-none focus:bg-stone-50 transition-colors font-light text-stone-700 placeholder:text-stone-300 text-base shadow-sm resize-none"
+            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm resize-none"
           ></textarea>
         </div>
       </div>
 
-      <div className="pt-4">
+      <div className="pt-2 md:pt-4">
         <button
           type="submit"
           disabled={status === "loading"}
-          className="w-full bg-black text-white py-6 px-8 flex items-center justify-center transition-all hover:bg-stone-900 active:scale-[0.99] disabled:bg-stone-400 shadow-md"
+          className="w-full bg-black text-white py-5 md:py-6 px-8 flex items-center justify-center transition-all hover:bg-stone-900 active:scale-[0.99] disabled:bg-stone-400 shadow-md"
         >
           {status === "loading" ? (
             <span className="text-[10px] uppercase tracking-[0.4em] font-bold">Processing...</span>
           ) : (
-            <span className="font-serif italic text-2xl tracking-[0.1em] lowercase">submit</span>
+            <span className="font-serif italic text-xl md:text-2xl tracking-[0.1em] lowercase">submit</span>
           )}
         </button>
 
         {status === "success" && (
-          <p className="text-green-600 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-6">
+          <p className="text-green-600 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6 animate-pulse">
             ✓ Message Delivered
           </p>
         )}
         {status === "error" && (
-          <p className="text-red-500 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-6">
+          <p className="text-red-500 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6">
             ⚠ Connection Failed
           </p>
         )}
