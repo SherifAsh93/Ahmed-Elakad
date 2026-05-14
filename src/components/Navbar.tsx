@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,14 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SiteContent } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
-
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About Us" },
-  { href: "/bridal", label: "Bridal" },
-  { href: "/couture", label: "Couture" },
-  { href: "/contact", label: "Contact Us" },
-];
 
 export default function Navbar({ content }: { content: SiteContent }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +15,17 @@ export default function Navbar({ content }: { content: SiteContent }) {
   }, [pathname]);
 
   if (pathname.startsWith("/admin")) return null;
+
+  const isBridalActive = pathname === "/bridal" || pathname.startsWith("/bridal/");
+  const isCoutureActive = pathname === "/couture" || pathname.startsWith("/couture/");
+
+  const navLinks = [
+    { href: "/", label: "Home", isActive: pathname === "/" },
+    { href: "/about", label: "About Us", isActive: pathname === "/about" },
+    { href: "/bridal", label: "Bridal", isActive: isBridalActive },
+    { href: "/couture", label: "Couture", isActive: isCoutureActive },
+    { href: "/contact", label: "Contact Us", isActive: pathname === "/contact" },
+  ];
 
   return (
     <header className="w-full absolute top-0 left-0 z-50">
@@ -40,24 +41,23 @@ export default function Navbar({ content }: { content: SiteContent }) {
             />
           </Link>
 
-          {/* Desktop Nav - Centered */}
-          <nav className="hidden md:flex flex-1 justify-center items-center">
-            {NAV_LINKS.map((link) => (
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex flex-1 justify-center items-center gap-x-10">
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[11px] tracking-[3px] uppercase transition-colors ${pathname === link.href
-                  ? "text-[#b3a384] font-medium"
-                  : "text-[#1a1a1a] hover:text-[#b3a384]"
-                  }`}
+                className={`text-[11px] tracking-[3px] uppercase transition-colors ${
+                  link.isActive ? "text-[#b3a384] font-medium" : "text-[#1a1a1a] hover:text-[#b3a384]"
+                }`}
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Mobile Toggle / Hamburger (Right side) */}
-          <div className="flex justify-end min-w-[100px] md:min-w-0">
+          {/* Mobile Hamburger */}
+          <div className="flex justify-end min-w-[100px] md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 text-[#1a1a1a] hover:text-[#b3a384] transition-colors"
@@ -80,35 +80,33 @@ export default function Navbar({ content }: { content: SiteContent }) {
         </div>
       </div>
 
-      {/* Mobile Dropdown — fits content only, not full-screen */}
+      {/* Mobile Menu */}
       <div
-        className={`absolute top-full left-0 w-full bg-white z-[55] md:hidden transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] origin-top overflow-hidden ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          }`}
+        className={`absolute top-full left-0 w-full bg-white z-[55] md:hidden transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] origin-top overflow-hidden ${
+          isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+        }`}
       >
-        <nav className="flex flex-col py-8 items-center text-center gap-3">
-          {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`block w-full px-6 py-4 text-[15px] tracking-[3px] uppercase transition-colors ${isActive
-                  ? "text-[#b3a384] font-medium"
-                  : "text-[#1a1a1a] hover:text-[#b3a384]"
-                  }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav className="flex flex-col py-8 items-center text-center gap-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setIsOpen(false)}
+              className={`block w-full px-6 py-4 text-[15px] tracking-[3px] uppercase transition-colors ${
+                link.isActive ? "text-[#b3a384] font-medium" : "text-[#1a1a1a] hover:text-[#b3a384]"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
       </div>
 
-      {/* Backdrop — click to close */}
+      {/* Mobile Backdrop */}
       <div
-        className={`fixed inset-0 z-[50] md:hidden transition-opacity duration-400 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
+        className={`fixed inset-0 z-[50] md:hidden transition-opacity duration-400 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
         onClick={() => setIsOpen(false)}
       />
     </header>

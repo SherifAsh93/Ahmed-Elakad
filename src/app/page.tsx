@@ -1,5 +1,8 @@
 import { getContent } from "@/lib/content";
 import Link from "next/link";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { optimizeImage } from "@/lib/utils";
 import MasonryGallery from "@/components/MasonryGallery";
 
@@ -29,10 +32,10 @@ export default async function HomePage() {
               Find Your Dress
             </Link>
             <Link
-              href="/couture"
+              href="/contact"
               className="pill-btn pill-btn-white"
             >
-              Shop The Label
+              Book an Appointment
             </Link>
           </div>
         </div>

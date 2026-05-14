@@ -14,10 +14,12 @@
   --font-display: "Cinzel", serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 body {
@@ -415,6 +417,15 @@ body {
   max-width: 95vw;
   max-height: 90vh;
   object-fit: contain;
+}
+
+/* ── Scrollbar ── */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Custom Editorial Animations ── */

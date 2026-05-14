@@ -27,7 +27,7 @@
     "title": "The Designer",
     "subtitle": "Ahmed Elakad",
     "bio": [
-      "Ahmed Elakad is a couture designer celebrated for his mastery of fabric and silhouette."
+      "Ahmed Elakad Couture House is a destination for custom-made bridal and evening wear, where craftsmanship meets timeless sophistication.\nEvery design is created with exceptional attention to detail, combining luxurious fabrics, intricate hand embroidery, and couture techniques to celebrate individuality and femininity.\nOur philosophy is simple: every woman deserves a gown that feels uniquely hers - elegant, unforgettable, and crafted to perfection."
     ],
     "portraitImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524454/1_112_zmxnrk.jpg",
     "sideImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg"
@@ -138,10 +138,10 @@
     "gallery": []
   },
   "contact": {
-    "pageTitle": "Contact",
-    "pageSubtitle": "We would love to hear from you.",
+    "pageTitle": "Contact us",
+    "pageSubtitle": "Book your private couture consultation with Ahmed Elakad Couture House. Our appointments are designed to offer a personalized luxury experience where we discuss your vision, fabrics, silhouettes, and custom details to create your perfect gown.",
     "phones": [
-      "01097755475"
+      "+201097755475"
     ],
     "email": "Ahmedelakadcouture@gmail.com",
     "location": "Cairo, Egypt",
@@ -173,7 +173,36 @@
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524415/1_101_sfy85o.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524270/1_69_uifmu1.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524212/1_47_kskcsv.jpg"
-    ]
+    ],
+    "years": {
+      "2025": {
+        "collections": [
+          {
+            "id": "coll-1778703480112",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524479/1_117_yero4n.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524477/1_118_fnjez1.jpg"
+            ]
+          }
+        ]
+      },
+      "2026": {
+        "collections": [
+          {
+            "id": "coll-1778705610596",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523806/1_279_xbgwk9.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523808/1_280_xbpmby.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523814/1_277_elce7i.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523795/1_276_qtdy5i.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523788/1_275_nkkkkt.jpg"
+            ]
+          }
+        ]
+      }
+    },
+    "bannerImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg"
   },
   "couture": {
     "gallery": [
@@ -196,6 +225,22 @@
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523570/1_222_rtpbm3.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523595/1_226_zji2ar.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524178/1_342_fstgip.jpg"
-    ]
+    ],
+    "years": {
+      "2026": {
+        "collections": [
+          {
+            "id": "coll-1778704295247",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524212/1_47_kskcsv.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524210/1_45_jfjur7.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524220/1_49_izmifp.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524226/1_50_easb39.jpg"
+            ]
+          }
+        ]
+      }
+    },
+    "bannerImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524479/1_117_yero4n.jpg"
   }
 }

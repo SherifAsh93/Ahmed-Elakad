@@ -8,7 +8,11 @@ let cachedResult: { images: string[]; thumbnails: Record<string, string> } | nul
 let cacheTimestamp = 0;
 const CACHE_TTL = 30_000; // 30 seconds
 
-export async function GET() {
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const bust = url.searchParams.get("nocache");
+  if (bust) { cachedResult = null; cacheTimestamp = 0; }
+
   const now = Date.now();
   if (cachedResult && now - cacheTimestamp < CACHE_TTL) {
     return NextResponse.json(cachedResult, {

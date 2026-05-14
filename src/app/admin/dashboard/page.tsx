@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { SiteContent } from "@/lib/content";
+import { SiteContent, CategoryYear } from "@/lib/content";
 
 // Module-level thumbnail cache populated from server-signed URLs
 const thumbMap = new Map<string, string>();
@@ -42,10 +42,12 @@ function ImagePicker({
   const [pasteUrl, setPasteUrl] = useState("");
   const [urlError, setUrlError] = useState("");
   const [urlPreviewOk, setUrlPreviewOk] = useState(false);
+  const [isGrabbingUrl, setIsGrabbingUrl] = useState(false);
+  const [grabStatus, setGrabStatus] = useState("");
 
   useEffect(() => {
     if (pasteUrl.includes("console.cloudinary.com") || pasteUrl.includes("collection.cloudinary.com")) {
-      setUrlError("You pasted a Cloudinary Console link. Please right-click the image in Cloudinary and select 'Copy image address' instead.");
+      setUrlError("You pasted a Cloudinary Console link. Please right-click the image and select 'Copy image address' instead.");
       setUrlPreviewOk(false);
     } else {
       setUrlError("");
@@ -125,12 +127,52 @@ function ImagePicker({
     }
   };
 
-  const handlePasteUrl = () => {
+  const handlePasteUrl = async () => {
     const url = pasteUrl.trim();
     if (!url) return;
-    onSelect([url]);
-    setPasteUrl("");
-    if (onClose) onClose();
+
+    // Already our Cloudinary URL — use directly
+    if (url.includes("res.cloudinary.com/")) {
+      onSelect([url]);
+      setPasteUrl("");
+      if (onClose) onClose();
+      return;
+    }
+
+    // Fetch from external URL and upload to Cloudinary
+    setIsGrabbingUrl(true);
+    setUrlError("");
+    setGrabStatus("Fetching image…");
+
+    try {
+      const res = await fetch("/api/grab-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setUrlError(data.error || "Failed to grab image.");
+        setGrabStatus("");
+        return;
+      }
+
+      setGrabStatus("Saved to Cloudinary!");
+      if (onUploadComplete) onUploadComplete();
+
+      setTimeout(() => {
+        onSelect([data.cloudinaryUrl]);
+        setPasteUrl("");
+        setGrabStatus("");
+        if (onClose) onClose();
+      }, 800);
+    } catch {
+      setUrlError("Network error. Please try again.");
+      setGrabStatus("");
+    } finally {
+      setIsGrabbingUrl(false);
+    }
   };
 
   const handleSelectImage = (src: string) => {
@@ -254,7 +296,7 @@ function ImagePicker({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-5">
                   {displayed.map((src) => {
                     const isSelected = selectedImages.has(src);
                     const isLoading = loadingImages.has(src);
@@ -322,47 +364,24 @@ function ImagePicker({
               )}
             </div>
 
-            {/* Selection Confirm Bar - Forced Massive Padding */}
+            {/* Selection Confirm Bar — compact strip */}
             {selectedImages.size > 0 && (
-              <div 
-                className="bg-gradient-to-r from-black via-[#222] to-[#b3a384] py-4 sm:py-6 md:py-12 px-4 sm:px-6 md:px-12 lg:px-[100px] border-t flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 shadow-[0_-20px_40px_rgba(0,0,0,0.1)]"
-              >
-                <div className="flex items-center gap-6 md:gap-10 w-full md:w-auto">
-                  <div className="relative flex -space-x-12">
-                    {Array.from(selectedImages).slice(0, 3).map((img, i) => (
-                      <div key={img} className="relative transition-transform hover:-translate-y-4" style={{ zIndex: 10 - i }}>
-                        <img
-                          src={img}
-                          alt="Preview"
-                          className="w-20 h-24 object-cover rounded-xl shadow-2xl ring-2 ring-white/20"
-                        />
-                      </div>
-                    ))}
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg z-20 -ml-4 mt-auto mb-2 border-2 border-black">
-                      <span className="text-[12px] text-black font-black">{selectedImages.size}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-white text-base font-black uppercase tracking-[3px]">
-                      {selectedImages.size} Assets Selected
-                    </p>
-                    <p className="text-white/50 text-[10px] uppercase tracking-[2px] mt-2 font-bold">
-                      Ready to apply to your section
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
+              <div className="bg-black px-4 sm:px-8 py-3 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-white text-[11px] font-black uppercase tracking-[2px]">
+                  {selectedImages.size} image{selectedImages.size > 1 ? "s" : ""} selected
+                </p>
+                <div className="flex gap-3">
                   <button
                     onClick={() => setSelectedImages(new Set())}
-                    className="text-white text-[9px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[3px] px-6 py-3 md:px-8 md:py-4 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap"
+                    className="text-white/60 text-[10px] font-black uppercase tracking-[2px] px-5 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap"
                   >
-                    CLEAR
+                    Clear
                   </button>
                   <button
                     onClick={handleConfirmSelection}
-                    className="text-black text-[9px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[4px] px-8 py-3 md:px-12 md:py-4 bg-white rounded-full hover:bg-[#b3a384] hover:text-white transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-95 whitespace-nowrap"
+                    className="text-black text-[10px] font-black uppercase tracking-[2px] px-6 py-2 bg-white rounded-full hover:bg-[#b3a384] hover:text-white transition-all active:scale-95 whitespace-nowrap"
                   >
-                    CONFIRM & SAVE
+                    Confirm &amp; Save
                   </button>
                 </div>
               </div>
@@ -401,17 +420,18 @@ function ImagePicker({
 
         {/* Tab: Paste URL */}
         {activeTab === "url" && (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#faf9f7]">
-            <div className="w-full max-w-2xl space-y-8">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-black/5 mb-4">
-                  <span className="text-3xl">🔗</span>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#faf9f7] overflow-y-auto">
+            <div className="w-full max-w-2xl space-y-6">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-black/5 mb-3">
+                  <span className="text-2xl">🔗</span>
                 </div>
                 <h4 className="font-display text-lg uppercase tracking-[3px]">
-                  Paste Image URL
+                  Import from URL
                 </h4>
-                <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-2">
-                  Enter a direct Cloudinary image URL (res.cloudinary.com/...)
+                <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1.5">
+                  Paste any image URL — Instagram, Facebook, Cloudinary, or any direct link.<br />
+                  External images are automatically uploaded to your Cloudinary library.
                 </p>
               </div>
 
@@ -423,21 +443,30 @@ function ImagePicker({
                     setPasteUrl(e.target.value);
                     setUrlError("");
                     setUrlPreviewOk(false);
+                    setGrabStatus("");
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handlePasteUrl();
+                    if (e.key === "Enter" && !isGrabbingUrl) handlePasteUrl();
                   }}
-                  placeholder="https://res.cloudinary.com/..."
-                  className="flex-1 bg-white border-2 border-gray-200 rounded-xl px-6 py-4 text-base text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/5 transition-all font-mono"
+                  placeholder="https://instagram.com/p/... or https://scontent-..."
+                  className="flex-1 bg-white border-2 border-gray-200 rounded-xl px-5 py-3.5 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/5 transition-all font-mono"
+                  disabled={isGrabbingUrl}
                 />
                 <button
                   onClick={handlePasteUrl}
-                  disabled={!pasteUrl.trim()}
-                  className="text-[11px] font-bold uppercase tracking-[2px] px-8 py-4 bg-black text-white rounded-xl hover:bg-[#b3a384] transition-all disabled:opacity-20 disabled:cursor-not-allowed whitespace-nowrap shadow-lg hover:shadow-xl"
+                  disabled={!pasteUrl.trim() || isGrabbingUrl}
+                  className="text-[11px] font-bold uppercase tracking-[2px] px-7 py-3.5 bg-black text-white rounded-xl hover:bg-[#b3a384] transition-all disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap shadow-lg"
                 >
-                  USE THIS IMAGE
+                  {isGrabbingUrl ? "…" : "Import"}
                 </button>
               </div>
+
+              {grabStatus && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <p className="text-green-700 text-[11px] font-bold uppercase tracking-[2px]">{grabStatus}</p>
+                </div>
+              )}
 
               {urlError && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -445,8 +474,8 @@ function ImagePicker({
                 </div>
               )}
 
-              {/* Large URL Preview */}
-              {pasteUrl.trim() && !urlError && (
+              {/* Preview — only shown for direct Cloudinary URLs (previews immediately without fetching) */}
+              {pasteUrl.trim() && !urlError && pasteUrl.includes("res.cloudinary.com/") && (
                 <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-lg">
                   <div className="aspect-[4/3] relative bg-gray-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -455,37 +484,39 @@ function ImagePicker({
                       alt="URL Preview"
                       className="w-full h-full object-contain"
                       onLoad={() => setUrlPreviewOk(true)}
-                      onError={() => {
-                        setUrlPreviewOk(false);
-                      }}
+                      onError={() => setUrlPreviewOk(false)}
                     />
                     {!urlPreviewOk && (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
                         <div className="text-center">
                           <span className="text-4xl block mb-2">🖼️</span>
-                          <p className="text-[10px] uppercase tracking-[2px] font-bold">
-                            Loading preview...
-                          </p>
+                          <p className="text-[10px] uppercase tracking-[2px] font-bold">Loading preview…</p>
                         </div>
                       </div>
                     )}
                   </div>
                   {urlPreviewOk && (
-                    <div className="p-4 border-t bg-green-50">
+                    <div className="p-3 border-t bg-green-50">
                       <p className="text-green-700 text-[10px] uppercase tracking-[2px] font-bold">
-                        ✓ Image loaded successfully — click &quot;USE THIS
-                        IMAGE&quot; to select
+                        ✓ Cloudinary image ready — click Import to use
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="text-center pt-4 border-t border-gray-200">
-                <p className="text-[10px] text-gray-300 uppercase tracking-[2px]">
-                  Tip: Right-click an image in Cloudinary → &quot;Copy image
-                  address&quot; to get the direct URL
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-gray-200">
+                {[
+                  { icon: "📸", label: "Instagram", hint: "Paste post URL or right-click image → Copy address" },
+                  { icon: "👤", label: "Facebook", hint: "Right-click image → Copy image address" },
+                  { icon: "☁️", label: "Cloudinary", hint: "Paste any res.cloudinary.com URL directly" },
+                ].map(({ icon, label, hint }) => (
+                  <div key={label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
+                    <span className="text-xl">{icon}</span>
+                    <p className="text-[10px] font-black uppercase tracking-[2px] mt-1 mb-1">{label}</p>
+                    <p className="text-[9px] text-gray-400 leading-relaxed">{hint}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -721,6 +752,483 @@ function BioParagraphEditor({
   );
 }
 
+// ── Year Collection Editor ──────────────
+const ALL_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016"];
+
+function YearCollectionEditor({
+  sectionKey,
+  years,
+  allImages,
+  onChange,
+  onUploadComplete,
+}: {
+  sectionKey: "bridal" | "couture";
+  years: Record<string, CategoryYear>;
+  allImages: string[];
+  onChange: (years: Record<string, CategoryYear>) => void;
+  onUploadComplete?: () => void;
+}) {
+  const existingYears = ALL_YEARS.filter((y) => y in years);
+  const addableYears = ALL_YEARS.filter((y) => !(y in years));
+  const [activeYear, setActiveYear] = useState<string | null>(existingYears[0] ?? null);
+  const [pickerCollIdx, setPickerCollIdx] = useState<number | null>(null);
+
+  // If years change externally and active year is gone, reset
+  useEffect(() => {
+    if (activeYear && !(activeYear in years)) {
+      const remaining = ALL_YEARS.filter((y) => y in years);
+      setActiveYear(remaining[0] ?? null);
+    }
+  }, [years, activeYear]);
+
+  const addYear = (y: string) => {
+    const updated = { ...years, [y]: { collections: [] } };
+    onChange(updated);
+    setActiveYear(y);
+  };
+
+  const deleteYear = (y: string) => {
+    if (!window.confirm(`Delete ${y.toUpperCase()} and all its collections?`)) return;
+    const updated = { ...years };
+    delete updated[y];
+    onChange(updated);
+    const remaining = ALL_YEARS.filter((yr) => yr in updated);
+    setActiveYear(remaining[0] ?? null);
+  };
+
+  const addCollection = () => {
+    if (!activeYear) return;
+    const existing = years[activeYear]?.collections ?? [];
+    const newId = `coll-${Date.now()}`;
+    const updated = {
+      ...years,
+      [activeYear]: { collections: [...existing, { id: newId, name: "", images: [] }] },
+    };
+    onChange(updated);
+  };
+
+  const updateCollectionName = (collIdx: number, name: string) => {
+    if (!activeYear) return;
+    const existing = years[activeYear]?.collections ?? [];
+    const updatedCollections = existing.map((c, i) =>
+      i === collIdx ? { ...c, name } : c
+    );
+    const updated = { ...years, [activeYear]: { collections: updatedCollections } };
+    onChange(updated);
+  };
+
+  const deleteCollection = (collIdx: number) => {
+    if (!activeYear) return;
+    if (!window.confirm(`Delete Collection ${collIdx + 1}?`)) return;
+    const existing = years[activeYear]?.collections ?? [];
+    const updated = {
+      ...years,
+      [activeYear]: { collections: existing.filter((_, i) => i !== collIdx) },
+    };
+    onChange(updated);
+  };
+
+  const addImagesToCollection = (collIdx: number, srcs: string[]) => {
+    if (!activeYear) return;
+    const existing = years[activeYear]?.collections ?? [];
+    const coll = existing[collIdx];
+    const updatedCollections = existing.map((c, i) =>
+      i === collIdx ? { ...c, images: [...c.images, ...srcs] } : c
+    );
+    const updated = { ...years, [activeYear]: { collections: updatedCollections } };
+    onChange(updated);
+    setPickerCollIdx(null);
+    void coll;
+  };
+
+  const removeImageFromCollection = (collIdx: number, imgIdx: number) => {
+    if (!activeYear) return;
+    const existing = years[activeYear]?.collections ?? [];
+    const updatedCollections = existing.map((c, i) =>
+      i === collIdx ? { ...c, images: c.images.filter((_, ii) => ii !== imgIdx) } : c
+    );
+    const updated = { ...years, [activeYear]: { collections: updatedCollections } };
+    onChange(updated);
+  };
+
+  const activeCollections = activeYear ? (years[activeYear]?.collections ?? []) : [];
+
+  return (
+    <div className="space-y-8">
+      {/* Year tabs row */}
+      <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap pb-2 border-b border-gray-100">
+        {existingYears.map((y) => (
+          <button
+            key={y}
+            onClick={() => setActiveYear(y)}
+            className={`min-h-[44px] px-5 py-2 text-[10px] tracking-[2px] uppercase font-black rounded transition-all shrink-0 ${activeYear === y ? "bg-black text-white shadow" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-black"}`}
+          >
+            {y}
+          </button>
+        ))}
+        {addableYears.length > 0 && (
+          <select
+            onChange={(e) => { if (e.target.value) addYear(e.target.value); e.target.value = ""; }}
+            defaultValue=""
+            className="min-h-[44px] px-4 py-2 text-[10px] tracking-[2px] uppercase font-black bg-white border-2 border-dashed border-gray-300 rounded text-gray-400 hover:border-black transition-colors cursor-pointer shrink-0"
+          >
+            <option value="" disabled>+ Add Year</option>
+            {addableYears.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {/* No year selected */}
+      {!activeYear && (
+        <div className="py-16 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-widest">
+          Select or add a year to get started
+        </div>
+      )}
+
+      {activeYear && (
+        <div className="space-y-8">
+          {/* Active year header */}
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-xl uppercase tracking-[3px] text-black">
+              {sectionKey === "bridal" ? "Bridal" : "Couture"} {activeYear}
+            </h3>
+            <button
+              onClick={() => deleteYear(activeYear)}
+              className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-4 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"
+            >
+              Delete Year
+            </button>
+          </div>
+
+          {/* Collections */}
+          {activeCollections.length === 0 && (
+            <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-widest">
+              No collections yet — add one below
+            </div>
+          )}
+
+          {activeCollections.map((coll, collIdx) => (
+            <div key={coll.id} className="border border-gray-100 rounded-lg p-5 sm:p-6 space-y-4 bg-white shadow-sm">
+              {/* Design header */}
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-500">
+                  Design {collIdx + 1}
+                </p>
+                <button
+                  onClick={() => deleteCollection(collIdx)}
+                  className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-4 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"
+                >
+                  ✕ Delete Design
+                </button>
+              </div>
+
+              {/* Design name */}
+              <div>
+                <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-2">
+                  Design Name <span className="text-gray-300">(shown on the page)</span>
+                </label>
+                <input
+                  type="text"
+                  value={coll.name ?? ""}
+                  onChange={(e) => updateCollectionName(collIdx, e.target.value)}
+                  placeholder="e.g. Spring Garden 2026"
+                  className="admin-input text-base"
+                />
+              </div>
+
+              {/* Thumbnail grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {coll.images.map((src, imgIdx) => (
+                  <div key={src + imgIdx} className="relative group aspect-[3/4] bg-gray-100 rounded overflow-hidden shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getThumb(src)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <button
+                      title="Remove"
+                      onClick={() => removeImageFromCollection(collIdx, imgIdx)}
+                      className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full opacity-100 z-10 shadow-lg cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {coll.images.length === 0 && (
+                  <div className="col-span-full py-8 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-widest">
+                    No images
+                  </div>
+                )}
+              </div>
+
+              {/* Add Images button */}
+              <button
+                onClick={() => setPickerCollIdx(collIdx)}
+                className="min-h-[44px] px-6 py-2 bg-black text-white text-[10px] tracking-[2px] uppercase font-bold hover:bg-[#333] transition-colors rounded shadow-sm"
+              >
+                + Add Design Images
+              </button>
+
+              {/* Image Picker modal for this collection */}
+              {pickerCollIdx === collIdx && (
+                <ImagePicker
+                  allImages={allImages}
+                  onSelect={(srcs) => addImagesToCollection(collIdx, srcs)}
+                  onUploadComplete={onUploadComplete}
+                  onClose={() => setPickerCollIdx(null)}
+                  multi={true}
+                />
+              )}
+            </div>
+          ))}
+
+          {/* New Design button */}
+          <button
+            onClick={addCollection}
+            className="w-full min-h-[56px] border-2 border-dashed border-gray-200 rounded text-[10px] uppercase tracking-[3px] font-black text-gray-400 hover:border-black hover:text-black transition-colors"
+          >
+            + New Design
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Messages Panel ──────────────────────
+function MessagesPanel({
+  messages,
+  onRefresh,
+  onDelete,
+  onMarkRead,
+}: {
+  messages: any[];
+  onRefresh: () => void;
+  onDelete: (id: string) => void;
+  onMarkRead: (id: string, read: boolean) => void;
+}) {
+  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const unreadCount = messages.filter((m) => !m.read).length;
+  const filtered = messages.filter((m) => {
+    if (filter === "unread") return !m.read;
+    if (filter === "read") return !!m.read;
+    return true;
+  });
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this message permanently?")) return;
+    setDeletingId(id);
+    await onDelete(id);
+    setDeletingId(null);
+    if (expandedId === id) setExpandedId(null);
+  };
+
+  const handleToggleRead = async (id: string, currentRead: boolean) => {
+    await onMarkRead(id, !currentRead);
+  };
+
+  const handleExpand = async (msg: any) => {
+    const isOpening = expandedId !== msg.id;
+    setExpandedId(isOpening ? msg.id : null);
+    if (isOpening && !msg.read) {
+      await onMarkRead(msg.id, true);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+        <div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-display uppercase tracking-widest text-black">Inbox</h3>
+            {unreadCount > 0 && (
+              <span className="bg-[#b3a384] text-white text-[10px] font-black px-2.5 py-1 rounded-full min-w-[24px] text-center">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1 font-bold">
+            {messages.length} total · {unreadCount} unread
+          </p>
+        </div>
+        <button
+          onClick={onRefresh}
+          className="text-[10px] font-black uppercase tracking-[2px] px-5 py-2.5 min-h-[44px] border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all rounded flex items-center gap-2"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 border-b border-gray-100 pb-4">
+        {(["all", "unread", "read"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`min-h-[40px] px-5 py-2 text-[10px] tracking-[2px] uppercase font-black rounded-full transition-all ${
+              filter === f ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-black"
+            }`}
+          >
+            {f === "all" ? `All (${messages.length})` : f === "unread" ? `Unread (${unreadCount})` : `Read (${messages.length - unreadCount})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-[4px] font-bold">
+          {filter === "unread" ? "No unread messages" : filter === "read" ? "No read messages" : "No messages yet"}
+        </div>
+      )}
+
+      {/* Message list */}
+      <div className="space-y-3">
+        {filtered.map((msg: any) => {
+          const isExpanded = expandedId === msg.id;
+          const isDeleting = deletingId === msg.id;
+          const date = new Date(msg.createdAt);
+          const dateStr = date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+          const timeStr = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+          return (
+            <div
+              key={msg.id}
+              className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                msg.read ? "bg-white border-gray-100" : "bg-[#fdfcfb] border-[#e8dfd4]"
+              } ${isExpanded ? "shadow-lg" : "shadow-sm hover:shadow-md"}`}
+            >
+              {/* Collapsed row — tap to expand */}
+              <button
+                onClick={() => handleExpand(msg)}
+                className="w-full text-left px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4"
+              >
+                {/* Unread dot */}
+                <span className={`mt-2 shrink-0 w-2 h-2 rounded-full ${msg.read ? "bg-transparent" : "bg-[#b3a384]"}`} />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className={`text-sm font-bold text-stone-800 truncate ${!msg.read ? "font-black" : ""}`}>
+                      {msg.name}
+                    </span>
+                    {!msg.read && (
+                      <span className="text-[9px] uppercase tracking-[2px] font-black text-[#b3a384] bg-[#f5f0ea] px-2 py-0.5 rounded-full">
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-stone-400 truncate">{msg.message}</p>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] text-gray-400 font-bold whitespace-nowrap">{dateStr}</p>
+                  <p className="text-[9px] text-gray-300 whitespace-nowrap">{timeStr}</p>
+                </div>
+
+                <svg
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`shrink-0 mt-1 text-gray-300 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* Expanded content */}
+              {isExpanded && (
+                <div className="px-4 sm:px-6 pb-5 space-y-4 border-t border-gray-100">
+                  {/* Contact details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Email</p>
+                      <a href={`mailto:${msg.email}`} className="text-sm text-stone-700 hover:text-[#b3a384] transition-colors break-all">
+                        {msg.email}
+                      </a>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Phone</p>
+                      {msg.phone ? (
+                        <a href={`tel:${msg.phone}`} className="text-sm text-stone-700 hover:text-[#b3a384] transition-colors">
+                          {msg.phone}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-gray-300">Not provided</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message body */}
+                  <div className="bg-[#faf9f7] border-l-4 border-[#b3a384] rounded-r-lg px-4 py-4">
+                    <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-2">Message</p>
+                    <p className="text-stone-700 leading-relaxed text-sm whitespace-pre-wrap">{msg.message}</p>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {msg.phone && (
+                      <a
+                        href={`https://wa.me/${msg.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 sm:flex-none min-h-[44px] bg-[#25D366] text-white px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-[#1ebe5d] transition-all text-center flex items-center justify-center gap-2"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                        </svg>
+                        WhatsApp
+                      </a>
+                    )}
+                    <a
+                      href={`mailto:${msg.email}`}
+                      className="flex-1 sm:flex-none min-h-[44px] bg-black text-white px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all text-center flex items-center justify-center gap-2"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      Reply Email
+                    </a>
+                    <button
+                      onClick={() => handleToggleRead(msg.id, !!msg.read)}
+                      className="flex-1 sm:flex-none min-h-[44px] px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black border border-gray-200 hover:bg-gray-50 transition-all text-gray-500 flex items-center justify-center gap-2"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {msg.read ? (
+                          <><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></>
+                        ) : (
+                          <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>
+                        )}
+                      </svg>
+                      {msg.read ? "Mark Unread" : "Mark Read"}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(msg.id)}
+                      disabled={isDeleting}
+                      className="min-h-[44px] px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                      {isDeleting ? "..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<Section>("site");
@@ -730,6 +1238,7 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -761,7 +1270,7 @@ export default function AdminDashboard() {
   }, [fetchData]);
 
   const refreshImages = async () => {
-    const res = await fetch("/api/images");
+    const res = await fetch("/api/images?nocache=1");
     const data = await res.json();
     setAllImages(data.images || []);
     if (data.thumbnails) {
@@ -770,6 +1279,7 @@ export default function AdminDashboard() {
   };
 
   const set = useCallback((path: string, value: unknown) => {
+    setHasChanges(true);
     setContent((prev: SiteContent | null) => {
       const clone = JSON.parse(JSON.stringify(prev));
       const parts = path.split(".");
@@ -791,6 +1301,7 @@ export default function AdminDashboard() {
         body: JSON.stringify(content),
       });
       if (res.ok) {
+        setHasChanges(false);
         alert("CHANGES SAVED SUCCESSFULLY!");
       } else {
         alert("FAILED TO SAVE CHANGES.");
@@ -832,8 +1343,8 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Mobile Floating Save Button */}
-      {!sidebarOpen && (
+      {/* Mobile Floating Save Button — only visible when there are unsaved changes */}
+      {hasChanges && !sidebarOpen && (
         <button
           onClick={save}
           disabled={saving}
@@ -1158,13 +1669,23 @@ export default function AdminDashboard() {
 
           {/* BRIDAL SETTINGS */}
           {activeSection === "bridal" && (
-            <div className="space-y-12 animate-in slide-in-from-bottom-5">
+            <div className="space-y-12">
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <GalleryEditor
-                  label="BRIDAL EDITORIAL GALLERY"
-                  images={content.bridal?.gallery ?? []}
+                <SingleImageEditor
+                  label="BRIDAL PAGE BANNER IMAGE"
+                  image={content.bridal?.bannerImage ?? ""}
                   allImages={allImages}
-                  onChange={(imgs) => set("bridal.gallery", imgs)}
+                  onUploadComplete={refreshImages}
+                  onChange={(src) => set("bridal.bannerImage", src)}
+                />
+              </div>
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+                <YearCollectionEditor
+                  sectionKey="bridal"
+                  years={content.bridal?.years ?? {}}
+                  allImages={allImages}
+                  onUploadComplete={refreshImages}
+                  onChange={(years) => set("bridal.years", years)}
                 />
               </div>
             </div>
@@ -1172,13 +1693,23 @@ export default function AdminDashboard() {
 
           {/* COUTURE SETTINGS */}
           {activeSection === "couture" && (
-            <div className="space-y-12 animate-in slide-in-from-bottom-5">
+            <div className="space-y-12">
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <GalleryEditor
-                  label="COUTURE EDITORIAL GALLERY"
-                  images={content.couture?.gallery ?? []}
+                <SingleImageEditor
+                  label="COUTURE PAGE BANNER IMAGE"
+                  image={content.couture?.bannerImage ?? ""}
                   allImages={allImages}
-                  onChange={(imgs) => set("couture.gallery", imgs)}
+                  onUploadComplete={refreshImages}
+                  onChange={(src) => set("couture.bannerImage", src)}
+                />
+              </div>
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+                <YearCollectionEditor
+                  sectionKey="couture"
+                  years={content.couture?.years ?? {}}
+                  allImages={allImages}
+                  onUploadComplete={refreshImages}
+                  onChange={(years) => set("couture.years", years)}
                 />
               </div>
             </div>
@@ -1358,91 +1889,22 @@ export default function AdminDashboard() {
 
           {/* MESSAGES SECTION */}
           {activeSection === "messages" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-xl font-display uppercase tracking-widest text-black">Contact Submissions</h3>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1 font-bold">
-                    {messages.length} messages received
-                  </p>
-                </div>
-                <button 
-                  onClick={() => {
-                    fetch("/api/admin/messages")
-                      .then(r => r.json())
-                      .then(data => setMessages(Array.isArray(data) ? data : []));
-                  }}
-                  className="text-[10px] font-black uppercase tracking-[2px] px-6 py-2 border border-black hover:bg-black hover:text-white transition-all rounded"
-                >
-                  Refresh
-                </button>
-              </div>
-
-              {messages.length === 0 ? (
-                <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-20 text-center text-gray-300 uppercase tracking-[4px] font-bold">
-                  No messages yet
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {messages.map((msg: any) => (
-                    <div key={msg.id} className="admin-card border-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] p-8 bg-white hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all animate-in slide-in-from-bottom-2">
-                      <div className="flex flex-col md:flex-row justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-4">
-                            <h4 className="font-serif text-2xl text-stone-800">{msg.name}</h4>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-stone-50 px-2 py-1 border border-stone-100">
-                              {new Date(msg.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                            <p className="text-sm font-light text-stone-500">
-                              <span className="font-bold text-stone-400 uppercase tracking-tighter text-[10px] mr-2">Email:</span>
-                              <a href={`mailto:${msg.email}`} className="text-stone-800 hover:text-[#b3a384] underline underline-offset-4 decoration-stone-200">
-                                {msg.email}
-                              </a>
-                            </p>
-                            <p className="text-sm font-light text-stone-500">
-                              <span className="font-bold text-stone-400 uppercase tracking-tighter text-[10px] mr-2">Phone:</span>
-                              <span className="text-stone-800">{msg.phone || "N/A"}</span>
-                            </p>
-                          </div>
-                          <div className="bg-stone-50 p-6 border-l-4 border-[#b3a384] rounded-r">
-                            <p className="text-stone-700 leading-relaxed font-light whitespace-pre-wrap italic">
-                              &quot;{msg.message}&quot;
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex md:flex-col gap-3 shrink-0">
-                          {msg.phone && (
-                            <a
-                              href={`https://wa.me/${msg.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="bg-[#25D366] text-white px-6 py-4 rounded text-[10px] uppercase tracking-[2px] font-black hover:bg-[#128C7E] transition-all text-center flex items-center justify-center gap-2"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                              </svg>
-                              WhatsApp
-                            </a>
-                          )}
-                          <a
-                            href={`mailto:${msg.email}`}
-                            className="bg-black text-white px-6 py-4 rounded text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all text-center flex items-center justify-center gap-2"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect width="20" height="16" x="2" y="4" rx="2" />
-                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                            </svg>
-                            Reply Email
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <MessagesPanel
+              messages={messages}
+              onRefresh={() =>
+                fetch("/api/admin/messages")
+                  .then((r) => r.json())
+                  .then((d) => setMessages(Array.isArray(d) ? d : []))
+              }
+              onDelete={async (id) => {
+                await fetch("/api/admin/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                setMessages((prev: any[]) => prev.filter((m) => m.id !== id));
+              }}
+              onMarkRead={async (id, read) => {
+                await fetch("/api/admin/messages", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, read }) });
+                setMessages((prev: any[]) => prev.map((m) => m.id === id ? { ...m, read } : m));
+              }}
+            />
           )}
         </div>
       </main>

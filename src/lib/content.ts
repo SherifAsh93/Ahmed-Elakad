@@ -2,6 +2,16 @@ import fs from "fs";
 import path from "path";
 import cloudinary, { CLOUDINARY_FOLDER } from "./cloudinary";
 
+export interface Collection {
+  id: string;
+  name?: string;
+  images: string[];
+}
+
+export interface CategoryYear {
+  collections: Collection[];
+}
+
 export interface SiteContent {
   siteInfo?: {
     brandName?: string;
@@ -25,10 +35,14 @@ export interface SiteContent {
     metaDescription?: string;
   };
   bridal?: {
+    bannerImage?: string;
     gallery?: string[];
+    years?: Record<string, CategoryYear>;
   };
   couture?: {
+    bannerImage?: string;
     gallery?: string[];
+    years?: Record<string, CategoryYear>;
   };
   theLabelPage?: {
     metaTitle?: string;
@@ -62,42 +76,36 @@ const CONTENT_FILE = path.join(process.cwd(), "src", "data", "content.json");
 const CLOUDINARY_CONTENT_PATH = `${CLOUDINARY_FOLDER}/content.json`;
 
 /**
- * Fetches site content.
- * In dev, it reads from src/data/content.json.
- * In production, it attempts to fetch from Cloudinary (raw file).
+ * Reads content from local file (primary) with Cloudinary as fallback.
+ * Local file is always the source of truth on this VPS — no CDN caching issues.
  */
 export async function getContent(): Promise<SiteContent> {
-  let localContent: SiteContent = {};
+  // Primary: local file (instant, no CDN cache)
   try {
     if (fs.existsSync(CONTENT_FILE)) {
       const raw = fs.readFileSync(CONTENT_FILE, "utf-8");
-      localContent = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && Object.keys(parsed).length > 0) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.error("Error reading local content:", e);
   }
 
-  // 1. Fetch Cloudinary content first with zero caching
+  // Fallback: Cloudinary (e.g. first boot, file missing)
   if (process.env.CLOUDINARY_CLOUD_NAME) {
     try {
       const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
       const folder = encodeURIComponent(CLOUDINARY_FOLDER);
       const url = `https://res.cloudinary.com/${cloudName}/raw/upload/${folder}/content.json`;
-      
-      const res = await fetch(url, {
-        cache: 'no-store',
-        next: { revalidate: 0 }
-      });
-      
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const cloudContent = await res.json();
         if (cloudContent && Object.keys(cloudContent).length > 0) {
-          // PRODUCTION: Cloudinary is the absolute source of truth
-          if (process.env.NODE_ENV === "production") {
-            return cloudContent;
-          }
-          // DEVELOPMENT: Prioritize local for instant save feedback
-          return { ...cloudContent, ...localContent };
+          // Persist to local so next read is fast
+          try { fs.writeFileSync(CONTENT_FILE, JSON.stringify(cloudContent, null, 2), "utf-8"); } catch {}
+          return cloudContent;
         }
       }
     } catch (e) {
@@ -105,39 +113,33 @@ export async function getContent(): Promise<SiteContent> {
     }
   }
 
-  return localContent;
+  return {};
 }
 
-
-
 /**
- * Saves site content.
- * In dev, it writes to src/data/content.json.
- * It also uploads to Cloudinary for production persistence.
+ * Saves content to local file (immediate) and uploads to Cloudinary (backup).
  */
 export async function saveContent(content: SiteContent): Promise<void> {
-    // 1. Save locally (only if not in production and fs is available)
-    if (process.env.NODE_ENV !== "production") {
-      try {
-        fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), "utf-8");
-      } catch (e) {
-        console.error("Error saving local content:", e);
-      }
-    }
+  // 1. Always write locally — VPS filesystem is persistent
+  try {
+    fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error saving local content:", e);
+    throw new Error("Failed to write local content file.");
+  }
 
-    // 2. Upload to Cloudinary (Persistence for Production)
-    if (process.env.CLOUDINARY_API_SECRET) {
-      try {
-        const contentStr = JSON.stringify(content);
-        const base64 = Buffer.from(contentStr).toString("base64");
-        await cloudinary.uploader.upload(`data:application/json;base64,${base64}`, {
-          resource_type: "raw",
-          public_id: CLOUDINARY_CONTENT_PATH,
-          overwrite: true,
-        });
-      } catch (e) {
-        console.error("Error saving to Cloudinary:", e);
-        throw new Error("Failed to save to cloud storage.");
-      }
+  // 2. Upload to Cloudinary as backup
+  if (process.env.CLOUDINARY_API_SECRET) {
+    try {
+      const base64 = Buffer.from(JSON.stringify(content)).toString("base64");
+      await cloudinary.uploader.upload(`data:application/json;base64,${base64}`, {
+        resource_type: "raw",
+        public_id: CLOUDINARY_CONTENT_PATH,
+        overwrite: true,
+      });
+    } catch (e) {
+      console.error("Cloudinary backup failed:", e);
+      // Don't throw — local save already succeeded
     }
   }
+}
