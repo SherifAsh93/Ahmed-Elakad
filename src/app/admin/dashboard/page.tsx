@@ -1165,8 +1165,23 @@ function ClientForm({
               )}
             </div>
             <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Client Name *</label>
-              <input required value={name} onChange={e => setName(e.target.value)} className="admin-input" placeholder="Full name" />
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">
+                Client Name * <span className="text-[#b3a384] normal-case tracking-normal">— بالعربي</span>
+              </label>
+              <input
+                required
+                dir="rtl"
+                lang="ar"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="admin-input text-right"
+                placeholder="الاسم بالعربي"
+              />
+              {/[a-zA-Z]/.test(name) && (
+                <p className="mt-1.5 text-[10px] text-red-500 font-bold flex items-center gap-1">
+                  ⚠️ الاسم يجب أن يكون بالعربي — يبدو أنك كتبت بالإنجليزي
+                </p>
+              )}
             </div>
             <div>
               <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Total Price (EGP)</label>
@@ -1242,13 +1257,21 @@ function ClientForm({
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="admin-input" placeholder="client@email.com" />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Notes <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="admin-input resize-none" placeholder="e.g. prefers ivory, size 38..." />
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Notes <span className="text-gray-300 normal-case tracking-normal">— ملاحظات (اختياري)</span></label>
+              <textarea
+                dir="rtl"
+                lang="ar"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                className="admin-input resize-none text-right"
+                placeholder="مثال: تفضل اللون العاجي، مقاس ٣٨..."
+              />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
-            <button type="submit" disabled={saving || !!dupClient} className="flex-1 min-h-[48px] bg-black text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all disabled:opacity-40">
+            <button type="submit" disabled={saving || !!dupClient || /[a-zA-Z]/.test(name)} className="flex-1 min-h-[48px] bg-black text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all disabled:opacity-40">
               {saving ? "Saving..." : initial?.id ? "Save Changes" : "Create Client"}
             </button>
           </div>
@@ -2089,7 +2112,7 @@ function PasswordChangeCard() {
   return (
     <div>
       <h3 className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-6 border-b pb-4">Admin Password</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-2xl">
         <div>
           <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Current Password</label>
           <input type="password" value={current} onChange={e => setCurrent(e.target.value)} required className="admin-input" placeholder="Current password" />
@@ -2102,7 +2125,7 @@ function PasswordChangeCard() {
           <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Confirm New Password</label>
           <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required className="admin-input" placeholder="Repeat new password" />
         </div>
-        <div className="md:col-span-3 flex items-center gap-4">
+        <div className="lg:col-span-3 flex items-center gap-4">
           <button type="submit" disabled={status === "saving"} className="min-h-[44px] px-6 bg-black text-white text-[10px] uppercase tracking-[2px] font-black rounded hover:bg-[#b3a384] transition-all disabled:opacity-40">
             {status === "saving" ? "Saving..." : "Update Password"}
           </button>
@@ -2257,7 +2280,7 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`w-80 bg-white border-r px-6 py-12 flex flex-col fixed md:sticky top-0 h-screen overflow-y-auto shadow-[10px_0_30px_rgba(0,0,0,0.02)] z-[55] transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`w-72 md:w-64 lg:w-80 bg-white border-r px-5 py-8 flex flex-col fixed md:sticky top-0 h-screen overflow-y-auto shadow-[10px_0_30px_rgba(0,0,0,0.02)] z-[55] transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="mb-12 text-center">
           <div className="bg-black text-white inline-block px-5 py-2 mb-4">
@@ -2374,8 +2397,8 @@ export default function AdminDashboard() {
 
           {/* SITE SETTINGS */}
           {activeSection === "site" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
                   label="GLOBAL BRAND LOGO"
                   image={content.siteInfo?.logo ?? ""}
@@ -2384,8 +2407,8 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
                   <div>
                     <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
                       Global Brand Identity
@@ -2428,11 +2451,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <h3 className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 border-b pb-4">
                   Footer & Credits
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
                   <div>
                     <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
                       Copyright Text
@@ -2453,20 +2476,10 @@ export default function AdminDashboard() {
                       className="admin-input py-3 cursor-text"
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
-                      Developer Link (URL)
-                    </label>
-                    <input
-                      value={content.footer?.creditLink ?? ""}
-                      onChange={(e) => set("footer.creditLink", e.target.value)}
-                      className="admin-input py-3 font-mono text-sm cursor-text"
-                    />
-                  </div>
                 </div>
               </div>
 
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <PasswordChangeCard />
               </div>
             </div>
@@ -2474,8 +2487,8 @@ export default function AdminDashboard() {
 
           {/* HOME SETTINGS */}
           {activeSection === "home" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
                   Home Page SEO
                 </label>
@@ -2496,7 +2509,7 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
                   label="MAIN HERO BACKGROUND"
                   image={content.homepage?.heroImage ?? ""}
@@ -2505,7 +2518,7 @@ export default function AdminDashboard() {
                   onChange={(src) => set("homepage.heroImage", src)}
                 />
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <GalleryEditor
                   label="FEATURED COLLECTION PREVIEW"
                   images={content.homepage?.featuredImages ?? []}
@@ -2519,8 +2532,8 @@ export default function AdminDashboard() {
 
           {/* ABOUT SETTINGS */}
           {activeSection === "about" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
                   About Page SEO
                 </label>
@@ -2541,8 +2554,8 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
                   <div>
                     <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
                       PAGE HEADER
@@ -2565,7 +2578,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                   <SingleImageEditor
                     label="HERO BACKGROUND IMAGE"
                     image={content.about?.portraitImage ?? ""}
@@ -2574,7 +2587,7 @@ export default function AdminDashboard() {
                     onChange={(src) => set("about.portraitImage", src)}
                   />
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <BioParagraphEditor
                   bio={content.about?.bio ?? []}
                   onChange={(b) => set("about.bio", b)}
@@ -2586,8 +2599,8 @@ export default function AdminDashboard() {
 
           {/* BRIDAL SETTINGS */}
           {activeSection === "bridal" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
                   label="BRIDAL PAGE BANNER IMAGE"
                   image={content.bridal?.bannerImage ?? ""}
@@ -2596,7 +2609,7 @@ export default function AdminDashboard() {
                   onChange={(src) => set("bridal.bannerImage", src)}
                 />
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <YearCollectionEditor
                   sectionKey="bridal"
                   years={content.bridal?.years ?? {}}
@@ -2610,8 +2623,8 @@ export default function AdminDashboard() {
 
           {/* COUTURE SETTINGS */}
           {activeSection === "couture" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
                   label="COUTURE PAGE BANNER IMAGE"
                   image={content.couture?.bannerImage ?? ""}
@@ -2620,7 +2633,7 @@ export default function AdminDashboard() {
                   onChange={(src) => set("couture.bannerImage", src)}
                 />
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <YearCollectionEditor
                   sectionKey="couture"
                   years={content.couture?.years ?? {}}
@@ -2634,8 +2647,8 @@ export default function AdminDashboard() {
 
           {/* CONTACT SETTINGS */}
           {activeSection === "contact" && (
-            <div className="space-y-12">
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+            <div className="space-y-6 lg:space-y-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
                   Contact Page SEO
                 </label>
@@ -2656,8 +2669,8 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
                   <div>
                     <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
                       PAGE TITLE
@@ -2682,7 +2695,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
                   label="CONTACT HERO BACKGROUND"
                   image={content.contact?.heroImage ?? ""}
@@ -2691,8 +2704,8 @@ export default function AdminDashboard() {
                   onChange={(src) => set("contact.heroImage", src)}
                 />
               </div>
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 mb-12">
                   <div>
                     <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold block mb-3">
                       PUBLIC EMAIL
@@ -2765,8 +2778,8 @@ export default function AdminDashboard() {
 
           {/* SOCIAL SETTINGS */}
           {activeSection === "social" && (
-            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
-              <div className="space-y-12">
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+              <div className="space-y-6 lg:space-y-12">
                 {["facebook", "instagram", "whatsapp"].map((s) => (
                   <div key={s} className="relative">
                     <label className="text-[10px] uppercase tracking-[5px] text-gray-400 font-bold mb-4 block">

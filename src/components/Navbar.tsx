@@ -31,13 +31,13 @@ export default function Navbar({ content }: { content: SiteContent }) {
     <header className="w-full absolute top-0 left-0 z-50">
       {/* Top bar */}
       <div className="relative z-[60] bg-white border-b border-gray-50 shadow-sm">
-        <div className="flex justify-between items-center h-[80px] px-6 sm:px-12 md:px-24 max-w-[1440px] mx-auto">
+        <div className="flex justify-between items-center h-[100px] sm:h-[110px] md:h-[120px] px-6 sm:px-12 md:px-24 max-w-[1440px] mx-auto">
           {/* Logo */}
           <Link href="/" className="flex items-center h-full py-2">
             <img
               src={optimizeImage(content.siteInfo?.logo ?? "")}
               alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}
-              className="h-[56px] sm:h-[60px] md:h-[64px] w-auto object-contain block"
+              className="h-[84px] sm:h-[94px] md:h-[104px] w-auto object-contain block"
             />
           </Link>
 

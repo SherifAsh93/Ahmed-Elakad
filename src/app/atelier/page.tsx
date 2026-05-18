@@ -58,6 +58,18 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
 }
 
+// Convert Latin digits to Arabic-Indic (٠١٢٣٤٥٦٧٨٩)
+function toAr(n: number | string): string {
+  return String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[+d]);
+}
+
+// Normalize search input: handle both Latin and Arabic-Indic digits
+function normalizeDigits(s: string): string {
+  return s
+    .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/\D/g, "");
+}
+
 // ── Add Payment Modal ─────────────────────────────────
 function AddPaymentModal({
   clientName,
@@ -247,9 +259,9 @@ function ClientCard({
     try {
       const uploaded: string[] = [];
       for (let i = 0; i < files.length; i++) {
-        setUploadStatus(`ضغط ${i + 1}/${files.length}...`);
+        setUploadStatus(`ضغط ${toAr(i + 1)}/${toAr(files.length)}...`);
         const compressed = await compressImage(files[i]);
-        setUploadStatus(`رفع ${i + 1}/${files.length}...`);
+        setUploadStatus(`رفع ${toAr(i + 1)}/${toAr(files.length)}...`);
         const fd = new FormData();
         fd.append("files", compressed, compressed.name);
         const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -285,7 +297,7 @@ function ClientCard({
           <path d="m6 9 6 6 6-6" />
         </svg>
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-base font-black text-black tracking-wide mb-0.5">{client.phone}</p>
+          <p className="text-base font-black text-black mb-0.5"><span dir="ltr">{toAr(client.phone)}</span></p>
           <div className="flex flex-wrap items-center gap-2 mb-1 justify-end">
             <span className={`text-[12px] tracking-[2px] font-black px-2 py-0.5 rounded-full ${statusBg[client.status]}`}>{statusAr[client.status]}</span>
             {client.dressType && <span className="text-[12px] tracking-[1px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">{dressTypeAr[client.dressType]}</span>}
@@ -313,7 +325,7 @@ function ClientCard({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-lg px-4 py-3 text-right">
               <p className="text-[12px] tracking-[2px] font-black text-gray-400 mb-1">رقم الموبايل</p>
-              <a href={`tel:${client.phone}`} className="text-base font-black text-stone-800 hover:text-[#b3a384] transition-colors">{client.phone}</a>
+              <a href={`tel:${client.phone}`} className="text-base font-black text-stone-800 hover:text-[#b3a384] transition-colors"><span dir="ltr">{toAr(client.phone)}</span></a>
             </div>
             {client.email && (
               <div className="bg-gray-50 rounded-lg px-4 py-3 text-right">
@@ -343,7 +355,7 @@ function ClientCard({
             <div className="h-2 bg-white rounded-full overflow-hidden border border-[#e8dfd4]">
               <div className="h-full bg-[#b3a384] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[13px] text-gray-400 font-bold mt-1.5 text-left">{pct}% مدفوع</p>
+            <p className="text-[13px] text-gray-400 font-bold mt-1.5 text-left">{toAr(pct)}٪ مدفوع</p>
           </div>
 
           {/* Payments */}
@@ -525,9 +537,12 @@ export default function AtelierPage() {
 
   const filtered = clients.filter(c => {
     const matchStatus = filter === "all" || c.status === filter;
-    const q = search.replace(/\D/g, "");
-    const matchPhone = !q || (c.phone ?? "").replace(/\D/g, "").includes(q);
-    return matchStatus && matchPhone;
+    const q = search.trim();
+    if (!q) return matchStatus;
+    const qDigits = normalizeDigits(q);
+    const matchPhone = qDigits.length > 0 && normalizeDigits(c.phone ?? "").includes(qDigits);
+    const matchName = (c.name ?? "").includes(q);
+    return matchStatus && (matchPhone || matchName);
   });
 
   const counts = {
@@ -580,25 +595,22 @@ export default function AtelierPage() {
         .atelier-root { font-size: 17px; }
       `}</style>
 
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-black text-black tracking-wide">أتيليه أحمد الأكاد</h1>
-            <p className="text-[13px] text-gray-400 font-bold">إدارة العملاء</p>
-          </div>
-          <button onClick={refresh} className="text-[13px] font-black tracking-[2px] px-4 py-2.5 min-h-[44px] border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all rounded flex items-center gap-2">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+
+        {/* Page title + refresh */}
+        <div className="flex items-center justify-between">
+          <button onClick={refresh} className="text-[13px] font-black px-4 py-2.5 min-h-[44px] border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all rounded flex items-center gap-2">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
             تحديث
           </button>
+          <div className="text-right">
+            <h1 className="text-lg font-black text-black">إدارة العملاء</h1>
+          </div>
         </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
         {/* Summary */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 text-right">
-          <p className="text-2xl font-black text-black mb-0.5">{clients.length} عميل</p>
+          <p className="text-2xl font-black text-black mb-0.5">{toAr(clients.length)} عميل</p>
           <p className="text-xs text-gray-400 font-bold">
             {totalCollected.toLocaleString("ar-EG")} جنيه محصّل · {totalRemaining.toLocaleString("ar-EG")} جنيه متبقي
           </p>
@@ -608,11 +620,10 @@ export default function AtelierPage() {
         <div className="relative">
           <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
-            type="tel"
-            inputMode="numeric"
+            type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="بحث برقم الموبايل..."
+            placeholder="بحث بالاسم أو رقم الموبايل..."
             className="w-full border border-gray-200 rounded-xl pr-11 pl-10 py-3 text-base focus:border-[#b3a384] focus:outline-none bg-white text-right"
           />
           {search && (
@@ -624,7 +635,7 @@ export default function AtelierPage() {
         <div className="grid grid-cols-3 gap-3">
           {([["active", "نشط"], ["pending", "جديد"], ["completed", "مكتمل"]] as const).map(([s, label]) => (
             <div key={s} className="bg-white border border-gray-100 rounded-xl p-3 text-center shadow-sm">
-              <p className="text-xl font-black text-black">{counts[s]}</p>
+              <p className="text-xl font-black text-black">{toAr(counts[s])}</p>
               <p className="text-[12px] tracking-[2px] font-bold text-gray-400 mt-0.5">{label}</p>
             </div>
           ))}
@@ -632,7 +643,7 @@ export default function AtelierPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-2 flex-wrap">
-          {([["all", `الكل (${clients.length})`], ["active", `نشط (${counts.active})`], ["pending", `جديد (${counts.pending})`], ["completed", `مكتمل (${counts.completed})`]] as const).map(([f, label]) => (
+          {([["all", `الكل (${toAr(clients.length)})`], ["active", `نشط (${toAr(counts.active)})`], ["pending", `جديد (${toAr(counts.pending)})`], ["completed", `مكتمل (${toAr(counts.completed)})`]] as const).map(([f, label]) => (
             <button key={f} onClick={() => setFilter(f)} className={`min-h-[40px] px-4 py-2 text-[13px] tracking-[1px] font-black rounded-full transition-all ${filter === f ? "bg-black text-white" : "bg-white border border-gray-100 text-gray-400 hover:bg-gray-50"}`}>
               {label}
             </button>
