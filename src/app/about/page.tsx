@@ -49,12 +49,10 @@ export default async function AboutPage() {
       {/* ── Bio Section ── */}
       {remainingBio.length > 0 && (
         <section className="w-full py-20 sm:py-28 px-5 sm:px-6">
+          <div className="w-12 h-px bg-[#b3a384]/40 mx-auto mb-12" />
           <div className="max-w-[680px] mx-auto space-y-8 sm:space-y-10 text-center">
             {remainingBio.map((para, i) => (
-              <p
-                key={i}
-                className="text-[#333] leading-[2] sm:leading-[2.2] text-base sm:text-lg font-light font-serif"
-              >
+              <p key={i} className="text-[#555] leading-[2] sm:leading-[2.2] text-base sm:text-lg font-light font-serif">
                 {para}
               </p>
             ))}

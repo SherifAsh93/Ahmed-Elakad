@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
+import { excludedUrls } from "@/app/api/upload/route";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function GET(req: Request) {
     }
   }
 
-  const dedupedImages = Array.from(new Set(images));
+  const dedupedImages = Array.from(new Set(images)).filter((u) => !excludedUrls.has(u));
   const payload = { images: dedupedImages, thumbnails };
 
   cachedResult = payload;

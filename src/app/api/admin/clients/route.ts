@@ -1,0 +1,126 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getClients,
+  addClient,
+  updateClient,
+  deleteClient,
+  addPayment,
+  deletePayment,
+  addDress,
+  deleteDress,
+  addDressImages,
+  removeDressImage,
+  updateDressLabel,
+} from "@/lib/clients";
+
+export async function GET() {
+  const clients = await getClients();
+  return NextResponse.json(clients);
+}
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  if (!body.phone) return NextResponse.json({ error: "Mobile number is required" }, { status: 400 });
+  try {
+    const client = await addClient({
+      name: body.name ?? "",
+      email: body.email ?? "",
+      phone: body.phone,
+      notes: body.notes ?? "",
+      totalPrice: Number(body.totalPrice) || 0,
+      payments: [],
+      dresses: [],
+      appointmentDate: body.appointmentDate ?? "",
+      nextAppointmentDate: body.nextAppointmentDate ?? "",
+      fittingDate: body.fittingDate ?? "",
+      eventDate: body.eventDate ?? "",
+      dressType: body.dressType ?? "",
+      branch: body.branch ?? "",
+      clientImages: body.clientImages ?? [],
+      status: body.status ?? "pending",
+      sourceMessageId: body.sourceMessageId,
+    });
+    return NextResponse.json(client, { status: 201 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Failed to create client";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  const body = await req.json();
+  const { id, action, ...data } = body;
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  if (action === "addPayment") {
+    const updated = await addPayment(id, { amount: Number(data.amount), date: data.date, note: data.note ?? "" });
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "deletePayment") {
+    const updated = await deletePayment(id, data.paymentId);
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "addDress") {
+    const updated = await addDress(id, data.label ?? "");
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "deleteDress") {
+    const updated = await deleteDress(id, data.dressId);
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "addDressImages") {
+    const updated = await addDressImages(id, data.dressId, data.images ?? []);
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "removeDressImage") {
+    const updated = await removeDressImage(id, data.dressId, data.imageUrl);
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "updateDressLabel") {
+    const updated = await updateDressLabel(id, data.dressId, data.label ?? "");
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  try {
+    const updated = await updateClient(id, {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      notes: data.notes,
+      totalPrice: data.totalPrice !== undefined ? Number(data.totalPrice) : undefined,
+      appointmentDate: data.appointmentDate,
+      nextAppointmentDate: data.nextAppointmentDate,
+      fittingDate: data.fittingDate,
+      eventDate: data.eventDate,
+      dressType: data.dressType,
+      branch: data.branch,
+      clientImages: data.clientImages,
+      status: data.status,
+    });
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Failed to update client";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const body = await req.json();
+  if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  await deleteClient(body.id);
+  return NextResponse.json({ ok: true });
+}

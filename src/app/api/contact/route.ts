@@ -8,11 +8,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, phone, message } = body;
 
-    if (!name || !email || !message) {
+    if (!name || !message) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const savedMessage = await addMessage({ name, email, phone: phone || "", message });
+    const savedMessage = await addMessage({ name, email: email || "", phone: phone || "", message });
     return NextResponse.json({ ok: true, message: savedMessage });
   } catch (err: any) {
     console.error("Contact API Error:", err);

@@ -35,7 +35,7 @@ export default async function BridalYearPage({
   const collections = year !== "all" ? (years[year]?.collections ?? []) : [];
 
   return (
-    <main className="bg-white">
+    <main className="bg-[#f9f7f4]">
       {/* Hero Banner */}
       {bannerImage ? (
         <div className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] overflow-hidden">
@@ -44,6 +44,7 @@ export default async function BridalYearPage({
             alt="Bridal Collection"
             className="w-full h-full object-cover"
             loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-black/35" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
@@ -69,18 +70,17 @@ export default async function BridalYearPage({
       )}
 
       {/* Year tabs + content */}
-      <div className="bg-white">
+      <div className="bg-[#f9f7f4]">
         <div className="pt-10 sm:pt-12 pb-8 text-center">
           {/* Year tabs */}
           <div className="overflow-x-auto scrollbar-none">
-            <nav className="flex items-center gap-[5px] px-4 sm:px-0 min-w-max sm:min-w-0 sm:justify-center sm:flex-wrap mx-auto pb-1">
-              {/* ALL tab */}
+            <nav className="flex items-center gap-1 px-4 sm:px-0 min-w-max sm:min-w-0 sm:justify-center sm:flex-wrap mx-auto">
               <Link
                 href="/bridal/all"
-                className={`px-4 py-1.5 text-[13px] font-medium transition-all whitespace-nowrap ${
+                className={`px-4 py-2.5 text-[10px] tracking-[2px] uppercase font-medium transition-all whitespace-nowrap border-b-2 ${
                   year === "all"
-                    ? "bg-[#1a1a1a] text-white"
-                    : "bg-[#e7e7e7] text-[#1a1a1a] hover:bg-[#d0d0d0]"
+                    ? "border-[#b3a384] text-[#1a1a1a]"
+                    : "border-transparent text-[#aaa] hover:text-[#555]"
                 }`}
               >
                 All
@@ -89,10 +89,10 @@ export default async function BridalYearPage({
                 <Link
                   key={y}
                   href={`/bridal/${y}`}
-                  className={`px-4 py-1.5 text-[13px] font-medium transition-all whitespace-nowrap ${
+                  className={`px-4 py-2.5 text-[10px] tracking-[2px] uppercase font-medium transition-all whitespace-nowrap border-b-2 ${
                     y === year
-                      ? "bg-[#1a1a1a] text-white"
-                      : "bg-[#e7e7e7] text-[#1a1a1a] hover:bg-[#d0d0d0]"
+                      ? "border-[#b3a384] text-[#1a1a1a]"
+                      : "border-transparent text-[#aaa] hover:text-[#555]"
                   }`}
                 >
                   {y}
@@ -101,7 +101,7 @@ export default async function BridalYearPage({
             </nav>
           </div>
 
-          <div className="mt-8 w-16 h-px bg-[#e8e0d5] mx-auto" />
+          <div className="mt-6 w-12 h-px bg-[#b3a384]/40 mx-auto" />
         </div>
 
         {/* Content */}
@@ -116,7 +116,7 @@ export default async function BridalYearPage({
                       <h2 className="font-display text-xl sm:text-2xl uppercase tracking-[0.2em] text-[#1a1a1a]">
                         {y}
                       </h2>
-                      <div className="flex-1 h-px bg-[#e8e0d5]" />
+                      <div className="flex-1 h-px bg-[#e0dbd4]" />
                     </div>
                   </div>
                   <div className="px-4 sm:px-8 md:px-12 max-w-screen-xl mx-auto">

@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
 
 export async function POST(req: NextRequest) {
-  // Auth check
-  const cookieStore = await cookies();
-  const session = cookieStore.get("admin_session");
-  if (!session || session.value !== "authenticated") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
@@ -63,5 +55,37 @@ export async function POST(req: NextRequest) {
       { error: `Upload Error: ${err instanceof Error ? err.message : "Unknown"}` },
       { status: 500 }
     );
+  }
+}
+
+// Server-side excluded list so images API hides deleted assets immediately
+// (Cloudinary search index lags up to a few minutes after destroy)
+export const excludedUrls = new Set<string>();
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { url } = await req.json();
+    if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
+
+    // Extract public_id: take everything after /upload/, strip optional version (v123/), strip extension
+    const uploadIdx = url.indexOf("/upload/");
+    if (uploadIdx === -1) return NextResponse.json({ error: "invalid url" }, { status: 400 });
+
+    let publicId = url.slice(uploadIdx + 8);
+    publicId = publicId.replace(/^v\d+\//, "");
+    publicId = publicId.replace(/\.[^/.]+$/, "");
+
+    console.log("Deleting Cloudinary publicId:", publicId);
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log("Cloudinary destroy result:", result);
+
+    if (result.result === "ok" || result.result === "not found") {
+      excludedUrls.add(url);
+      return NextResponse.json({ ok: true, result: result.result });
+    }
+    return NextResponse.json({ error: `Cloudinary returned: ${result.result}` }, { status: 500 });
+  } catch (err) {
+    console.error("Cloudinary Delete failure:", err);
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }

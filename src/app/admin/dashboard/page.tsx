@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SiteContent, CategoryYear } from "@/lib/content";
+import { compressImage } from "@/lib/compressImage";
 
 // Module-level thumbnail cache populated from server-signed URLs
 const thumbMap = new Map<string, string>();
@@ -20,7 +21,50 @@ type Section =
   | "contact"
   | "social"
   | "media"
-  | "messages";
+  | "messages"
+  | "clients";
+
+interface Payment {
+  id: string;
+  amount: number;
+  date: string;
+  note: string;
+}
+
+interface Dress {
+  id: string;
+  label: string;
+  images: string[];
+  createdAt: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+  totalPrice: number;
+  payments: Payment[];
+  dresses: Dress[];
+  appointmentDate: string;
+  nextAppointmentDate: string;
+  fittingDate: string;
+  eventDate: string;
+  dressType: "wedding" | "evening" | "";
+  branch: "cairo" | "damietta" | "";
+  clientImages: string[];
+  status: "active" | "completed" | "pending";
+  createdAt: string;
+  sourceMessageId?: string;
+}
+
+function clientPaid(c: Client) {
+  return c.payments.reduce((s, p) => s + p.amount, 0);
+}
+function clientRemaining(c: Client) {
+  return Math.max(0, c.totalPrice - clientPaid(c));
+}
 
 // ── Image Picker Modal ───────────────────
 function ImagePicker({
@@ -55,25 +99,24 @@ function ImagePicker({
   }, [pasteUrl]);
   const [activeTab, setActiveTab] = useState<"browse" | "url">("browse");
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
-  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [errorImages, setErrorImages] = useState<Set<string>>(new Set());
+  const [deletedImages, setDeletedImages] = useState<Set<string>>(new Set());
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "deleting" | "done" | "error">("idle");
   const perPage = 24;
   const filtered = allImages.filter((img) =>
-    img && !errorImages.has(img)
+    img && !errorImages.has(img) && !deletedImages.has(img)
   );
   const total = Math.ceil(filtered.length / perPage);
   const displayed = filtered.slice(page * perPage, (page + 1) * perPage);
 
-  const handleImageLoad = (src: string) => {
-    setLoadingImages((prev) => {
-      const next = new Set(prev);
-      next.delete(src);
-      return next;
-    });
-  };
+  // Reset loaded state when page changes so skeletons show on new page
+  useEffect(() => {
+    setLoadedImages(new Set());
+  }, [page]);
 
-  const handleImageLoadStart = (src: string) => {
-    setLoadingImages((prev) => new Set(prev).add(src));
+  const handleImageLoad = (src: string) => {
+    setLoadedImages((prev) => new Set(prev).add(src));
   };
 
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -94,7 +137,7 @@ function ImagePicker({
         const originalFile = files[i];
 
         setUploadStatus(`Optimizing ${i + 1}/${total}...`);
-        const fileToUpload = originalFile;
+        const fileToUpload = await compressImage(originalFile);
 
         setUploadStatus(`Uploading ${i + 1}/${total}...`);
         const singleFormData = new FormData();
@@ -186,6 +229,25 @@ function ImagePicker({
       else next.add(src);
       return next;
     });
+  };
+
+  const handleDeleteSelected = async () => {
+    const urls = Array.from(selectedImages);
+    if (!urls.length) return;
+    if (!window.confirm(`Delete ${urls.length} image${urls.length > 1 ? "s" : ""} permanently from Cloudinary?`)) return;
+    setDeleteStatus("deleting");
+    try {
+      await Promise.all(urls.map((url) =>
+        fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) })
+      ));
+      setDeletedImages((prev) => new Set([...prev, ...urls]));
+      setSelectedImages(new Set());
+      setDeleteStatus("done");
+      setTimeout(() => setDeleteStatus("idle"), 2000);
+    } catch {
+      setDeleteStatus("error");
+      setTimeout(() => setDeleteStatus("idle"), 3000);
+    }
   };
 
   const handleConfirmSelection = () => {
@@ -299,19 +361,19 @@ function ImagePicker({
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-5">
                   {displayed.map((src) => {
                     const isSelected = selectedImages.has(src);
-                    const isLoading = loadingImages.has(src);
+                    const isLoaded = loadedImages.has(src);
                     return (
                       <div
                         key={src}
-                        className={`relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer transition-all ${
+                        className={`relative aspect-[2/3] bg-gray-100 rounded-xl overflow-hidden cursor-pointer transition-all ${
                           isSelected
                             ? "ring-4 ring-[#b3a384] shadow-lg scale-95"
                             : "ring-2 ring-gray-200 hover:ring-black shadow-md hover:shadow-xl"
                         }`}
                         onClick={() => handleSelectImage(src)}
                       >
-                        {/* Loading Skeleton */}
-                        {isLoading && (
+                        {/* Loading Skeleton — shown until image finishes loading */}
+                        {!isLoaded && (
                           <div className="absolute inset-0 bg-gray-200 animate-pulse z-10" />
                         )}
 
@@ -323,7 +385,6 @@ function ImagePicker({
                           className="w-full h-full object-cover"
                           loading={page === 0 ? "eager" : "lazy"}
                           decoding="async"
-                          onLoadStart={() => handleImageLoadStart(src)}
                           onLoad={() => handleImageLoad(src)}
                           onError={() => {
                             setErrorImages(prev => new Set(prev).add(src));
@@ -376,6 +437,13 @@ function ImagePicker({
                     className="text-white/60 text-[10px] font-black uppercase tracking-[2px] px-5 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap"
                   >
                     Clear
+                  </button>
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={deleteStatus === "deleting"}
+                    className="text-white text-[10px] font-black uppercase tracking-[2px] px-5 py-2 bg-red-600 rounded-full hover:bg-red-700 transition-all active:scale-95 whitespace-nowrap disabled:opacity-50"
+                  >
+                    {deleteStatus === "deleting" ? "Deleting..." : deleteStatus === "done" ? "Deleted ✓" : deleteStatus === "error" ? "Failed ✗" : "Delete"}
                   </button>
                   <button
                     onClick={handleConfirmSelection}
@@ -999,17 +1067,778 @@ function YearCollectionEditor({
   );
 }
 
+// ── Client Form Modal ───────────────────
+function ClientForm({
+  initial,
+  existingClients,
+  onSave,
+  onClose,
+}: {
+  initial?: Partial<Client>;
+  existingClients: Client[];
+  onSave: (data: Partial<Client>) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [totalPrice, setTotalPrice] = useState(String(initial?.totalPrice ?? ""));
+  const [appointmentDate, setAppointmentDate] = useState(initial?.appointmentDate ?? "");
+  const [nextAppointmentDate, setNextAppointmentDate] = useState(initial?.nextAppointmentDate ?? "");
+  const [eventDate, setEventDate] = useState(initial?.eventDate ?? "");
+  const [dressType, setDressType] = useState<Client["dressType"]>(initial?.dressType ?? "");
+  const [branch, setBranch] = useState<Client["branch"]>(initial?.branch ?? "");
+  const [clientImages, setClientImages] = useState<string[]>(initial?.clientImages ?? []);
+  const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<Client["status"]>(initial?.status ?? "pending");
+  const [saving, setSaving] = useState(false);
+
+  const dupClient = phone.trim()
+    ? existingClients.find(c => c.id !== initial?.id && (c.phone ?? "").replace(/\D/g, "") === phone.replace(/\D/g, "") && phone.replace(/\D/g, "").length >= 7)
+    : null;
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const total = files.length;
+    const uploaded: string[] = [];
+    for (let i = 0; i < total; i++) {
+      const file = files[i];
+      setImageUploadStatus(`Uploading ${i + 1}/${total}...`);
+      const fd = new FormData();
+      fd.append("files", file, file.name);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        const urls: string[] = data.uploaded ?? [];
+        uploaded.push(...urls);
+      }
+    }
+    setClientImages(prev => [...prev, ...uploaded]);
+    setImageUploadStatus(null);
+    e.target.value = "";
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (dupClient) return;
+    setSaving(true);
+    try {
+      await onSave({ name, email, phone, notes, totalPrice: Number(totalPrice) || 0, appointmentDate, nextAppointmentDate, eventDate, dressType, branch, clientImages, status });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-y-auto max-h-[95vh]">
+        <div className="flex items-center justify-between px-6 py-5 border-b">
+          <h3 className="font-display text-base uppercase tracking-[4px]">
+            {initial?.id ? "Edit Client" : "New Client"}
+          </h3>
+          <button onClick={onClose} className="text-gray-300 hover:text-black text-2xl font-bold transition-colors">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Phone first — it's the primary reference */}
+            <div className="sm:col-span-2">
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">
+                Mobile Number <span className="text-[#b3a384]">— main reference *</span>
+              </label>
+              <input
+                required
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className={`admin-input text-lg font-bold tracking-wide ${dupClient ? "border-amber-400 focus:border-amber-500" : ""}`}
+                placeholder="01xxxxxxxxx"
+                inputMode="tel"
+              />
+              {dupClient && (
+                <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <span className="text-amber-500 text-base shrink-0">⚠️</span>
+                  <p className="text-[10px] text-amber-700 font-bold leading-relaxed">
+                    This number is already registered under <span className="underline">{dupClient.name || dupClient.id}</span>. Each mobile number can only have one client profile.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Client Name *</label>
+              <input required value={name} onChange={e => setName(e.target.value)} className="admin-input" placeholder="Full name" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Total Price (EGP)</label>
+              <input type="number" min="0" value={totalPrice} onChange={e => setTotalPrice(e.target.value)} className="admin-input" placeholder="0" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value as Client["status"])} className="admin-input">
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Appointment Date</label>
+              <input type="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} className="admin-input" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Next Appointment</label>
+              <input type="date" value={nextAppointmentDate} onChange={e => setNextAppointmentDate(e.target.value)} className="admin-input" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Event Date</label>
+              <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="admin-input" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Dress Type</label>
+              <select value={dressType} onChange={e => setDressType(e.target.value as Client["dressType"])} className="admin-input">
+                <option value="">— Select —</option>
+                <option value="wedding">Wedding Dress</option>
+                <option value="evening">Evening Dress</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Branch</label>
+              <select value={branch} onChange={e => setBranch(e.target.value as Client["branch"])} className="admin-input">
+                <option value="">— Select —</option>
+                <option value="cairo">Cairo</option>
+                <option value="damietta">Damietta</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Upload Images <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
+              <label className="flex items-center justify-center gap-2 w-full min-h-[48px] border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#b3a384] transition-colors text-[10px] uppercase tracking-[2px] font-bold text-gray-400 hover:text-[#b3a384]">
+                <span>📷</span>
+                <span>{imageUploadStatus ?? "Tap to upload photos"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={!!imageUploadStatus}
+                />
+              </label>
+              {clientImages.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {clientImages.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-100" />
+                      <button
+                        type="button"
+                        onClick={() => setClientImages(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Email <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="admin-input" placeholder="client@email.com" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Notes <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="admin-input resize-none" placeholder="e.g. prefers ivory, size 38..." />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
+            <button type="submit" disabled={saving || !!dupClient} className="flex-1 min-h-[48px] bg-black text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all disabled:opacity-40">
+              {saving ? "Saving..." : initial?.id ? "Save Changes" : "Create Client"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Add Payment Modal ────────────────────
+function AddPaymentModal({
+  onSave,
+  onClose,
+}: {
+  onSave: (amount: number, date: string, note: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || Number(amount) <= 0) return;
+    setSaving(true);
+    await onSave(Number(amount), date, note);
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5 border-b">
+          <h3 className="font-display text-sm uppercase tracking-[4px]">Add Payment</h3>
+          <button onClick={onClose} className="text-gray-300 hover:text-black text-2xl font-bold transition-colors">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Amount Paid (EGP) *</label>
+            <input type="number" min="1" required value={amount} onChange={e => setAmount(e.target.value)} className="admin-input text-lg font-bold" placeholder="0" autoFocus />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Date</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="admin-input" />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Visit Note (optional)</label>
+            <input value={note} onChange={e => setNote(e.target.value)} className="admin-input" placeholder="e.g. First fitting" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 min-h-[48px] bg-[#b3a384] text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-black transition-all disabled:opacity-40">
+              {saving ? "Saving..." : "Add Payment"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Clients Panel ────────────────────────
+// ── Fitting Appointment Modal ────────────
+function FittingModal({
+  current,
+  onSave,
+  onClose,
+}: {
+  current: string;
+  onSave: (date: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [date, setDate] = useState(current || new Date().toISOString().split("T")[0]);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date) return;
+    setSaving(true);
+    await onSave(date);
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5 border-b">
+          <h3 className="font-display text-sm uppercase tracking-[4px]">Fitting Appointment</h3>
+          <button onClick={onClose} className="text-gray-300 hover:text-black text-2xl font-bold transition-colors">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Fitting Date *</label>
+            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="admin-input text-base font-bold" autoFocus />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 min-h-[48px] bg-rose-500 text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-rose-600 transition-all disabled:opacity-40">
+              {saving ? "Saving..." : "Confirm Fitting"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Clients Panel ────────────────────────
+function ClientsPanel({
+  clients,
+  allImages,
+  onRefresh,
+  onUploadComplete,
+}: {
+  clients: Client[];
+  allImages: string[];
+  onRefresh: () => void;
+  onUploadComplete: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "completed" | "pending">("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editClient, setEditClient] = useState<Client | null>(null);
+  const [paymentClientId, setPaymentClientId] = useState<string | null>(null);
+  const [fittingClientId, setFittingClientId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [dressPickerInfo, setDressPickerInfo] = useState<{ clientId: string; dressId: string } | null>(null);
+
+  const totalCollected = clients.reduce((s, c) => s + clientPaid(c), 0);
+  const totalRemaining = clients.reduce((s, c) => s + clientRemaining(c), 0);
+
+  const statusCounts = {
+    active: clients.filter(c => c.status === "active").length,
+    pending: clients.filter(c => c.status === "pending").length,
+    completed: clients.filter(c => c.status === "completed").length,
+  };
+
+  const statusColor = (s: Client["status"]) =>
+    s === "active" ? "bg-green-100 text-green-700" :
+    s === "completed" ? "bg-blue-100 text-blue-700" :
+    "bg-amber-100 text-amber-700";
+
+  const filtered = clients.filter(c => {
+    const matchesStatus = filter === "all" || c.status === filter;
+    const q = search.replace(/\D/g, "");
+    const matchesSearch = !q || (c.phone ?? "").replace(/\D/g, "").includes(q);
+    return matchesStatus && matchesSearch;
+  });
+
+  const handleCreate = async (data: Partial<Client>) => {
+    const res = await fetch("/api/admin/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || "Failed to create client");
+      return;
+    }
+    onRefresh();
+    setFormOpen(false);
+  };
+
+  const handleUpdate = async (data: Partial<Client>) => {
+    if (!editClient) return;
+    const res = await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editClient.id, ...data }) });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || "Failed to update client");
+      return;
+    }
+    onRefresh();
+    setEditClient(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this client permanently?")) return;
+    setDeletingId(id);
+    await fetch("/api/admin/clients", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    onRefresh();
+    setDeletingId(null);
+    if (expandedId === id) setExpandedId(null);
+  };
+
+  const handleAddPayment = async (clientId: string, amount: number, date: string, note: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addPayment", amount, date, note }) });
+    onRefresh();
+    setPaymentClientId(null);
+  };
+
+  const handleDeletePayment = async (clientId: string, paymentId: string) => {
+    if (!window.confirm("Remove this payment?")) return;
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deletePayment", paymentId }) });
+    onRefresh();
+  };
+
+  const handleDateChange = async (clientId: string, field: "appointmentDate" | "nextAppointmentDate" | "fittingDate", value: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, [field]: value }) });
+    onRefresh();
+  };
+
+  const handleAddDress = async (clientId: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addDress", label: "" }) });
+    onRefresh();
+  };
+
+  const handleDeleteDress = async (clientId: string, dressId: string) => {
+    if (!window.confirm("Remove this dress and all its photos?")) return;
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deleteDress", dressId }) });
+    onRefresh();
+  };
+
+  const handleAddDressImages = async (clientId: string, dressId: string, images: string[]) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addDressImages", dressId, images }) });
+    onRefresh();
+    setDressPickerInfo(null);
+  };
+
+  const handleRemoveDressImage = async (clientId: string, dressId: string, imageUrl: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "removeDressImage", dressId, imageUrl }) });
+    fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: imageUrl }) }).catch(() => {});
+    onRefresh();
+  };
+
+  const handleUpdateDressLabel = async (clientId: string, dressId: string, label: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "updateDressLabel", dressId, label }) });
+    onRefresh();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+        <div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-display uppercase tracking-widest text-black">Clients</h3>
+            <span className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-full">{clients.length}</span>
+          </div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1 font-bold">
+            EGP {totalCollected.toLocaleString()} collected · EGP {totalRemaining.toLocaleString()} remaining
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onRefresh} className="text-[10px] font-black uppercase tracking-[2px] px-4 py-2.5 min-h-[44px] border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all rounded flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            Refresh
+          </button>
+          <button onClick={() => setFormOpen(true)} className="text-[10px] font-black uppercase tracking-[2px] px-5 py-2.5 min-h-[44px] bg-black text-white hover:bg-[#b3a384] transition-all rounded flex items-center gap-2">
+            + New Client
+          </button>
+        </div>
+      </div>
+
+      {/* Search by mobile */}
+      <div className="relative">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by mobile number..."
+          className="admin-input pl-11 text-base"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black text-lg font-bold transition-colors">✕</button>
+        )}
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-3">
+        {([["active", "Active"], ["pending", "Pending"], ["completed", "Completed"]] as const).map(([s, label]) => (
+          <div key={s} className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 text-center shadow-sm">
+            <p className="text-lg sm:text-2xl font-black text-black">{statusCounts[s]}</p>
+            <p className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 mt-0.5">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 flex-wrap border-b border-gray-100 pb-4">
+        {(["all", "active", "pending", "completed"] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} className={`min-h-[40px] px-4 py-2 text-[10px] tracking-[2px] uppercase font-black rounded-full transition-all ${filter === f ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-black"}`}>
+            {f === "all" ? `All (${clients.length})` : `${f} (${statusCounts[f]})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-[4px] font-bold">
+          {search ? `No client found with number "${search}"` : filter === "all" ? "No clients yet — add one above" : `No ${filter} clients`}
+        </div>
+      )}
+
+      {/* Client list */}
+      <div className="space-y-3">
+        {filtered.map(client => {
+          const paid = clientPaid(client);
+          const remaining = clientRemaining(client);
+          const pct = client.totalPrice > 0 ? Math.round((paid / client.totalPrice) * 100) : 0;
+          const isExpanded = expandedId === client.id;
+          const isDeleting = deletingId === client.id;
+
+          return (
+            <div key={client.id} className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${isExpanded ? "shadow-lg border-gray-200" : "shadow-sm border-gray-100 hover:shadow-md"}`}>
+              {/* Collapsed row — phone is primary */}
+              <button onClick={() => setExpandedId(isExpanded ? null : client.id)} className="w-full text-left px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4">
+                <span className={`mt-2 shrink-0 w-2 h-2 rounded-full ${client.status === "active" ? "bg-green-500" : client.status === "completed" ? "bg-blue-400" : "bg-amber-400"}`} />
+                <div className="flex-1 min-w-0">
+                  {/* Phone number — large and bold, the main identifier */}
+                  <p className="text-base font-black text-black tracking-wide mb-0.5">{client.phone || "—"}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-xs text-stone-500">{client.name}</span>
+                    <span className={`text-[9px] uppercase tracking-[2px] font-black px-2 py-0.5 rounded-full ${statusColor(client.status)}`}>{client.status}</span>
+                    {client.dressType && (
+                      <span className="text-[9px] uppercase tracking-[2px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-500">{client.dressType === "wedding" ? "Wedding" : "Evening"}</span>
+                    )}
+                    {client.branch && (
+                      <span className="text-[9px] uppercase tracking-[2px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">{client.branch === "cairo" ? "Cairo" : "Damietta"}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-stone-400">
+                    EGP {paid.toLocaleString()} paid · EGP {remaining.toLocaleString()} remaining
+                  </p>
+                  <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden w-full max-w-xs">
+                    <div className="h-full bg-[#b3a384] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  {client.nextAppointmentDate && (
+                    <p className="text-[10px] text-gray-400 mt-1.5 font-bold">Next: {new Date(client.nextAppointmentDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  )}
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`shrink-0 mt-1 text-gray-300 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
+              {/* Expanded */}
+              {isExpanded && (
+                <div className="px-4 sm:px-6 pb-6 space-y-6 border-t border-gray-100 pt-5">
+
+                  {/* Contact info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Mobile</p>
+                      <a href={`tel:${client.phone}`} className="text-base font-black text-stone-800 hover:text-[#b3a384] transition-colors">{client.phone}</a>
+                    </div>
+                    {client.email && (
+                      <div className="bg-gray-50 rounded-lg px-4 py-3">
+                        <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Email</p>
+                        <span className="text-sm text-stone-700 break-all">{client.email}</span>
+                      </div>
+                    )}
+                    {client.dressType && (
+                      <div className="bg-gray-50 rounded-lg px-4 py-3">
+                        <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Dress Type</p>
+                        <span className="text-sm font-bold text-stone-700">{client.dressType === "wedding" ? "Wedding Dress" : "Evening Dress"}</span>
+                      </div>
+                    )}
+                    {client.branch && (
+                      <div className="bg-gray-50 rounded-lg px-4 py-3">
+                        <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Branch</p>
+                        <span className="text-sm font-bold text-stone-700">{client.branch === "cairo" ? "Cairo" : "Damietta"}</span>
+                      </div>
+                    )}
+                    {client.eventDate && (
+                      <div className="bg-gray-50 rounded-lg px-4 py-3">
+                        <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Event Date</p>
+                        <span className="text-sm font-bold text-stone-700">{new Date(client.eventDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Client images */}
+                  {(client.clientImages ?? []).length > 0 && (
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 mb-3">Photos</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(client.clientImages ?? []).map((img, idx) => (
+                          <a key={idx} href={img} target="_blank" rel="noopener noreferrer">
+                            <img src={img} alt="" className="w-20 h-20 object-cover rounded-lg border border-gray-100 hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Financial summary */}
+                  <div className="bg-[#faf9f7] border border-[#e8dfd4] rounded-xl p-4">
+                    <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 mb-3">Financial Summary</p>
+                    <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 mb-0.5">Total</p>
+                        <p className="text-sm sm:text-base font-black text-black">EGP {client.totalPrice.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 mb-0.5">Paid</p>
+                        <p className="text-sm sm:text-base font-black text-green-600">EGP {paid.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 mb-0.5">Remaining</p>
+                        <p className="text-sm sm:text-base font-black text-amber-600">EGP {remaining.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-white rounded-full overflow-hidden border border-[#e8dfd4]">
+                      <div className="h-full bg-[#b3a384] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-bold mt-1.5 text-right">{pct}% paid</p>
+                  </div>
+
+                  {/* Payments */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400">Payment History</p>
+                      <button onClick={() => setPaymentClientId(client.id)} className="text-[10px] font-black uppercase tracking-[2px] text-[#b3a384] hover:text-black transition-colors">+ Add Payment</button>
+                    </div>
+                    {client.payments.length === 0 ? (
+                      <p className="text-xs text-gray-300 italic">No payments recorded yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {client.payments.map(p => (
+                          <div key={p.id} className="flex items-center gap-3 bg-white border border-gray-100 rounded-lg px-4 py-2.5">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-black text-green-600">+EGP {p.amount.toLocaleString()}</span>
+                              {p.note && <span className="text-[10px] text-gray-400 ml-2">· {p.note}</span>}
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-bold whitespace-nowrap">{new Date(p.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+                            <button onClick={() => handleDeletePayment(client.id, p.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black ml-1 shrink-0">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dresses */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400">Dresses</p>
+                      <button onClick={() => handleAddDress(client.id)} className="text-[10px] font-black uppercase tracking-[2px] text-[#b3a384] hover:text-black transition-colors">+ Add Dress</button>
+                    </div>
+                    {(client.dresses ?? []).length === 0 ? (
+                      <div className="py-8 text-center border-2 border-dashed border-gray-100 rounded-xl text-gray-300 text-xs uppercase tracking-[3px] font-bold">
+                        No dress added yet
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {(client.dresses ?? []).map((dress, dressIdx) => (
+                          <div key={dress.id} className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+                            <div className="flex items-center gap-3 mb-3">
+                              <span className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 shrink-0">Dress {dressIdx + 1}</span>
+                              <input
+                                type="text"
+                                value={dress.label}
+                                onChange={e => handleUpdateDressLabel(client.id, dress.id, e.target.value)}
+                                placeholder="Add a label (e.g. Wedding Dress)"
+                                className="flex-1 text-xs border-0 border-b border-gray-100 focus:border-[#b3a384] focus:outline-none bg-transparent py-1 text-stone-600 placeholder:text-gray-300 transition-colors"
+                              />
+                              <button onClick={() => handleDeleteDress(client.id, dress.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black shrink-0">✕</button>
+                            </div>
+                            {/* Dress images grid */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                              {dress.images.map((src) => (
+                                <div key={src} className="relative group aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-sm">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                  <button
+                                    onClick={() => handleRemoveDressImage(client.id, dress.id, src)}
+                                    className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full opacity-100 z-10 shadow"
+                                  >✕</button>
+                                </div>
+                              ))}
+                              {/* Add photos button as last grid item */}
+                              <button
+                                onClick={() => setDressPickerInfo({ clientId: client.id, dressId: dress.id })}
+                                className="aspect-[3/4] border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-1 text-gray-300 hover:border-[#b3a384] hover:text-[#b3a384] transition-colors"
+                              >
+                                <span className="text-xl">+</span>
+                                <span className="text-[9px] uppercase tracking-[1px] font-black">Photos</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Appointments */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400">Appointments</p>
+                      <button
+                        onClick={() => setFittingClientId(client.id)}
+                        className="text-[9px] uppercase tracking-[2px] font-black text-[#b3a384] hover:text-black transition-colors"
+                      >
+                        {client.fittingDate ? "✎ Fitting Appointment" : "+ Fitting Appointment"}
+                      </button>
+                    </div>
+                    {client.fittingDate && (
+                      <div className="mb-3 bg-rose-50 border border-rose-100 rounded-lg px-4 py-2.5 flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] uppercase tracking-[2px] font-black text-rose-400 mb-0.5">Fitting Appointment</p>
+                          <p className="text-sm font-bold text-rose-700">{new Date(client.fittingDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
+                        </div>
+                        <button onClick={() => handleDateChange(client.id, "fittingDate", "")} className="text-rose-300 hover:text-rose-600 text-lg font-bold transition-colors">✕</button>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 block mb-1">First Appointment</label>
+                        <input type="date" value={client.appointmentDate} onChange={e => handleDateChange(client.id, "appointmentDate", e.target.value)} className="admin-input text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 block mb-1">Next Appointment</label>
+                        <input type="date" value={client.nextAppointmentDate} onChange={e => handleDateChange(client.id, "nextAppointmentDate", e.target.value)} className="admin-input text-sm" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {client.notes && (
+                    <div className="bg-gray-50 rounded-lg px-4 py-3">
+                      <p className="text-[9px] uppercase tracking-[2px] font-black text-gray-400 mb-1">Notes</p>
+                      <p className="text-sm text-stone-600 leading-relaxed">{client.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {client.phone && (
+                      <a href={`https://wa.me/${client.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none min-h-[44px] bg-[#25D366] text-white px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-[#1ebe5d] transition-all text-center flex items-center justify-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+                        WhatsApp
+                      </a>
+                    )}
+                    <button onClick={() => setEditClient(client)} className="flex-1 sm:flex-none min-h-[44px] px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black border border-gray-200 hover:bg-gray-50 transition-all text-gray-500 flex items-center justify-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Edit Info
+                    </button>
+                    <button onClick={() => handleDelete(client.id)} disabled={isDeleting} className="min-h-[44px] px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      {isDeleting ? "..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modals */}
+      {formOpen && <ClientForm existingClients={clients} onSave={handleCreate} onClose={() => setFormOpen(false)} />}
+      {editClient && <ClientForm initial={editClient} existingClients={clients} onSave={handleUpdate} onClose={() => setEditClient(null)} />}
+      {paymentClientId && (
+        <AddPaymentModal
+          onSave={(amount, date, note) => handleAddPayment(paymentClientId, amount, date, note)}
+          onClose={() => setPaymentClientId(null)}
+        />
+      )}
+      {fittingClientId && (
+        <FittingModal
+          current={clients.find(c => c.id === fittingClientId)?.fittingDate ?? ""}
+          onSave={async (date) => { await handleDateChange(fittingClientId, "fittingDate", date); setFittingClientId(null); }}
+          onClose={() => setFittingClientId(null)}
+        />
+      )}
+      {dressPickerInfo && (
+        <ImagePicker
+          allImages={allImages}
+          multi={true}
+          onUploadComplete={onUploadComplete}
+          onSelect={(srcs) => handleAddDressImages(dressPickerInfo.clientId, dressPickerInfo.dressId, srcs)}
+          onClose={() => setDressPickerInfo(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Messages Panel ──────────────────────
 function MessagesPanel({
   messages,
   onRefresh,
   onDelete,
   onMarkRead,
+  onRegisterClient,
 }: {
   messages: any[];
   onRefresh: () => void;
   onDelete: (id: string) => void;
   onMarkRead: (id: string, read: boolean) => void;
+  onRegisterClient: (msg: any) => void;
 }) {
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -1172,6 +2001,13 @@ function MessagesPanel({
 
                   {/* Action buttons */}
                   <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      onClick={() => onRegisterClient(msg)}
+                      className="flex-1 sm:flex-none min-h-[44px] bg-black text-white px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all text-center flex items-center justify-center gap-2"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                      Register as Client
+                    </button>
                     {msg.phone && (
                       <a
                         href={`https://wa.me/${msg.phone.replace(/\D/g, "")}`}
@@ -1185,16 +2021,6 @@ function MessagesPanel({
                         WhatsApp
                       </a>
                     )}
-                    <a
-                      href={`mailto:${msg.email}`}
-                      className="flex-1 sm:flex-none min-h-[44px] bg-black text-white px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all text-center flex items-center justify-center gap-2"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect width="20" height="16" x="2" y="4" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                      </svg>
-                      Reply Email
-                    </a>
                     <button
                       onClick={() => handleToggleRead(msg.id, !!msg.read)}
                       className="flex-1 sm:flex-none min-h-[44px] px-5 py-2.5 rounded-lg text-[10px] uppercase tracking-[2px] font-black border border-gray-200 hover:bg-gray-50 transition-all text-gray-500 flex items-center justify-center gap-2"
@@ -1229,12 +2055,74 @@ function MessagesPanel({
   );
 }
 
+// ── Password Change Card ─────────────────
+function PasswordChangeCard() {
+  const router = useRouter();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (next !== confirm) { setMsg("New passwords do not match"); setStatus("error"); return; }
+    if (next.length < 4) { setMsg("Password must be at least 4 characters"); setStatus("error"); return; }
+    setStatus("saving");
+    const res = await fetch("/api/admin/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword: current, newPassword: next }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setMsg("Password updated — logging out now...");
+      setStatus("ok");
+      // Clear session so admin must re-login with new password
+      await fetch("/api/auth", { method: "DELETE" });
+      setTimeout(() => router.push("/admin"), 1500);
+    } else {
+      setStatus("error"); setMsg(data.error || "Failed to update password");
+    }
+  };
+
+  return (
+    <div>
+      <h3 className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-6 border-b pb-4">Admin Password</h3>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
+        <div>
+          <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Current Password</label>
+          <input type="password" value={current} onChange={e => setCurrent(e.target.value)} required className="admin-input" placeholder="Current password" />
+        </div>
+        <div>
+          <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">New Password</label>
+          <input type="password" value={next} onChange={e => setNext(e.target.value)} required className="admin-input" placeholder="New password" />
+        </div>
+        <div>
+          <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Confirm New Password</label>
+          <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required className="admin-input" placeholder="Repeat new password" />
+        </div>
+        <div className="md:col-span-3 flex items-center gap-4">
+          <button type="submit" disabled={status === "saving"} className="min-h-[44px] px-6 bg-black text-white text-[10px] uppercase tracking-[2px] font-black rounded hover:bg-[#b3a384] transition-all disabled:opacity-40">
+            {status === "saving" ? "Saving..." : "Update Password"}
+          </button>
+          {msg && (
+            <p className={`text-[11px] font-bold ${status === "ok" ? "text-green-600" : "text-red-500"}`}>{msg}</p>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<Section>("site");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [allImages, setAllImages] = useState<string[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [registerFromMsg, setRegisterFromMsg] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1255,6 +2143,12 @@ export default function AdminDashboard() {
         .then(data => setMessages(Array.isArray(data) ? data : []))
         .catch(err => console.error("Error fetching messages:", err));
 
+      // Fetch clients
+      fetch("/api/admin/clients")
+        .then(r => r.json())
+        .then(data => setClients(Array.isArray(data) ? data : []))
+        .catch(err => console.error("Error fetching clients:", err));
+
       // Populate server-signed thumbnail map
       if (imgs.thumbnails) {
         Object.entries(imgs.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
@@ -1268,6 +2162,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const refreshClients = useCallback(async () => {
+    const res = await fetch("/api/admin/clients");
+    const data = await res.json();
+    setClients(Array.isArray(data) ? data : []);
+  }, []);
 
   const refreshImages = async () => {
     const res = await fetch("/api/images?nocache=1");
@@ -1298,6 +2198,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/content", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),
       });
       if (res.ok) {
@@ -1316,7 +2217,7 @@ export default function AdminDashboard() {
   if (!content) return null;
 
   return (
-    <div className="flex min-h-screen bg-[#fcfaf9]">
+    <div className="flex min-h-screen bg-[#fcfaf9] overflow-x-hidden">
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
@@ -1385,6 +2286,7 @@ export default function AdminDashboard() {
                 "social",
                 "media",
                 "messages",
+                "clients",
               ] as Section[]
             ).map((s) => (
               <button
@@ -1393,7 +2295,7 @@ export default function AdminDashboard() {
                   setActiveSection(s);
                   setSidebarOpen(false);
                 }}
-                className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer ${
+                className={`w-full px-4 py-4 text-[10px] uppercase tracking-[2px] font-medium transition-all duration-300 rounded text-center cursor-pointer relative ${
                   activeSection === s
                     ? "bg-black text-white shadow-lg"
                     : "text-gray-500 hover:bg-gray-50 hover:text-black"
@@ -1409,7 +2311,14 @@ export default function AdminDashboard() {
                         ? "SOCIAL SETTINGS"
                         : s === "messages"
                           ? "MESSAGES"
-                          : s.toUpperCase()}
+                          : s === "clients"
+                            ? "CLIENTS"
+                            : s.toUpperCase()}
+                {s === "clients" && clients.length > 0 && activeSection !== "clients" && (
+                  <span className="absolute top-3 right-3 bg-[#b3a384] text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full">
+                    {clients.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -1437,7 +2346,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-3 pt-20 sm:p-4 sm:pt-24 md:p-8 lg:p-12 overflow-y-auto bg-[#fcfaf9]">
+      <main className="flex-1 min-w-0 p-3 pt-20 sm:p-4 sm:pt-24 md:p-8 lg:p-12 overflow-x-hidden bg-[#fcfaf9]">
         <div className="max-w-6xl mx-auto animate-in fade-in duration-700">
           <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b pb-8 border-gray-100">
             <div>
@@ -1451,7 +2360,11 @@ export default function AdminDashboard() {
                     ? "GLOBAL SETTINGS"
                     : activeSection === "social"
                       ? "SOCIAL SETTINGS"
-                      : activeSection.toUpperCase()}
+                      : activeSection === "media"
+                        ? "MEDIA LIBRARY"
+                        : activeSection === "clients"
+                          ? "CLIENTS"
+                          : activeSection.toUpperCase()}
               </h2>
             </div>
             <div className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-1 whitespace-nowrap bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
@@ -1551,6 +2464,10 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 md:p-12">
+                <PasswordChangeCard />
               </div>
             </div>
           )}
@@ -1889,21 +2806,52 @@ export default function AdminDashboard() {
 
           {/* MESSAGES SECTION */}
           {activeSection === "messages" && (
-            <MessagesPanel
-              messages={messages}
-              onRefresh={() =>
-                fetch("/api/admin/messages")
-                  .then((r) => r.json())
-                  .then((d) => setMessages(Array.isArray(d) ? d : []))
-              }
-              onDelete={async (id) => {
-                await fetch("/api/admin/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-                setMessages((prev: any[]) => prev.filter((m) => m.id !== id));
-              }}
-              onMarkRead={async (id, read) => {
-                await fetch("/api/admin/messages", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, read }) });
-                setMessages((prev: any[]) => prev.map((m) => m.id === id ? { ...m, read } : m));
-              }}
+            <>
+              <MessagesPanel
+                messages={messages}
+                onRefresh={() =>
+                  fetch("/api/admin/messages")
+                    .then((r) => r.json())
+                    .then((d) => setMessages(Array.isArray(d) ? d : []))
+                }
+                onDelete={async (id) => {
+                  await fetch("/api/admin/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                  setMessages((prev: any[]) => prev.filter((m) => m.id !== id));
+                }}
+                onMarkRead={async (id, read) => {
+                  await fetch("/api/admin/messages", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, read }) });
+                  setMessages((prev: any[]) => prev.map((m) => m.id === id ? { ...m, read } : m));
+                }}
+                onRegisterClient={(msg) => setRegisterFromMsg(msg)}
+              />
+              {registerFromMsg && (
+                <ClientForm
+                  existingClients={clients}
+                  initial={{ name: registerFromMsg.name, email: registerFromMsg.email, phone: registerFromMsg.phone, sourceMessageId: registerFromMsg.id }}
+                  onSave={async (data) => {
+                    const res = await fetch("/api/admin/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, sourceMessageId: registerFromMsg.id }) });
+                    if (!res.ok) {
+                      const err = await res.json();
+                      alert(err.error || "Failed to register client");
+                      return;
+                    }
+                    await refreshClients();
+                    setRegisterFromMsg(null);
+                    setActiveSection("clients");
+                  }}
+                  onClose={() => setRegisterFromMsg(null)}
+                />
+              )}
+            </>
+          )}
+
+          {/* CLIENTS SECTION */}
+          {activeSection === "clients" && (
+            <ClientsPanel
+              clients={clients}
+              allImages={allImages}
+              onRefresh={refreshClients}
+              onUploadComplete={refreshImages}
             />
           )}
         </div>

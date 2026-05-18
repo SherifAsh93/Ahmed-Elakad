@@ -21,9 +21,9 @@ export default function Navbar({ content }: { content: SiteContent }) {
 
   const navLinks = [
     { href: "/", label: "Home", isActive: pathname === "/" },
-    { href: "/about", label: "About Us", isActive: pathname === "/about" },
     { href: "/bridal", label: "Bridal", isActive: isBridalActive },
     { href: "/couture", label: "Couture", isActive: isCoutureActive },
+    { href: "/about", label: "About Us", isActive: pathname === "/about" },
     { href: "/contact", label: "Contact Us", isActive: pathname === "/contact" },
   ];
 

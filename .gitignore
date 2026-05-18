@@ -44,3 +44,5 @@ next-env.d.ts
 public/images/*
 !public/images/.gitkeep
 .env*.local
+src/data/content.json
+src/data/messages.json

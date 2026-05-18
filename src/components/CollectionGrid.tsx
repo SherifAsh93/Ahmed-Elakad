@@ -10,6 +10,15 @@ interface Collection {
   images: string[];
 }
 
+// Returns grid + optional centering wrapper classes based on collection count
+function adaptiveGrid(count: number): { grid: string; wrap: string } {
+  if (count === 1) return { grid: "grid-cols-1", wrap: "max-w-[340px] mx-auto" };
+  if (count === 2) return { grid: "grid-cols-2", wrap: "max-w-2xl mx-auto" };
+  if (count === 3) return { grid: "grid-cols-2 sm:grid-cols-3", wrap: "" };
+  if (count === 4) return { grid: "grid-cols-2 lg:grid-cols-4", wrap: "" };
+  return { grid: "grid-cols-2 lg:grid-cols-3", wrap: "" };
+}
+
 export default function CollectionGrid({
   collections,
 }: {
@@ -40,7 +49,7 @@ export default function CollectionGrid({
           <p className="font-display text-2xl sm:text-3xl uppercase tracking-[0.15em] text-[#b3a384] mb-3">
             Coming Soon
           </p>
-          <p className="text-[10px] tracking-[4px] text-gray-400 uppercase font-bold">
+          <p className="text-[10px] tracking-[4px] text-[#bbb] uppercase font-bold">
             Collection in progress
           </p>
         </div>
@@ -48,48 +57,48 @@ export default function CollectionGrid({
     );
   }
 
+  const { grid, wrap } = adaptiveGrid(filled.length);
+
   return (
     <>
-      {/* Collection cards grid — 2 col mobile, 2 tablet, 3 desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-14">
-        {filled.map((coll, idx) => {
-          const cover = optimizeImage(coll.images[0]);
-          const label = coll.name || `Design ${idx + 1}`;
-          return (
-            <button
-              key={coll.id}
-              onClick={() => setOpen(coll)}
-              className="group text-left focus:outline-none"
-            >
-              {/* Portrait image */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cover}
-                  alt={label}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                  loading="lazy"
-                />
-                {/* Subtle overlay on hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
+      <div className={wrap}>
+        <div className={`grid ${grid} gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-14`}>
+          {filled.map((coll, idx) => {
+            const cover = optimizeImage(coll.images[0]);
+            const label = coll.name || `Design ${idx + 1}`;
+            return (
+              <button
+                key={coll.id}
+                onClick={() => setOpen(coll)}
+                className="group text-left focus:outline-none"
+              >
+                {/* Portrait image */}
+                <div className="relative aspect-[3/4] overflow-hidden bg-[#f0ede8] mb-5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cover}
+                    alt={label}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
 
-                {/* Image count badge */}
-                {coll.images.length > 1 && (
-                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold tracking-[2px] px-2.5 py-1 rounded-full">
-                    {coll.images.length}
-                  </div>
+                  {coll.images.length > 1 && (
+                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold tracking-[2px] px-2.5 py-1 rounded-full">
+                      {coll.images.length}
+                    </div>
+                  )}
+                </div>
+
+                {coll.name && (
+                  <h2 className="font-display text-[11px] sm:text-sm md:text-base uppercase tracking-[0.1em] text-[#1a1a1a] text-center transition-colors group-hover:text-[#b3a384] leading-snug">
+                    {coll.name}
+                  </h2>
                 )}
-              </div>
-
-              {/* Design name */}
-              {coll.name && (
-                <h2 className="font-display text-[11px] sm:text-sm md:text-base uppercase tracking-[0.1em] text-[#1a1a1a] text-center transition-colors group-hover:text-[#b3a384] leading-snug">
-                  {coll.name}
-                </h2>
-              )}
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Full-screen gallery modal */}
@@ -98,7 +107,6 @@ export default function CollectionGrid({
           className="fixed inset-0 z-[300] bg-black/96 overflow-y-auto overscroll-contain"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(null); }}
         >
-          {/* Sticky header */}
           <div className="sticky top-0 z-10 flex items-center justify-between px-5 sm:px-8 py-4 bg-black/80 backdrop-blur-sm border-b border-white/10">
             <div>
               {open.name && (
@@ -117,7 +125,6 @@ export default function CollectionGrid({
             </button>
           </div>
 
-          {/* Gallery content */}
           <div className="px-3 sm:px-8 md:px-12 py-6 max-w-screen-xl mx-auto">
             <MasonryGallery images={open.images} />
           </div>

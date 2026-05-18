@@ -20,13 +20,33 @@
     margin: 0;
     padding: 0;
   }
+
+  button,
+  a,
+  label,
+  select,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+}
+
+html {
+  overflow-x: hidden;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--white);
+  background-color: #0d0d0d;
   color: var(--text-black);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 .font-serif {

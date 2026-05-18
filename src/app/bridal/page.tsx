@@ -1,4 +1,3 @@
-import { getContent } from "@/lib/content";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -10,17 +9,6 @@ export const metadata: Metadata = {
   description: "Exclusive bridal collections by Ahmed Elakad.",
 };
 
-const ALL_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016"];
-
 export default async function BridalPage() {
-  const content = await getContent();
-  const years = content.bridal?.years ?? {};
-
-  // Redirect to latest year with content, or default to 2026
-  const yearsWithContent = ALL_YEARS.filter((y) =>
-    y in years && (years[y].collections ?? []).some((c) => c.images.length > 0)
-  );
-
-  const target = yearsWithContent[0] ?? "2026";
-  redirect(`/bridal/${target}`);
+  redirect("/bridal/all");
 }

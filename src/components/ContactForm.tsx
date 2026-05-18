@@ -45,18 +45,17 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
+            className="w-full bg-white border border-[#e5e5e5] px-6 py-5 md:py-6 outline-none focus:border-[#b3a384] transition-all font-light text-[#333] placeholder:text-[#bbb] text-sm md:text-base"
           />
         </div>
         <div>
           <input
-            type="email"
-            placeholder="Email"
-            required
+            type="text"
+            placeholder="Email (optional)"
             disabled={status === "loading"}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
+            className="w-full bg-white border border-[#e5e5e5] px-6 py-5 md:py-6 outline-none focus:border-[#b3a384] transition-all font-light text-[#333] placeholder:text-[#bbb] text-sm md:text-base"
           />
         </div>
         <div>
@@ -66,7 +65,7 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm"
+            className="w-full bg-white border border-[#e5e5e5] px-6 py-5 md:py-6 outline-none focus:border-[#b3a384] transition-all font-light text-[#333] placeholder:text-[#bbb] text-sm md:text-base"
           />
         </div>
         <div>
@@ -77,7 +76,7 @@ export default function ContactForm() {
             disabled={status === "loading"}
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            className="w-full bg-white border-none px-6 py-5 md:py-6 outline-none focus:ring-1 focus:ring-[#b3a384]/20 transition-all font-light text-stone-700 placeholder:text-stone-300 text-sm md:text-base shadow-sm resize-none"
+            className="w-full bg-white border border-[#e5e5e5] px-6 py-5 md:py-6 outline-none focus:border-[#b3a384] transition-all font-light text-[#333] placeholder:text-[#bbb] text-sm md:text-base resize-none"
           ></textarea>
         </div>
       </div>
@@ -86,7 +85,7 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="w-full bg-black text-white py-5 md:py-6 px-8 flex items-center justify-center transition-all hover:bg-stone-900 active:scale-[0.99] disabled:bg-stone-400 shadow-md"
+          className="w-full bg-[#b3a384] text-[#0d0d0d] py-5 md:py-6 px-8 flex items-center justify-center transition-all hover:bg-[#c4b598] active:scale-[0.99] disabled:opacity-50"
         >
           {status === "loading" ? (
             <span className="text-[10px] uppercase tracking-[0.4em] font-bold">Processing...</span>
@@ -96,12 +95,12 @@ export default function ContactForm() {
         </button>
 
         {status === "success" && (
-          <p className="text-green-600 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6 animate-pulse">
+          <p className="text-[#b3a384] text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6 animate-pulse">
             ✓ Message Delivered
           </p>
         )}
         {status === "error" && (
-          <p className="text-red-500 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6">
+          <p className="text-red-400 text-center text-[10px] uppercase tracking-[0.3em] font-bold mt-4 md:mt-6">
             ⚠ Connection Failed
           </p>
         )}
