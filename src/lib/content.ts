@@ -23,6 +23,10 @@ export interface SiteContent {
     featuredImages?: string[];
     metaTitle?: string;
     metaDescription?: string;
+    cta1Text?: string;
+    cta1Href?: string;
+    cta2Text?: string;
+    cta2Href?: string;
   };
   about?: {
     title?: string;

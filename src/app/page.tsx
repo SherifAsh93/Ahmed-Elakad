@@ -27,16 +27,16 @@ export default async function HomePage() {
         <div className="absolute bottom-10 sm:bottom-16 inset-x-0 flex justify-center z-10 w-full px-6">
           <div className="hero-btn-wrap w-full max-w-sm sm:max-w-none sm:w-auto">
             <Link
-              href="/bridal"
+              href={home.cta1Href || "/bridal"}
               className="pill-btn pill-btn-beige"
             >
-              Find Your Dress
+              {home.cta1Text || "Find Your Dress"}
             </Link>
             <Link
-              href="/contact"
+              href={home.cta2Href || "/contact"}
               className="pill-btn pill-btn-white"
             >
-              Book an Appointment
+              {home.cta2Text || "Book an Appointment"}
             </Link>
           </div>
         </div>

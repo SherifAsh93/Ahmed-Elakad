@@ -2519,6 +2519,43 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
+                  Hero Buttons (Call to Action)
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold">Button 1 (Beige)</p>
+                    <input
+                      value={content.homepage?.cta1Text ?? ""}
+                      onChange={(e) => set("homepage.cta1Text", e.target.value)}
+                      className="admin-input cursor-text"
+                      placeholder="Find Your Dress"
+                    />
+                    <input
+                      value={content.homepage?.cta1Href ?? ""}
+                      onChange={(e) => set("homepage.cta1Href", e.target.value)}
+                      className="admin-input cursor-text"
+                      placeholder="/bridal"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold">Button 2 (White)</p>
+                    <input
+                      value={content.homepage?.cta2Text ?? ""}
+                      onChange={(e) => set("homepage.cta2Text", e.target.value)}
+                      className="admin-input cursor-text"
+                      placeholder="Book an Appointment"
+                    />
+                    <input
+                      value={content.homepage?.cta2Href ?? ""}
+                      onChange={(e) => set("homepage.cta2Href", e.target.value)}
+                      className="admin-input cursor-text"
+                      placeholder="/contact"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <GalleryEditor
                   label="FEATURED COLLECTION PREVIEW"
                   images={content.homepage?.featuredImages ?? []}

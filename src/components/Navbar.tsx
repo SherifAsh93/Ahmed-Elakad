@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SiteContent } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
 
 export default function Navbar({ content }: { content: SiteContent }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const logoTaps = useRef(0);
+  const logoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleLogoClick(e: React.MouseEvent) {
+    logoTaps.current += 1;
+    if (logoTimer.current) clearTimeout(logoTimer.current);
+    if (logoTaps.current >= 3) {
+      e.preventDefault();
+      logoTaps.current = 0;
+      router.push("/admin");
+      return;
+    }
+    logoTimer.current = setTimeout(() => { logoTaps.current = 0; }, 600);
+  }
 
   useEffect(() => {
     setIsOpen(false);
@@ -33,7 +48,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
       <div className="relative z-[60] bg-white border-b border-gray-50 shadow-sm">
         <div className="flex justify-between items-center h-[100px] sm:h-[110px] md:h-[120px] px-6 sm:px-12 md:px-24 max-w-[1440px] mx-auto">
           {/* Logo */}
-          <Link href="/" className="flex items-center h-full py-2">
+          <Link href="/" onClick={handleLogoClick} className="flex items-center h-full py-2">
             <img
               src={optimizeImage(content.siteInfo?.logo ?? "")}
               alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}
