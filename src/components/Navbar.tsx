@@ -46,14 +46,17 @@ export default function Navbar({ content }: { content: SiteContent }) {
     <header className="w-full absolute top-0 left-0 z-50">
       {/* Top bar */}
       <div className="relative z-[60] bg-white border-b border-gray-50 shadow-sm">
-        <div className="flex justify-between items-center h-[72px] px-6 sm:px-10 md:px-20 max-w-[1440px] mx-auto">
+        <div className="flex justify-between items-center h-[90px] px-6 sm:px-10 md:px-20 max-w-[1440px] mx-auto">
           {/* Logo */}
-          <Link href="/" onClick={handleLogoClick} className="flex items-center h-full py-1">
-            <img
-              src={optimizeImage(content.siteInfo?.logo ?? "")}
-              alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}
-              className="h-[58px] w-auto object-contain block"
-            />
+          <Link href="/" onClick={handleLogoClick} className="flex items-center h-full">
+            {/* Clip whitespace: image rendered larger so the actual mark fills the container */}
+            <div className="h-[90px] w-[100px] overflow-hidden flex items-center justify-center">
+              <img
+                src={optimizeImage(content.siteInfo?.logo ?? "")}
+                alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}
+                className="h-[140px] w-auto object-contain block flex-shrink-0"
+              />
+            </div>
           </Link>
 
           {/* Desktop Nav */}
