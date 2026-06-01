@@ -46,23 +46,23 @@ export default function Navbar({ content }: { content: SiteContent }) {
     <header className="w-full absolute top-0 left-0 z-50">
       {/* Top bar */}
       <div className="relative z-[60] bg-white border-b border-gray-50 shadow-sm">
-        <div className="flex justify-between items-center h-[100px] sm:h-[110px] md:h-[120px] px-6 sm:px-12 md:px-24 max-w-[1440px] mx-auto">
+        <div className="flex justify-between items-center h-[72px] px-6 sm:px-10 md:px-20 max-w-[1440px] mx-auto">
           {/* Logo */}
-          <Link href="/" onClick={handleLogoClick} className="flex items-center h-full py-2">
+          <Link href="/" onClick={handleLogoClick} className="flex items-center h-full py-1">
             <img
               src={optimizeImage(content.siteInfo?.logo ?? "")}
               alt={content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}
-              className="h-[84px] sm:h-[94px] md:h-[104px] w-auto object-contain block"
+              className="h-[58px] w-auto object-contain block"
             />
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex flex-1 justify-center items-center gap-x-10">
+          <nav className="hidden md:flex flex-1 justify-center items-center gap-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[11px] tracking-[3px] uppercase transition-colors ${
+                className={`text-[12px] tracking-[2px] uppercase transition-colors ${
                   link.isActive ? "text-[#b3a384] font-medium" : "text-[#1a1a1a] hover:text-[#b3a384]"
                 }`}
               >
@@ -107,7 +107,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
               key={link.href}
               href={link.href}
               onClick={() => setIsOpen(false)}
-              className={`block w-full px-6 py-4 text-[15px] tracking-[3px] uppercase transition-colors ${
+              className={`block w-full px-6 py-4 text-[13px] tracking-[2px] uppercase transition-colors ${
                 link.isActive ? "text-[#b3a384] font-medium" : "text-[#1a1a1a] hover:text-[#b3a384]"
               }`}
             >
