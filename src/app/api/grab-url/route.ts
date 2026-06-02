@@ -1,13 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+const IMAGES_DIR = "/home/sherif/data/ahmed-elakad/images";
+const PUBLIC_BASE = "https://ahmedelakad.com/media";
+
+async function auth() {
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session");
-  if (!session || session.value !== "authenticated") {
+  return session?.value === "authenticated";
+}
+
+function saveToLocal(buffer: Buffer, ext: string): string {
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  fs.writeFileSync(path.join(IMAGES_DIR, filename), buffer);
+  return `${PUBLIC_BASE}/${filename}`;
+}
+
+const FETCH_HEADERS: Record<string, string> = {
+  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Referer": "https://www.instagram.com/",
+};
+
+export async function POST(req: NextRequest) {
+  if (!(await auth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -16,21 +38,19 @@ export async function POST(req: NextRequest) {
 
   const cleanUrl = url.trim();
 
-  // Already our Cloudinary URL — return as-is
+  // Already our own local media URL — use directly
+  if (cleanUrl.startsWith(PUBLIC_BASE)) {
+    return NextResponse.json({ cloudinaryUrl: cleanUrl, alreadySynced: true });
+  }
+
+  // Already a Cloudinary URL from old uploads — use directly
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   if (cloudName && cleanUrl.includes(`res.cloudinary.com/${cloudName}/`)) {
     return NextResponse.json({ cloudinaryUrl: cleanUrl, alreadySynced: true });
   }
 
-  const fetchHeaders: Record<string, string> = {
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://www.instagram.com/",
-  };
-
   try {
-    const response = await fetch(cleanUrl, { headers: fetchHeaders, redirect: "follow" });
+    const response = await fetch(cleanUrl, { headers: FETCH_HEADERS, redirect: "follow" });
 
     if (!response.ok) {
       return NextResponse.json(
@@ -41,12 +61,16 @@ export async function POST(req: NextRequest) {
 
     const contentType = response.headers.get("content-type") || "";
     let imageBuffer: Buffer | null = null;
+    let ext = "jpg";
 
     if (contentType.startsWith("image/")) {
       imageBuffer = Buffer.from(await response.arrayBuffer());
+      if (contentType.includes("png")) ext = "png";
+      else if (contentType.includes("webp")) ext = "webp";
+      else if (contentType.includes("gif")) ext = "gif";
     } else if (contentType.includes("text/html")) {
       const html = await response.text();
-      // Try og:image (works for Instagram, Facebook, most social pages)
+      // Extract og:image from the page (works for Instagram, Facebook, most social posts)
       const ogMatch =
         html.match(/property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
         html.match(/content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
@@ -58,10 +82,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const imgRes = await fetch(ogMatch[1], { redirect: "follow" });
+      const imgRes = await fetch(ogMatch[1], { headers: FETCH_HEADERS, redirect: "follow" });
       if (!imgRes.ok) {
-        return NextResponse.json({ error: "Found og:image but could not download it." }, { status: 422 });
+        return NextResponse.json({ error: "Found image on page but could not download it." }, { status: 422 });
       }
+      const ct = imgRes.headers.get("content-type") || "";
+      if (ct.includes("png")) ext = "png";
+      else if (ct.includes("webp")) ext = "webp";
       imageBuffer = Buffer.from(await imgRes.arrayBuffer());
     } else {
       return NextResponse.json(
@@ -70,19 +97,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: CLOUDINARY_FOLDER, resource_type: "image" },
-          (error, result) => {
-            if (error || !result) return reject(error ?? new Error("No result"));
-            resolve(result);
-          }
-        )
-        .end(imageBuffer!);
-    });
-
-    return NextResponse.json({ cloudinaryUrl: result.secure_url });
+    const localUrl = saveToLocal(imageBuffer, ext);
+    return NextResponse.json({ cloudinaryUrl: localUrl });
   } catch (err) {
     console.error("grab-url error:", err);
     return NextResponse.json(

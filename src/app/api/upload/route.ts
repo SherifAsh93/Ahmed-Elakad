@@ -1,7 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
+import { cookies } from "next/headers";
+import fs from "fs";
+import path from "path";
+
+const IMAGES_DIR = "/home/sherif/data/ahmed-elakad/images";
+const PUBLIC_BASE = "https://ahmedelakad.com/media";
+
+// Keep this export so images/route.ts can import it for excluded URL tracking
+export const excludedUrls = new Set<string>();
+
+async function auth() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("admin_session");
+  return session?.value === "authenticated";
+}
+
+function saveToLocal(buffer: Buffer, originalName: string): string {
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  const ext = (originalName.split(".").pop()?.toLowerCase() || "jpg")
+    .replace("jpeg", "jpg");
+  const allowed = ["jpg", "png", "webp", "gif"];
+  const finalExt = allowed.includes(ext) ? ext : "jpg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${finalExt}`;
+  fs.writeFileSync(path.join(IMAGES_DIR, filename), buffer);
+  return `${PUBLIC_BASE}/${filename}`;
+}
 
 export async function POST(req: NextRequest) {
+  if (!(await auth())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
@@ -10,47 +39,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    // Verify Cloudinary is configured
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      return NextResponse.json(
-        { error: "Cloudinary configuration is incomplete." },
-        { status: 500 }
-      );
-    }
-
     const uploaded: string[] = [];
 
     for (const file of files) {
-      const timestamp = Date.now();
-      const cleanName = file.name
-        .replace(/\.[^/.]+$/, "") // remove extension
-        .replace(/[^a-zA-Z0-9\-_]/g, "_");
-      
       const buffer = Buffer.from(await file.arrayBuffer());
-
-      // Upload to Cloudinary via stream
-      const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: CLOUDINARY_FOLDER,
-            public_id: `${timestamp}-${cleanName}`,
-            resource_type: "image",
-            overwrite: true,
-          },
-          (error, result) => {
-            if (error || !result) return reject(error ?? new Error("No result"));
-            resolve(result);
-          }
-        );
-        stream.end(buffer);
-      });
-
-      uploaded.push(result.secure_url);
+      const url = saveToLocal(buffer, file.name);
+      uploaded.push(url);
     }
 
     return NextResponse.json({ ok: true, uploaded });
   } catch (err) {
-    console.error("Cloudinary Upload failure:", err);
+    console.error("Upload failure:", err);
     return NextResponse.json(
       { error: `Upload Error: ${err instanceof Error ? err.message : "Unknown"}` },
       { status: 500 }
@@ -58,34 +57,38 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Server-side excluded list so images API hides deleted assets immediately
-// (Cloudinary search index lags up to a few minutes after destroy)
-export const excludedUrls = new Set<string>();
-
 export async function DELETE(req: NextRequest) {
+  if (!(await auth())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { url } = await req.json();
     if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
 
-    // Extract public_id: take everything after /upload/, strip optional version (v123/), strip extension
+    if (url.startsWith(PUBLIC_BASE)) {
+      const filename = url.replace(`${PUBLIC_BASE}/`, "");
+      const filepath = path.join(IMAGES_DIR, filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+      excludedUrls.add(url);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Legacy Cloudinary delete
+    const cloudinary = (await import("@/lib/cloudinary")).default;
     const uploadIdx = url.indexOf("/upload/");
     if (uploadIdx === -1) return NextResponse.json({ error: "invalid url" }, { status: 400 });
-
-    let publicId = url.slice(uploadIdx + 8);
-    publicId = publicId.replace(/^v\d+\//, "");
-    publicId = publicId.replace(/\.[^/.]+$/, "");
-
-    console.log("Deleting Cloudinary publicId:", publicId);
+    let publicId = url.slice(uploadIdx + 8).replace(/^v\d+\//, "").replace(/\.[^/.]+$/, "");
     const result = await cloudinary.uploader.destroy(publicId);
-    console.log("Cloudinary destroy result:", result);
-
     if (result.result === "ok" || result.result === "not found") {
       excludedUrls.add(url);
       return NextResponse.json({ ok: true, result: result.result });
     }
     return NextResponse.json({ error: `Cloudinary returned: ${result.result}` }, { status: 500 });
   } catch (err) {
-    console.error("Cloudinary Delete failure:", err);
+    console.error("Delete failure:", err);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }

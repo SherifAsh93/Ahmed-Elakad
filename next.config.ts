@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "ahmedelakad.com",
+        pathname: "/media/**",
+      },
     ],
     unoptimized: false,
   },

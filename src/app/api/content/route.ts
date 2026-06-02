@@ -4,13 +4,24 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
+function refreshSession(res: NextResponse) {
+  res.cookies.set("admin_session", "authenticated", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_MAX_AGE,
+    path: "/",
+  });
+}
+
 export async function GET() {
   const content = await getContent();
   return NextResponse.json(content);
 }
 
 export async function POST(req: NextRequest) {
-  // Auth check
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session");
   if (!session || session.value !== "authenticated") {
@@ -20,8 +31,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     await saveContent(body);
-    return NextResponse.json({ ok: true });
-  } catch (err: any) {
+    const res = NextResponse.json({ ok: true });
+    refreshSession(res);
+    return res;
+  } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 }

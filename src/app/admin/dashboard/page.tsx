@@ -2227,11 +2227,15 @@ export default function AdminDashboard() {
       if (res.ok) {
         setHasChanges(false);
         alert("CHANGES SAVED SUCCESSFULLY!");
+      } else if (res.status === 401) {
+        alert("SESSION EXPIRED — Please log in again.\n\nClick OK, then refresh the page and log in.");
+        window.location.href = "/admin";
       } else {
-        alert("FAILED TO SAVE CHANGES.");
+        const data = await res.json().catch(() => ({}));
+        alert("FAILED TO SAVE CHANGES.\n" + (data.error || "Please try again."));
       }
     } catch {
-      alert("ERROR SAVING CHANGES.");
+      alert("ERROR SAVING CHANGES — Check your internet connection and try again.");
     } finally {
       setSaving(false);
     }
