@@ -82,7 +82,10 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const imgRes = await fetch(ogMatch[1], { headers: FETCH_HEADERS, redirect: "follow" });
+      // Decode HTML entities (&amp; → &) in the extracted URL
+      const ogImageUrl = ogMatch[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
+
+      const imgRes = await fetch(ogImageUrl, { headers: FETCH_HEADERS, redirect: "follow" });
       if (!imgRes.ok) {
         return NextResponse.json({ error: "Found image on page but could not download it." }, { status: 422 });
       }
