@@ -1708,31 +1708,28 @@ function ClientsPanel({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
-        <div>
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-display uppercase tracking-widest text-black">Clients</h3>
-            <span className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-full">{clients.length}</span>
-          </div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-[2px] mt-1 font-bold">
-            EGP {totalCollected.toLocaleString()} collected · EGP {totalRemaining.toLocaleString()} remaining
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Toolbar — section title lives in the admin header above, no repeat here */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[10px] uppercase tracking-[2px] font-bold text-gray-400">
+          <span className="text-green-600 font-black">EGP {totalCollected.toLocaleString()}</span>
+          <span className="mx-1.5 text-gray-300">·</span>
+          <span className="text-amber-500 font-black">EGP {totalRemaining.toLocaleString()}</span>
+          <span className="ml-0.5 text-gray-400"> remaining</span>
+        </p>
         <div className="flex gap-2">
           <button onClick={onRefresh} className="text-[10px] font-black uppercase tracking-[2px] px-4 py-2.5 min-h-[44px] border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all rounded flex items-center gap-2">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
             Refresh
           </button>
-          <button onClick={() => setFormOpen(true)} className="text-[10px] font-black uppercase tracking-[2px] px-5 py-2.5 min-h-[44px] bg-black text-white hover:bg-[#b3a384] transition-all rounded flex items-center gap-2">
+          <button onClick={() => setFormOpen(true)} className="hidden sm:flex text-[10px] font-black uppercase tracking-[2px] px-5 py-2.5 min-h-[44px] bg-black text-white hover:bg-[#b3a384] transition-all rounded items-center gap-2">
             + New Client
           </button>
         </div>
       </div>
 
-      {/* Search + Month filter */}
-      <div className="flex gap-3">
+      {/* Search + Month filter — stacked on mobile, row on sm+ */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
@@ -1750,7 +1747,7 @@ function ClientsPanel({
         <select
           value={monthFilter}
           onChange={e => setMonthFilter(e.target.value)}
-          className="admin-input w-44 shrink-0 text-[11px] uppercase tracking-[1px] font-black"
+          className="w-full sm:w-44 min-h-[44px] px-3 py-2 border border-gray-200 rounded text-[11px] uppercase tracking-[1px] font-black focus:border-[#b3a384] focus:outline-none bg-white"
         >
           <option value="">All months</option>
           {monthOptions.map(({ key, label }) => (
@@ -1759,20 +1756,32 @@ function ClientsPanel({
         </select>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        {([["active", "Active"], ["pending", "Pending"], ["completed", "Completed"]] as const).map(([s, label]) => (
-          <div key={s} className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 text-center shadow-sm">
-            <p className="text-lg sm:text-2xl font-black text-black">{statusCounts[s]}</p>
-            <p className="text-[9px] uppercase tracking-[2px] font-bold text-gray-400 mt-0.5">{label}</p>
-          </div>
-        ))}
+      {/* Stats row — tap a card to toggle filter by that status */}
+      <div className="grid grid-cols-3 gap-2">
+        {(["active", "pending", "completed"] as const).map(s => {
+          const isFiltered = filter === s;
+          const cfg = {
+            active:    { label: "Active",    color: "text-green-600", bg: "bg-green-50 border-green-200" },
+            pending:   { label: "Pending",   color: "text-amber-500", bg: "bg-amber-50 border-amber-200" },
+            completed: { label: "Completed", color: "text-blue-500",  bg: "bg-blue-50 border-blue-200"  },
+          }[s];
+          return (
+            <button
+              key={s}
+              onClick={() => setFilter(isFiltered ? "all" : s)}
+              className={`rounded-xl p-3 sm:p-4 text-center border transition-all active:scale-95 ${isFiltered ? `${cfg.bg} shadow-md` : "bg-white border-gray-100 shadow-sm hover:border-gray-200"}`}
+            >
+              <p className={`text-xl sm:text-2xl font-black ${cfg.color}`}>{statusCounts[s]}</p>
+              <p className={`text-[9px] uppercase tracking-[2px] font-bold mt-0.5 ${isFiltered ? cfg.color : "text-gray-400"}`}>{cfg.label}</p>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap border-b border-gray-100 pb-4">
+      {/* Filter tabs — shrink-0 prevents compression, overflow-x-auto ensures scrollability on tiny screens */}
+      <div className="flex gap-2 overflow-x-auto border-b border-gray-100 pb-3">
         {(["all", "active", "pending", "completed"] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`min-h-[40px] px-4 py-2 text-[10px] tracking-[2px] uppercase font-black rounded-full transition-all ${filter === f ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-black"}`}>
+          <button key={f} onClick={() => setFilter(f)} className={`shrink-0 min-h-[40px] px-4 py-2 text-[10px] tracking-[2px] uppercase font-black rounded-full transition-all active:scale-95 ${filter === f ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-black"}`}>
             {f === "all" ? `All (${clients.length})` : `${f} (${statusCounts[f]})`}
           </button>
         ))}
@@ -1797,7 +1806,7 @@ function ClientsPanel({
           return (
             <div key={client.id} className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${isExpanded ? "shadow-lg border-gray-200" : "shadow-sm border-gray-100 hover:shadow-md"}`}>
               {/* Collapsed row — phone is primary */}
-              <button onClick={() => setExpandedId(isExpanded ? null : client.id)} className="w-full text-left px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4">
+              <button onClick={() => setExpandedId(isExpanded ? null : client.id)} className="w-full text-left px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4 active:bg-gray-50 transition-colors">
                 <span className={`mt-2 shrink-0 w-2 h-2 rounded-full ${client.status === "active" ? "bg-green-500" : client.status === "completed" ? "bg-blue-400" : "bg-amber-400"}`} />
                 <div className="flex-1 min-w-0">
                   {/* Phone number — large and bold, the main identifier */}
@@ -2084,6 +2093,17 @@ function ClientsPanel({
           onSelect={(srcs) => handleAddDressImages(dressPickerInfo.clientId, dressPickerInfo.dressId, srcs)}
           onClose={() => setDressPickerInfo(null)}
         />
+      )}
+
+      {/* Mobile FAB: New Client — bottom-left so it doesn't clash with the Save button (bottom-right) */}
+      {!formOpen && !editClient && !paymentClientId && !fittingClientId && !dressPickerInfo && (
+        <button
+          onClick={() => setFormOpen(true)}
+          className="fixed bottom-6 left-6 z-[40] sm:hidden bg-black text-white px-5 py-3.5 rounded-full shadow-2xl active:scale-95 transition-all font-black text-[11px] tracking-[2px] uppercase flex items-center gap-2 border-2 border-white/10"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
       )}
     </div>
   );
@@ -2615,26 +2635,31 @@ export default function AdminDashboard() {
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-3 pt-20 sm:p-4 sm:pt-24 md:p-8 lg:p-12 overflow-x-hidden bg-[#fcfaf9]">
         <div className="max-w-6xl mx-auto animate-in fade-in duration-700">
-          <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b pb-8 border-gray-100">
+          <header className="mb-5 sm:mb-10 flex items-start sm:items-end justify-between gap-3 border-b pb-4 sm:pb-7 border-gray-100">
             <div>
-              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-2 opacity-80">
+              <p className="hidden sm:block text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-2 opacity-80">
                 Management Module
               </p>
-              <h2 className="text-2xl md:text-3xl font-display uppercase tracking-widest text-black">
-                {activeSection === "about"
-                  ? "ABOUT US"
-                  : activeSection === "site"
-                    ? "GLOBAL SETTINGS"
-                    : activeSection === "social"
-                      ? "SOCIAL SETTINGS"
-                      : activeSection === "media"
-                        ? "MEDIA LIBRARY"
-                        : activeSection === "clients"
-                          ? "CLIENTS"
-                          : activeSection.toUpperCase()}
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-display uppercase tracking-widest text-black">
+                  {activeSection === "about"
+                    ? "ABOUT US"
+                    : activeSection === "site"
+                      ? "GLOBAL SETTINGS"
+                      : activeSection === "social"
+                        ? "SOCIAL SETTINGS"
+                        : activeSection === "media"
+                          ? "MEDIA LIBRARY"
+                          : activeSection === "clients"
+                            ? "CLIENTS"
+                            : activeSection.toUpperCase()}
+                </h2>
+                {activeSection === "clients" && clients.length > 0 && (
+                  <span className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-full">{clients.length}</span>
+                )}
+              </div>
             </div>
-            <div className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-1 whitespace-nowrap bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+            <div className="hidden sm:block text-[9px] tracking-[3px] uppercase text-gray-400 font-bold whitespace-nowrap bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
               System Status: <span className="text-green-600">Online</span>
             </div>
           </header>
