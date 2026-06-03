@@ -33,89 +33,82 @@ export default async function HomePage() {
           loading="eager"
           fetchPriority="high"
         />
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/45" />
 
-        {/* Hero content — left-aligned, lower third */}
-        <div className="absolute inset-0 flex flex-col justify-end pb-20 sm:pb-24 px-8 sm:px-14 md:px-20 max-w-[1440px] mx-auto left-0 right-0">
-          {/* Label with line */}
-          <div className="flex items-center gap-4 mb-5">
-            <span className="block w-10 h-[1px] bg-white/50" />
-            <span className="text-[9px] tracking-[4px] uppercase text-white/70 font-medium">
+        <div className="absolute inset-0 flex flex-col justify-end pb-16 sm:pb-24 px-6 sm:px-14 md:px-20 max-w-[1440px] mx-auto left-0 right-0">
+          <div className="flex items-center gap-4 mb-4 sm:mb-5">
+            <span className="block w-8 h-[1px] bg-white/50" />
+            <span className="text-[8px] tracking-[4px] uppercase text-white/70 font-medium">
               Bespoke Bridal Couture
             </span>
           </div>
-          {/* Main heading */}
-          <h1 className="font-serif text-[48px] sm:text-[62px] md:text-[76px] leading-[1.0] font-light text-white mb-4 max-w-[560px]">
+          <h1 className="font-serif text-[42px] sm:text-[62px] md:text-[76px] leading-[1.0] font-light text-white mb-3 sm:mb-4 max-w-[560px]">
             Crafting Bridal<br />Dreams
           </h1>
-          {/* Italic subtitle */}
-          <p className="font-serif italic text-[18px] sm:text-[22px] text-white/85 mb-6 leading-snug">
+          <p className="font-serif italic text-[16px] sm:text-[22px] text-white/85 mb-4 sm:mb-6 leading-snug">
             One Couture Creation at a Time
           </p>
-          {/* Description */}
-          <p className="text-[13px] text-white/65 leading-relaxed max-w-[340px] mb-10 font-light">
+          <p className="text-[12px] sm:text-[13px] text-white/65 leading-relaxed max-w-[320px] mb-8 sm:mb-10 font-light">
             Bespoke bridal couture designed and handcrafted in Cairo for brides who seek elegance, artistry, and timeless beauty.
           </p>
-          {/* CTA button */}
           <Link
             href="/contact"
-            className="inline-flex items-center gap-3 border border-white/50 text-white text-[9px] tracking-[3px] uppercase px-7 py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit"
+            className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] sm:text-[9px] tracking-[3px] uppercase px-6 sm:px-7 py-3 sm:py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit"
           >
             Book a Private Appointment
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
 
-        {/* Down arrow */}
-        <div className="absolute bottom-8 left-8 sm:left-14 md:left-20">
-          <svg width="16" height="24" viewBox="0 0 16 28" fill="none" stroke="white" strokeWidth="1" opacity="0.5">
-            <line x1="8" y1="0" x2="8" y2="26" />
-            <path d="M2 20 L8 26 L14 20" />
+        <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-14 md:left-20">
+          <svg width="14" height="22" viewBox="0 0 14 26" fill="none" stroke="white" strokeWidth="1" opacity="0.45">
+            <line x1="7" y1="0" x2="7" y2="24" />
+            <path d="M1 18 L7 24 L13 18" />
           </svg>
         </div>
       </section>
 
       {/* ── 2. The House of Ahmed Elakad ─────────────────────────── */}
-      <section className="bg-[#f9f7f4] py-20 md:py-28 px-6 sm:px-10 md:px-0">
-        <div className="max-w-[1440px] mx-auto md:grid md:grid-cols-[1fr_1.6fr] md:gap-0 md:items-start">
+      <section className="bg-[#f9f7f4] py-14 sm:py-20 md:py-28">
+        {/* Always 2 columns */}
+        <div className="grid grid-cols-[1fr_1.5fr]">
           {/* Text column */}
-          <div className="md:pl-20 lg:pl-28 md:pr-14 md:pt-8 mb-10 md:mb-0">
-            <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-4">
+          <div className="pl-5 sm:pl-12 md:pl-20 lg:pl-28 pr-5 sm:pr-8 md:pr-12 pt-4 sm:pt-8 pb-6 sm:pb-0 flex flex-col justify-center">
+            <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-2 sm:mb-4">
               The House of
             </p>
-            <h2 className="font-serif text-[38px] sm:text-[46px] leading-tight text-[#1a1a1a] font-light mb-6">
+            <h2 className="font-serif text-[22px] sm:text-[38px] md:text-[46px] leading-tight text-[#1a1a1a] font-light mb-3 sm:mb-6">
               Ahmed Elakad
             </h2>
-            <div className="w-8 h-[1px] bg-[#b3a384] mb-8" />
-            <div className="space-y-4 text-[13.5px] text-[#5a5a5a] leading-relaxed font-light max-w-[340px]">
+            <div className="w-6 sm:w-8 h-[1px] bg-[#b3a384] mb-4 sm:mb-8" />
+            <div className="space-y-3 text-[10px] sm:text-[13.5px] text-[#5a5a5a] leading-relaxed font-light">
               {bio.slice(0, 2).map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
               {bio.length === 0 && (
                 <>
                   <p>For over a decade, Ahmed Elakad Couture has been dedicated to creating bridal masterpieces that celebrate femininity, craftsmanship, and individuality.</p>
-                  <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings to ensure each bride experiences a dress made uniquely for her.</p>
+                  <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings.</p>
                 </>
               )}
             </div>
             <Link
               href="/about"
-              className="inline-flex items-center gap-3 mt-10 text-[9.5px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors"
+              className="inline-flex items-center gap-2 mt-6 sm:mt-10 text-[7px] sm:text-[9.5px] tracking-[2px] sm:tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors"
             >
               Discover Our Story
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
           {/* Image column */}
-          <div className="w-full aspect-[4/5] md:aspect-auto md:h-[580px] overflow-hidden">
+          <div className="h-[220px] sm:h-[480px] md:h-[580px] overflow-hidden">
             <img
               src={optimizeImage(aboutImage)}
-              alt="Ahmed Elakad Couture craftsmanship"
+              alt="Ahmed Elakad craftsmanship"
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -124,19 +117,18 @@ export default async function HomePage() {
       </section>
 
       {/* ── 3. Couture Collections ────────────────────────────────── */}
-      <section className="bg-[#f9f7f4] py-20 md:py-24 px-6 sm:px-10 md:px-20">
+      <section className="bg-[#f9f7f4] py-12 sm:py-20 md:py-24 px-4 sm:px-10 md:px-20">
         <div className="max-w-[1440px] mx-auto">
-          {/* Section header */}
-          <div className="text-center mb-12">
-            <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
               Couture Collections
             </p>
-            <h2 className="font-serif text-[36px] sm:text-[44px] font-light text-[#1a1a1a]">
+            <h2 className="font-serif text-[26px] sm:text-[38px] md:text-[44px] font-light text-[#1a1a1a]">
               Discover Our Collections
             </h2>
           </div>
-          {/* 3-column cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {/* Always 3 columns */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
               { img: bridalBanner, label: "Bridal Collection", href: "/bridal" },
               { img: coutureBanner, label: "Evening Couture", href: "/couture" },
@@ -145,7 +137,7 @@ export default async function HomePage() {
               <Link
                 key={card.label}
                 href={card.href}
-                className="relative block aspect-[3/4] overflow-hidden group"
+                className="relative block aspect-[2/3] sm:aspect-[3/4] overflow-hidden group"
               >
                 <img
                   src={optimizeImage(card.img)}
@@ -153,14 +145,14 @@ export default async function HomePage() {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-7">
-                  <p className="text-[10px] tracking-[3px] uppercase text-white font-medium mb-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-5 md:p-7">
+                  <p className="text-[6px] sm:text-[9px] md:text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-white font-medium mb-1 sm:mb-2 leading-tight">
                     {card.label}
                   </p>
-                  <span className="inline-flex items-center gap-2 text-[8.5px] tracking-[2.5px] uppercase text-white/70 group-hover:text-white transition-colors">
+                  <span className="hidden sm:inline-flex items-center gap-2 text-[7.5px] tracking-[2px] uppercase text-white/70 group-hover:text-white transition-colors">
                     Explore
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </span>
@@ -173,19 +165,17 @@ export default async function HomePage() {
 
       {/* ── 4. Real Brides ────────────────────────────────────────── */}
       {featuredImages.length > 0 && (
-        <section className="bg-[#f9f7f4] py-16 md:py-20">
-          <div className="max-w-[1440px] mx-auto px-6 sm:px-10 md:px-20">
-            {/* Section header */}
-            <div className="text-center mb-10">
-              <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-4">
+        <section className="bg-[#f9f7f4] py-12 sm:py-16 md:py-20">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
+            <div className="text-center mb-7 sm:mb-10">
+              <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
                 Real Brides
               </p>
-              <h2 className="font-serif text-[34px] sm:text-[42px] font-light text-[#1a1a1a]">
+              <h2 className="font-serif text-[24px] sm:text-[36px] md:text-[42px] font-light text-[#1a1a1a]">
                 Real Moments. Real Love.
               </h2>
             </div>
-            {/* Image row */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
               {featuredImages.map((img, i) => (
                 <div key={i} className="aspect-[2/3] overflow-hidden">
                   <img
@@ -197,14 +187,13 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-            {/* Link */}
-            <div className="text-center mt-8">
+            <div className="text-center mt-6 sm:mt-8">
               <Link
                 href="/bridal"
-                className="inline-flex items-center gap-3 text-[9.5px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/20 pb-1 hover:border-[#b3a384]"
+                className="inline-flex items-center gap-3 text-[8px] sm:text-[9.5px] tracking-[2px] sm:tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/20 pb-1 hover:border-[#b3a384]"
               >
                 View More Real Brides
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
@@ -214,35 +203,34 @@ export default async function HomePage() {
       )}
 
       {/* ── 5. Begin Your Bridal Journey ─────────────────────────── */}
-      <section className="relative bg-[#ede8df] overflow-hidden py-24 md:py-32">
-        {/* Decorative image — left side */}
-        <div className="absolute left-0 top-0 bottom-0 w-[220px] sm:w-[300px] md:w-[380px] opacity-25 pointer-events-none hidden sm:block">
+      <section className="relative bg-[#ede8df] overflow-hidden py-20 sm:py-28 md:py-32">
+        {/* Decorative image — left side (all screen sizes) */}
+        <div className="absolute left-0 top-0 bottom-0 w-[100px] sm:w-[260px] md:w-[380px] pointer-events-none">
           <img
             src={optimizeImage(ctaDecorImage)}
             alt=""
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-center opacity-30 sm:opacity-25"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#ede8df]" />
         </div>
-        {/* Content */}
         <div className="relative text-center px-6 max-w-lg mx-auto">
-          <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-4">
+          <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
             Begin Your
           </p>
-          <h2 className="font-serif text-[42px] sm:text-[52px] font-light text-[#1a1a1a] mb-6 leading-tight">
+          <h2 className="font-serif text-[34px] sm:text-[44px] md:text-[52px] font-light text-[#1a1a1a] mb-4 sm:mb-6 leading-tight">
             Bridal Journey
           </h2>
-          <div className="w-8 h-[1px] bg-[#b3a384] mx-auto mb-8" />
-          <p className="text-[13px] text-[#6a6a6a] leading-relaxed mb-10 font-light">
+          <div className="w-7 h-[1px] bg-[#b3a384] mx-auto mb-6 sm:mb-8" />
+          <p className="text-[12px] sm:text-[13px] text-[#6a6a6a] leading-relaxed mb-8 sm:mb-10 font-light">
             Private consultations are available by appointment only at our Cairo atelier.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[9px] tracking-[3px] uppercase px-10 py-4 hover:bg-[#b3a384] transition-colors duration-300"
+            className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] uppercase px-8 sm:px-10 py-3 sm:py-4 hover:bg-[#b3a384] transition-colors duration-300"
           >
             Reserve Your Consultation
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
