@@ -109,22 +109,22 @@ export default function Navbar({ content }: { content: SiteContent }) {
       <div className={`fixed inset-0 z-40 md:hidden flex flex-col transition-all duration-500 ${
         isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
-        style={{ backgroundColor: "#0d0d0d" }}
+        style={{ backgroundColor: "#f5f2ee" }}
       >
         {/* Close button area — same height as navbar */}
         <div className="h-[60px] sm:h-[68px] flex items-center px-5 sm:px-10">
           <Link href="/" onClick={handleLogoClick} className="flex flex-col leading-none gap-[3px]">
-            <span className="font-display text-[10px] tracking-[3px] uppercase text-white">
+            <span className="font-display text-[10px] tracking-[3px] uppercase text-[#1a1a1a]">
               {brand.toUpperCase()}
             </span>
-            <span className="text-[7px] tracking-[2.5px] uppercase text-white/45">
+            <span className="text-[7px] tracking-[2.5px] uppercase text-[#aaa]">
               Couture House
             </span>
           </Link>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-white/8 mx-5" />
+        <div className="h-px bg-[#e0dbd3] mx-5" />
 
         {/* Nav links — centered, vertical */}
         <nav className="flex-1 flex flex-col items-center justify-center gap-2 py-8">
@@ -133,16 +133,16 @@ export default function Navbar({ content }: { content: SiteContent }) {
               key={`mob-${l.href}-${l.label}`}
               href={l.href}
               onClick={() => setIsOpen(false)}
-              className="block py-3 text-[11px] tracking-[4px] uppercase text-white/60 hover:text-white transition-colors"
+              className="block py-3 text-[11px] tracking-[4px] uppercase text-[#777] hover:text-[#1a1a1a] transition-colors"
             >
               {l.label}
             </Link>
           ))}
-          <div className="h-px w-12 bg-white/15 my-4" />
+          <div className="h-px w-12 bg-[#e0dbd3] my-4" />
           <Link
             href="/contact"
             onClick={() => setIsOpen(false)}
-            className="px-10 py-3.5 border border-white/30 text-[9px] tracking-[3px] uppercase text-white hover:bg-white hover:text-black transition-all"
+            className="px-10 py-3.5 border border-[#b3a384] text-[9px] tracking-[3px] uppercase text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all"
           >
             Book Appointment
           </Link>
@@ -150,8 +150,8 @@ export default function Navbar({ content }: { content: SiteContent }) {
 
         {/* Bottom branding */}
         <div className="pb-10 text-center">
-          <p className="text-[8px] tracking-[3px] uppercase text-white/20">
-            © {new Date().getFullYear()} Ahmed Elakad Couture
+          <p className="text-[8px] tracking-[3px] uppercase text-[#bbb]">
+            © {new Date().getFullYear()} Ahmed Elakad Couture House
           </p>
         </div>
       </div>
