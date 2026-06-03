@@ -22,6 +22,7 @@ export default function Footer({ content }: { content: SiteContent }) {
     { href: "/about", label: "Atelier" },
     { href: "/bridal", label: "Brides" },
     { href: "/couture", label: "Experience" },
+    { href: "/about", label: "Journal" },
     { href: "/contact", label: "Contact" },
   ];
 

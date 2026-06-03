@@ -47,6 +47,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
     { href: "/about", label: "Atelier" },
     { href: "/bridal", label: "Brides" },
     { href: "/couture", label: "Experience" },
+    { href: "/about", label: "Journal" },
     { href: "/contact", label: "Contact" },
   ];
 
@@ -71,12 +72,12 @@ export default function Navbar({ content }: { content: SiteContent }) {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-x-8">
+        <nav className="hidden md:flex items-center gap-x-6 lg:gap-x-8">
           {navLinks.map((link) => (
             <Link
               key={`${link.href}-${link.label}`}
               href={link.href}
-              className="text-[9.5px] tracking-[2.5px] uppercase text-white/75 hover:text-white transition-colors duration-200 font-medium"
+              className="text-[8.5px] lg:text-[9.5px] tracking-[2px] lg:tracking-[2.5px] uppercase text-white/75 hover:text-white transition-colors duration-200 font-medium"
             >
               {link.label}
             </Link>
@@ -84,10 +85,10 @@ export default function Navbar({ content }: { content: SiteContent }) {
         </nav>
 
         {/* Book Appointment + Hamburger */}
-        <div className="flex items-center gap-4 min-w-[120px] justify-end">
+        <div className="flex items-center gap-3 min-w-[100px] justify-end">
           <Link
             href="/contact"
-            className="hidden md:inline-flex items-center px-5 py-2.5 text-[8.5px] tracking-[2px] uppercase border border-white/35 text-white hover:bg-white hover:text-black transition-all duration-300"
+            className="hidden md:inline-flex items-center px-4 lg:px-5 py-2.5 text-[7.5px] lg:text-[8.5px] tracking-[2px] uppercase border border-white/35 text-white hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
           >
             Book Appointment
           </Link>
