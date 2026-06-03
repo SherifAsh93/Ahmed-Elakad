@@ -1594,9 +1594,9 @@ function ClientsPanel({
     s === "completed" ? "bg-blue-100 text-blue-700" :
     "bg-amber-100 text-amber-700";
 
-  // Month dropdown shows all months ever (not affected by active filters)
+  // Month dropdown built from event dates (not registration dates)
   const monthOptions = Array.from(
-    new Set(clients.map(c => c.createdAt.slice(0, 7)))
+    new Set(clients.filter(c => c.eventDate).map(c => c.eventDate.slice(0, 7)))
   ).sort((a, b) => b.localeCompare(a)).map(key => ({
     key,
     label: new Date(key + "-15").toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
@@ -1606,7 +1606,7 @@ function ClientsPanel({
   const contextFiltered = clients.filter(c => {
     const q = search.replace(/\D/g, "");
     const matchesSearch = !q || (c.phone ?? "").replace(/\D/g, "").includes(q);
-    const matchesMonth = !monthFilter || c.createdAt.startsWith(monthFilter);
+    const matchesMonth = !monthFilter || (c.eventDate && c.eventDate.startsWith(monthFilter));
     return matchesSearch && matchesMonth;
   });
 
@@ -1752,7 +1752,7 @@ function ClientsPanel({
           onChange={e => setMonthFilter(e.target.value)}
           className="w-full sm:w-44 min-h-[44px] px-3 py-2 border border-gray-200 rounded text-[11px] uppercase tracking-[1px] font-black focus:border-[#b3a384] focus:outline-none bg-white"
         >
-          <option value="">All months</option>
+          <option value="">Event month</option>
           {monthOptions.map(({ key, label }) => (
             <option key={key} value={key}>{label}</option>
           ))}
