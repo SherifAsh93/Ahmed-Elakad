@@ -12,128 +12,145 @@ export default async function HomePage() {
   const bridal = content.bridal ?? {};
   const couture = content.couture ?? {};
 
-  // Hero
-  const heroImage = home.heroImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522163/1_21_iznofv.jpg";
-  const heroLabel = home.heroLabel || "Bespoke Bridal Couture";
-  const heroHeading = home.heroHeading || "Crafting Bridal Dreams";
-  const heroSubtitle = home.heroSubtitle || "One Couture Creation at a Time";
-  const heroDescription = home.heroDescription || "Bespoke bridal couture designed and handcrafted in Cairo for brides who seek elegance, artistry, and timeless beauty.";
-  const heroCTAText = home.heroCTAText || "Book a Private Appointment";
-  const heroCTAHref = home.heroCTAHref || "/contact";
+  /* ── Hero ──────────────────────────────────────────────────── */
+  const heroImage      = home.heroImage      || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522163/1_21_iznofv.jpg";
+  const heroLabel      = home.heroLabel      || "Bespoke Bridal Couture";
+  const heroHeading    = home.heroHeading    || "Crafting Bridal\nDreams";
+  const heroSubtitle   = home.heroSubtitle   || "One Couture Creation at a Time";
+  const heroDesc       = home.heroDescription || "Bespoke bridal couture designed and handcrafted in Cairo for brides who seek elegance, artistry, and timeless beauty.";
+  const heroCTAText    = home.heroCTAText    || "Book a Private Appointment";
+  const heroCTAHref    = home.heroCTAHref    || "/contact";
 
-  // House of Ahmed Elakad — text from About, image from About sideImage
-  const aboutImage = about.sideImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
-  const bio = about.bio ?? [];
+  /* ── The House of Ahmed Elakad ─────────────────────────────── */
+  const houseImage = about.sideImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
+  const bio        = about.bio ?? [];
 
-  // Collections
-  const bridalBanner = bridal.bannerImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
+  /* ── Collections ───────────────────────────────────────────── */
+  const bridalBanner  = bridal.bannerImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
   const coutureBanner = couture.bannerImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
-  const modestFallback = (bridal.gallery ?? [])[1] || bridalBanner;
+  const modest        = (bridal.gallery ?? [])[1] || bridalBanner;
 
-  const coll1Image = home.collection1Image || bridalBanner;
-  const coll1Label = home.collection1Label || "Bridal Collection";
-  const coll1Href  = home.collection1Href  || "/bridal";
-  const coll2Image = home.collection2Image || coutureBanner;
-  const coll2Label = home.collection2Label || "Evening Couture";
-  const coll2Href  = home.collection2Href  || "/couture";
-  const coll3Image = home.collection3Image || modestFallback;
-  const coll3Label = home.collection3Label || "Modest Bridal";
-  const coll3Href  = home.collection3Href  || "/bridal";
+  const c1img   = home.collection1Image || bridalBanner;
+  const c1label = home.collection1Label || "Bridal Collection";
+  const c1href  = home.collection1Href  || "/bridal";
+  const c2img   = home.collection2Image || coutureBanner;
+  const c2label = home.collection2Label || "Evening Couture";
+  const c2href  = home.collection2Href  || "/couture";
+  const c3img   = home.collection3Image || modest;
+  const c3label = home.collection3Label || "Modest Bridal";
+  const c3href  = home.collection3Href  || "/bridal";
 
-  // Real Brides
-  const featuredImages = (home.featuredImages ?? []).slice(0, 6);
+  /* ── Real Brides ───────────────────────────────────────────── */
+  const brides = (home.featuredImages ?? []).slice(0, 6);
 
-  // Bridal Journey CTA
-  const ctaDecorFallback = (home.featuredImages ?? [])[6] || aboutImage;
-  const ctaImage       = home.ctaImage       || ctaDecorFallback;
-  const ctaHeading     = home.ctaHeading     || "Bridal Journey";
-  const ctaDescription = home.ctaDescription || "Private consultations are available by appointment only at our Cairo atelier.";
-  const ctaBtnText     = home.ctaButtonText  || "Reserve Your Consultation";
-  const ctaBtnHref     = home.ctaButtonHref  || "/contact";
+  /* ── Bridal Journey CTA ────────────────────────────────────── */
+  const ctaImg  = home.ctaImage       || (home.featuredImages ?? [])[6] || houseImage;
+  const ctaHead = home.ctaHeading     || "Bridal Journey";
+  const ctaDesc = home.ctaDescription || "Private consultations are available by appointment only at our Cairo atelier.";
+  const ctaBtn  = home.ctaButtonText  || "Reserve Your Consultation";
+  const ctaHref = home.ctaButtonHref  || "/contact";
 
   return (
-    <main className="bg-[#f9f7f4]">
+    <main>
 
-      {/* ── 1. Hero ───────────────────────────────────────────────── */}
-      <section className="relative w-full h-screen min-h-[600px] overflow-hidden">
+      {/* ══════════════════════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════════════════════ */}
+      <section className="relative w-full h-screen min-h-[680px] overflow-hidden">
         <img
           src={optimizeImage(heroImage)}
           alt="Ahmed Elakad Couture"
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-black/45" />
-        <div className="absolute inset-0 flex flex-col justify-end pb-16 sm:pb-24 px-6 sm:px-14 md:px-20 max-w-[1440px] mx-auto left-0 right-0">
-          <div className="flex items-center gap-4 mb-4 sm:mb-5">
-            <span className="block w-8 h-[1px] bg-white/50" />
-            <span className="text-[8px] tracking-[4px] uppercase text-white/70 font-medium">
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/40" />
+
+        {/* Text — bottom-left */}
+        <div className="absolute bottom-0 left-0 right-0 pb-16 sm:pb-24 px-7 sm:px-14 md:px-20 max-w-[1440px] mx-auto">
+          {/* Label */}
+          <div className="flex items-center gap-3 mb-5">
+            <span className="block w-8 h-px bg-white/50 shrink-0" />
+            <span className="text-[9px] tracking-[4px] uppercase text-white/70 font-light">
               {heroLabel}
             </span>
           </div>
-          <h1 className="font-serif text-[42px] sm:text-[62px] md:text-[76px] leading-[1.0] font-light text-white mb-3 sm:mb-4 max-w-[560px] whitespace-pre-line">
+          {/* Heading */}
+          <h1 className="font-serif font-light leading-[0.95] text-white mb-4 text-[46px] sm:text-[64px] md:text-[76px] whitespace-pre-line max-w-xl">
             {heroHeading}
           </h1>
-          <p className="font-serif italic text-[16px] sm:text-[22px] text-white/85 mb-4 sm:mb-6 leading-snug">
+          {/* Italic subtitle */}
+          <p className="font-serif italic text-white/90 mb-5 text-[17px] sm:text-[22px] leading-snug">
             {heroSubtitle}
           </p>
-          <p className="text-[12px] sm:text-[13px] text-white/65 leading-relaxed max-w-[320px] mb-8 sm:mb-10 font-light">
-            {heroDescription}
+          {/* Description */}
+          <p className="text-[12.5px] text-white/65 leading-relaxed font-light mb-9 max-w-xs">
+            {heroDesc}
           </p>
+          {/* CTA */}
           <Link
             href={heroCTAHref}
-            className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] sm:text-[9px] tracking-[3px] uppercase px-6 sm:px-7 py-3 sm:py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit"
+            className="inline-flex items-center gap-3 border border-white/55 text-white text-[9px] tracking-[3px] uppercase px-7 py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit"
           >
             {heroCTAText}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
-        <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-14 md:left-20">
-          <svg width="14" height="22" viewBox="0 0 14 26" fill="none" stroke="white" strokeWidth="1" opacity="0.45">
-            <line x1="7" y1="0" x2="7" y2="24" />
-            <path d="M1 18 L7 24 L13 18" />
+
+        {/* Down arrow */}
+        <div className="absolute bottom-7 left-7 sm:left-14 md:left-20">
+          <svg width="13" height="22" viewBox="0 0 13 26" fill="none" stroke="white" strokeWidth="1" opacity="0.4">
+            <line x1="6.5" y1="0" x2="6.5" y2="24" />
+            <path d="M1 18 L6.5 24 L12 18" />
           </svg>
         </div>
       </section>
 
-      {/* ── 2. The House of Ahmed Elakad ─────────────────────────── */}
-      <section className="bg-[#f9f7f4] py-14 sm:py-20 md:py-28">
-        <div className="grid grid-cols-[1fr_1.5fr]">
-          <div className="pl-5 sm:pl-12 md:pl-20 lg:pl-28 pr-5 sm:pr-8 md:pr-12 pt-4 sm:pt-8 pb-6 sm:pb-0 flex flex-col justify-center">
-            <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-2 sm:mb-4">
+
+      {/* ══════════════════════════════════════════════════════════
+          THE HOUSE OF AHMED ELAKAD
+      ══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#f9f7f4]">
+        {/* Mobile: image first, text below — Desktop: side by side */}
+        <div className="flex flex-col md:grid md:grid-cols-[38%_62%]">
+
+          {/* Text column — shown BELOW image on mobile */}
+          <div className="order-2 md:order-1 flex flex-col justify-center px-7 sm:px-14 md:pl-20 lg:pl-28 md:pr-10 py-12 md:py-24">
+            <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-3">
               The House of
             </p>
-            <h2 className="font-serif text-[22px] sm:text-[38px] md:text-[46px] leading-tight text-[#1a1a1a] font-light mb-3 sm:mb-6">
+            <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-5 text-[34px] sm:text-[42px] md:text-[46px]">
               {content.siteInfo?.brandName ?? "Ahmed Elakad"}
             </h2>
-            <div className="w-6 sm:w-8 h-[1px] bg-[#b3a384] mb-4 sm:mb-8" />
-            <div className="space-y-3 text-[10px] sm:text-[13.5px] text-[#5a5a5a] leading-relaxed font-light">
-              {bio.slice(0, 2).map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+            <div className="w-8 h-px bg-[#b3a384] mb-7" />
+            <div className="space-y-4 text-[13px] text-[#5a5a5a] leading-[1.8] font-light max-w-sm">
+              {bio.slice(0, 2).map((p, i) => <p key={i}>{p}</p>)}
               {bio.length === 0 && (
                 <>
                   <p>For over a decade, Ahmed Elakad Couture has been dedicated to creating bridal masterpieces that celebrate femininity, craftsmanship, and individuality.</p>
-                  <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings.</p>
+                  <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings to ensure each bride experiences a dress made uniquely for her.</p>
                 </>
               )}
             </div>
             <Link
               href="/about"
-              className="inline-flex items-center gap-2 mt-6 sm:mt-10 text-[7px] sm:text-[9.5px] tracking-[2px] sm:tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors"
+              className="inline-flex items-center gap-3 mt-9 text-[9px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors font-medium"
             >
               Discover Our Story
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
-          <div className="h-[220px] sm:h-[480px] md:h-[580px] overflow-hidden">
+
+          {/* Image — shown FIRST on mobile */}
+          <div className="order-1 md:order-2 h-[280px] sm:h-[400px] md:h-[600px] overflow-hidden">
             <img
-              src={optimizeImage(aboutImage)}
-              alt="Ahmed Elakad craftsmanship"
+              src={optimizeImage(houseImage)}
+              alt="Craftsmanship at Ahmed Elakad"
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -141,27 +158,34 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── 3. Couture Collections ────────────────────────────────── */}
-      <section className="bg-[#f9f7f4] py-12 sm:py-20 md:py-24 px-4 sm:px-10 md:px-20">
+
+      {/* ══════════════════════════════════════════════════════════
+          COLLECTIONS
+      ══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#f9f7f4] py-14 sm:py-20 md:py-24 px-5 sm:px-10 md:px-20">
         <div className="max-w-[1440px] mx-auto">
+          {/* Header */}
           <div className="text-center mb-8 sm:mb-12">
-            <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
+            <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-3">
               Couture Collections
             </p>
-            <h2 className="font-serif text-[26px] sm:text-[38px] md:text-[44px] font-light text-[#1a1a1a]">
+            <h2 className="font-serif font-light text-[#1a1a1a] text-[30px] sm:text-[40px] md:text-[46px]">
               Discover Our Collections
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+
+          {/* Cards — 1 col on small mobile, 3 col on sm+ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
-              { img: coll1Image, label: coll1Label, href: coll1Href },
-              { img: coll2Image, label: coll2Label, href: coll2Href },
-              { img: coll3Image, label: coll3Label, href: coll3Href },
+              { img: c1img, label: c1label, href: c1href },
+              { img: c2img, label: c2label, href: c2href },
+              { img: c3img, label: c3label, href: c3href },
             ].map((card) => (
               <Link
                 key={card.label}
                 href={card.href}
-                className="relative block aspect-[2/3] sm:aspect-[3/4] overflow-hidden group"
+                className="relative block overflow-hidden group"
+                style={{ aspectRatio: "3/4" }}
               >
                 <img
                   src={optimizeImage(card.img)}
@@ -170,13 +194,13 @@ export default async function HomePage() {
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-5 md:p-7">
-                  <p className="text-[6px] sm:text-[9px] md:text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-white font-medium mb-1 sm:mb-2 leading-tight">
+                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+                  <p className="text-[10px] tracking-[3px] uppercase text-white font-medium mb-2">
                     {card.label}
                   </p>
-                  <span className="hidden sm:inline-flex items-center gap-2 text-[7.5px] tracking-[2px] uppercase text-white/70 group-hover:text-white transition-colors">
+                  <span className="inline-flex items-center gap-2 text-[8.5px] tracking-[2px] uppercase text-white/65 group-hover:text-white transition-colors">
                     Explore
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </span>
@@ -187,20 +211,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── 4. Real Brides ────────────────────────────────────────── */}
-      {featuredImages.length > 0 && (
-        <section className="bg-[#f9f7f4] py-12 sm:py-16 md:py-20">
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
-            <div className="text-center mb-7 sm:mb-10">
-              <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
+
+      {/* ══════════════════════════════════════════════════════════
+          REAL BRIDES
+      ══════════════════════════════════════════════════════════ */}
+      {brides.length > 0 && (
+        <section className="bg-[#f9f7f4] py-14 sm:py-20">
+          <div className="max-w-[1440px] mx-auto px-5 sm:px-10 md:px-20">
+            {/* Header */}
+            <div className="text-center mb-8 sm:mb-11">
+              <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-3">
                 Real Brides
               </p>
-              <h2 className="font-serif text-[24px] sm:text-[36px] md:text-[42px] font-light text-[#1a1a1a]">
+              <h2 className="font-serif font-light text-[#1a1a1a] text-[28px] sm:text-[38px] md:text-[44px]">
                 Real Moments. Real Love.
               </h2>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
-              {featuredImages.map((img, i) => (
+
+            {/* Grid — 3 col on mobile, 6 on desktop */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
+              {brides.map((img, i) => (
                 <div key={i} className="aspect-[2/3] overflow-hidden">
                   <img
                     src={optimizeImage(img)}
@@ -211,13 +241,15 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-            <div className="text-center mt-6 sm:mt-8">
+
+            {/* Link */}
+            <div className="text-center mt-8 sm:mt-10">
               <Link
                 href="/bridal"
-                className="inline-flex items-center gap-3 text-[8px] sm:text-[9.5px] tracking-[2px] sm:tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/20 pb-1 hover:border-[#b3a384]"
+                className="inline-flex items-center gap-3 text-[9px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/25 pb-1 hover:border-[#b3a384]"
               >
                 View More Real Brides
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
@@ -226,34 +258,40 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── 5. Begin Your Bridal Journey ─────────────────────────── */}
-      <section className="relative bg-[#ede8df] overflow-hidden py-20 sm:py-28 md:py-32">
-        <div className="absolute left-0 top-0 bottom-0 w-[100px] sm:w-[260px] md:w-[380px] pointer-events-none">
+
+      {/* ══════════════════════════════════════════════════════════
+          BRIDAL JOURNEY
+      ══════════════════════════════════════════════════════════ */}
+      <section className="relative bg-[#ece7de] overflow-hidden py-24 sm:py-32 md:py-40">
+        {/* Decorative side image */}
+        <div className="hidden sm:block absolute left-0 top-0 bottom-0 w-[200px] md:w-[340px] pointer-events-none select-none">
           <img
-            src={optimizeImage(ctaImage)}
+            src={optimizeImage(ctaImg)}
             alt=""
-            className="w-full h-full object-cover object-center opacity-30 sm:opacity-25"
+            className="w-full h-full object-cover opacity-30"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#ede8df]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#ece7de]" />
         </div>
-        <div className="relative text-center px-6 max-w-lg mx-auto">
-          <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-3 sm:mb-4">
+
+        {/* Content */}
+        <div className="relative z-10 text-center px-6 max-w-md mx-auto">
+          <p className="text-[9px] tracking-[4px] uppercase text-[#b3a384] font-medium mb-4">
             Begin Your
           </p>
-          <h2 className="font-serif text-[34px] sm:text-[44px] md:text-[52px] font-light text-[#1a1a1a] mb-4 sm:mb-6 leading-tight">
-            {ctaHeading}
+          <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-5 text-[40px] sm:text-[50px] md:text-[56px]">
+            {ctaHead}
           </h2>
-          <div className="w-7 h-[1px] bg-[#b3a384] mx-auto mb-6 sm:mb-8" />
-          <p className="text-[12px] sm:text-[13px] text-[#6a6a6a] leading-relaxed mb-8 sm:mb-10 font-light">
-            {ctaDescription}
+          <div className="w-8 h-px bg-[#b3a384] mx-auto mb-7" />
+          <p className="text-[13px] text-[#6a6a6a] leading-relaxed font-light mb-10">
+            {ctaDesc}
           </p>
           <Link
-            href={ctaBtnHref}
-            className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] uppercase px-8 sm:px-10 py-3 sm:py-4 hover:bg-[#b3a384] transition-colors duration-300"
+            href={ctaHref}
+            className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[9px] tracking-[3px] uppercase px-9 py-4 hover:bg-[#b3a384] transition-colors duration-300"
           >
-            {ctaBtnText}
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            {ctaBtn}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>

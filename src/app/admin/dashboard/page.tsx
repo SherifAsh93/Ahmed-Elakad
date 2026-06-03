@@ -2795,9 +2795,14 @@ export default function AdminDashboard() {
           {/* HOME SETTINGS */}
           {activeSection === "home" && (
             <div className="space-y-6 lg:space-y-12">
+              {/* Note about The House of Ahmed Elakad */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 bg-amber-50 border border-amber-100">
+                <p className="text-xs uppercase tracking-[3px] text-amber-700 font-bold mb-2">THE HOUSE OF AHMED ELAKAD</p>
+                <p className="text-sm text-amber-700/80">This section&apos;s text (bio) and image are managed under <strong>About Us</strong> in the sidebar.</p>
+              </div>
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  Home Page SEO
+                  SEO
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <input
@@ -2827,10 +2832,10 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              {/* Hero Text */}
+              {/* HERO */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  Hero Text
+                  HERO
                 </label>
                 <div className="space-y-4">
                   <div>
@@ -2896,7 +2901,7 @@ export default function AdminDashboard() {
               {/* Collections Section */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  Collections Section (3 Cards)
+                  COLLECTIONS
                 </label>
                 <div className="space-y-10">
                   {([
@@ -2937,7 +2942,7 @@ export default function AdminDashboard() {
               {/* Real Brides Gallery */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <GalleryEditor
-                  label="REAL BRIDES — GALLERY PHOTOS (first 6 shown)"
+                  label="REAL BRIDES"
                   images={content.homepage?.featuredImages ?? []}
                   allImages={allImages}
                   onUploadComplete={refreshImages}
@@ -2948,7 +2953,7 @@ export default function AdminDashboard() {
               {/* Bridal Journey CTA */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  Bridal Journey CTA Section
+                  BRIDAL JOURNEY
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-start">
                   <SingleImageEditor
