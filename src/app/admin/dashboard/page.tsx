@@ -1580,6 +1580,7 @@ function ClientsPanel({
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed" | "pending">("all");
+  const [monthFilter, setMonthFilter] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
@@ -1602,11 +1603,20 @@ function ClientsPanel({
     s === "completed" ? "bg-blue-100 text-blue-700" :
     "bg-amber-100 text-amber-700";
 
+  // Unique months from createdAt, newest first — "YYYY-MM" keys, "Month YYYY" labels
+  const monthOptions = Array.from(
+    new Set(clients.map(c => c.createdAt.slice(0, 7)))
+  ).sort((a, b) => b.localeCompare(a)).map(key => ({
+    key,
+    label: new Date(key + "-15").toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+  }));
+
   const filtered = clients.filter(c => {
     const matchesStatus = filter === "all" || c.status === filter;
     const q = search.replace(/\D/g, "");
     const matchesSearch = !q || (c.phone ?? "").replace(/\D/g, "").includes(q);
-    return matchesStatus && matchesSearch;
+    const matchesMonth = !monthFilter || c.createdAt.startsWith(monthFilter);
+    return matchesStatus && matchesSearch && matchesMonth;
   });
 
   const handleCreate = async (data: Partial<Client>) => {
@@ -1721,20 +1731,32 @@ function ClientsPanel({
         </div>
       </div>
 
-      {/* Search by mobile */}
-      <div className="relative">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input
-          type="tel"
-          inputMode="numeric"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by mobile number..."
-          className="admin-input pl-11 text-base"
-        />
-        {search && (
-          <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black text-lg font-bold transition-colors">✕</button>
-        )}
+      {/* Search + Month filter */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by mobile number..."
+            className="admin-input pl-11 text-base w-full"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black text-lg font-bold transition-colors">✕</button>
+          )}
+        </div>
+        <select
+          value={monthFilter}
+          onChange={e => setMonthFilter(e.target.value)}
+          className="admin-input w-44 shrink-0 text-[11px] uppercase tracking-[1px] font-black"
+        >
+          <option value="">All months</option>
+          {monthOptions.map(({ key, label }) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Stats row */}
