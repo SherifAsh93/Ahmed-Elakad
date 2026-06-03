@@ -1589,21 +1589,12 @@ function ClientsPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dressPickerInfo, setDressPickerInfo] = useState<{ clientId: string; dressId: string } | null>(null);
 
-  const totalCollected = clients.reduce((s, c) => s + clientPaid(c), 0);
-  const totalRemaining = clients.reduce((s, c) => s + clientRemaining(c), 0);
-
-  const statusCounts = {
-    active: clients.filter(c => c.status === "active").length,
-    pending: clients.filter(c => c.status === "pending").length,
-    completed: clients.filter(c => c.status === "completed").length,
-  };
-
   const statusColor = (s: Client["status"]) =>
     s === "active" ? "bg-green-100 text-green-700" :
     s === "completed" ? "bg-blue-100 text-blue-700" :
     "bg-amber-100 text-amber-700";
 
-  // Unique months from createdAt, newest first — "YYYY-MM" keys, "Month YYYY" labels
+  // Month dropdown shows all months ever (not affected by active filters)
   const monthOptions = Array.from(
     new Set(clients.map(c => c.createdAt.slice(0, 7)))
   ).sort((a, b) => b.localeCompare(a)).map(key => ({
@@ -1611,13 +1602,25 @@ function ClientsPanel({
     label: new Date(key + "-15").toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
   }));
 
-  const filtered = clients.filter(c => {
-    const matchesStatus = filter === "all" || c.status === filter;
+  // Context: month + search filter only — status tabs/counts/totals all reflect this
+  const contextFiltered = clients.filter(c => {
     const q = search.replace(/\D/g, "");
     const matchesSearch = !q || (c.phone ?? "").replace(/\D/g, "").includes(q);
     const matchesMonth = !monthFilter || c.createdAt.startsWith(monthFilter);
-    return matchesStatus && matchesSearch && matchesMonth;
+    return matchesSearch && matchesMonth;
   });
+
+  const statusCounts = {
+    active: contextFiltered.filter(c => c.status === "active").length,
+    pending: contextFiltered.filter(c => c.status === "pending").length,
+    completed: contextFiltered.filter(c => c.status === "completed").length,
+  };
+
+  const totalCollected = contextFiltered.reduce((s, c) => s + clientPaid(c), 0);
+  const totalRemaining = contextFiltered.reduce((s, c) => s + clientRemaining(c), 0);
+
+  // Final list: context + status filter applied on top
+  const filtered = contextFiltered.filter(c => filter === "all" || c.status === filter);
 
   const handleCreate = async (data: Partial<Client>) => {
     const res = await fetch("/api/admin/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
@@ -1782,7 +1785,7 @@ function ClientsPanel({
       <div className="flex gap-2 overflow-x-auto border-b border-gray-100 pb-3">
         {(["all", "active", "pending", "completed"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)} className={`shrink-0 min-h-[40px] px-4 py-2 text-[10px] tracking-[2px] uppercase font-black rounded-full transition-all active:scale-95 ${filter === f ? "bg-black text-white" : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-black"}`}>
-            {f === "all" ? `All (${clients.length})` : `${f} (${statusCounts[f]})`}
+            {f === "all" ? `All (${contextFiltered.length})` : `${f} (${statusCounts[f]})`}
           </button>
         ))}
       </div>
@@ -2410,6 +2413,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
+  const contentRef = useRef<SiteContent | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -2476,30 +2481,44 @@ export default function AdminDashboard() {
     });
   }, []);
 
-  const save = async () => {
+  // Keep a ref so the auto-save callback always reads the latest content without stale closure
+  useEffect(() => { contentRef.current = content; }, [content]);
+
+  const save = useCallback(async () => {
+    if (!contentRef.current) return;
     setSaving(true);
+    setSaveStatus("saving");
     try {
       const res = await fetch("/api/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(content),
+        body: JSON.stringify(contentRef.current),
       });
       if (res.ok) {
         setHasChanges(false);
-        alert("CHANGES SAVED SUCCESSFULLY!");
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2500);
       } else if (res.status === 401) {
+        setSaveStatus("error");
         alert("SESSION EXPIRED — Please log in again.\n\nClick OK, then refresh the page and log in.");
         window.location.href = "/admin";
       } else {
-        const data = await res.json().catch(() => ({}));
-        alert("FAILED TO SAVE CHANGES.\n" + (data.error || "Please try again."));
+        setSaveStatus("error");
       }
     } catch {
-      alert("ERROR SAVING CHANGES — Check your internet connection and try again.");
+      setSaveStatus("error");
     } finally {
       setSaving(false);
     }
-  };
+  }, []);
+
+  // Auto-save: reschedule 1.5s timer on every content change (debounce)
+  useEffect(() => {
+    if (!hasChanges || loading) return;
+    setSaveStatus("pending");
+    const id = setTimeout(() => save(), 1500);
+    return () => clearTimeout(id);
+  }, [content, hasChanges, loading, save]);
 
   if (!content) return null;
 
@@ -2531,15 +2550,18 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Mobile Floating Save Button — only visible when there are unsaved changes */}
-      {hasChanges && !sidebarOpen && (
-        <button
-          onClick={save}
-          disabled={saving}
-          className="fixed bottom-6 right-6 z-[40] md:hidden bg-[#b3a384] text-white px-8 py-4 rounded-full shadow-2xl active:scale-95 transition-all font-bold text-xs tracking-[3px] uppercase flex items-center gap-3 border-2 border-white/20"
+      {/* Mobile auto-save status indicator — replaces the manual save button */}
+      {(saveStatus === "saving" || saveStatus === "saved" || saveStatus === "error") && !sidebarOpen && (
+        <div
+          onClick={saveStatus === "error" ? save : undefined}
+          className={`fixed bottom-6 right-6 z-[40] md:hidden px-5 py-3 rounded-full shadow-xl text-xs font-black tracking-[2px] uppercase flex items-center gap-2 border-2 transition-all ${
+            saveStatus === "saving" ? "bg-[#b3a384] text-white border-white/20 animate-pulse" :
+            saveStatus === "saved" ? "bg-green-600 text-white border-white/20" :
+            "bg-red-600 text-white border-white/20 cursor-pointer"
+          }`}
         >
-          {saving ? "..." : "✓ SAVE"}
-        </button>
+          {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "✓ Saved" : "⚠ Retry"}
+        </div>
       )}
 
       {/* Sidebar */}
@@ -2612,13 +2634,29 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="mt-12 border-t pt-8 space-y-3 px-2 pb-10">
-          <button
-            onClick={save}
-            disabled={saving}
-            className="w-full bg-[#1a1a1a] text-white py-6 text-[11px] tracking-[4px] uppercase font-bold hover:bg-[#b3a384] cursor-pointer transition-all duration-500 disabled:opacity-50 rounded-sm shadow-xl active:scale-95"
-          >
-            {saving ? "COMMITTING..." : "SAVE ALL CHANGES"}
-          </button>
+          {/* Auto-save status — replaces the manual save button */}
+          <div className={`w-full py-5 text-[11px] tracking-[4px] uppercase font-bold text-center transition-colors ${
+            saveStatus === "saving" ? "text-gray-400 animate-pulse" :
+            saveStatus === "saved" ? "text-green-600" :
+            saveStatus === "error" ? "text-red-500" :
+            hasChanges ? "text-[#b3a384] animate-pulse" :
+            "text-gray-300"
+          }`}>
+            {saveStatus === "saving" ? "SAVING…" :
+             saveStatus === "saved" ? "✓ ALL SAVED" :
+             saveStatus === "error" ? "SAVE FAILED" :
+             hasChanges ? "SAVING SOON…" :
+             "AUTO-SAVE ON"}
+          </div>
+          {saveStatus === "error" && (
+            <button
+              onClick={save}
+              disabled={saving}
+              className="w-full bg-[#1a1a1a] text-white py-4 text-[11px] tracking-[4px] uppercase font-bold hover:bg-red-600 cursor-pointer transition-all rounded-sm shadow-xl active:scale-95 disabled:opacity-50"
+            >
+              RETRY SAVE
+            </button>
+          )}
           <button
             onClick={() =>
               fetch("/api/auth", { method: "DELETE" }).then(() =>
