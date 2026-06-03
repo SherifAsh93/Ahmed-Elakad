@@ -50,8 +50,9 @@ function readAll(): Client[] {
         const payments: Payment[] = c.payments ?? [];
         const dresses: Dress[] = c.dresses ?? [];
         const totalPrice: number = c.totalPrice ?? 0;
-        // If phone was lost, reconstruct it from id so the record stays valid
-        const phone = c.phone ?? c.id ?? "";
+        // If phone was lost or is too short, reconstruct it from id so the record stays valid
+        const rawPhone = c.phone ?? "";
+        const phone = rawPhone && normalizePhone(rawPhone).length >= 7 ? rawPhone : (c.id ?? "");
         const client: Client = {
           ...c,
           name: c.name ?? "",

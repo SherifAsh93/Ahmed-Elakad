@@ -1380,6 +1380,23 @@ function FittingModal({
   );
 }
 
+// ── Dress Label Input ─────────────────────
+// Saves only on blur to avoid one API call per keypress
+function DressLabelInput({ value, onSave }: { value: string; onSave: (label: string) => void }) {
+  const [label, setLabel] = useState(value);
+  useEffect(() => { setLabel(value); }, [value]);
+  return (
+    <input
+      type="text"
+      value={label}
+      onChange={e => setLabel(e.target.value)}
+      onBlur={() => { if (label !== value) onSave(label); }}
+      placeholder="Add a label (e.g. Wedding Dress)"
+      className="flex-1 text-xs border-0 border-b border-gray-100 focus:border-[#b3a384] focus:outline-none bg-transparent py-1 text-stone-600 placeholder:text-gray-300 transition-colors"
+    />
+  );
+}
+
 // ── Clients Panel ────────────────────────
 function ClientsPanel({
   clients,
@@ -1720,12 +1737,9 @@ function ClientsPanel({
                           <div key={dress.id} className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
                             <div className="flex items-center gap-3 mb-3">
                               <span className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 shrink-0">Dress {dressIdx + 1}</span>
-                              <input
-                                type="text"
+                              <DressLabelInput
                                 value={dress.label}
-                                onChange={e => handleUpdateDressLabel(client.id, dress.id, e.target.value)}
-                                placeholder="Add a label (e.g. Wedding Dress)"
-                                className="flex-1 text-xs border-0 border-b border-gray-100 focus:border-[#b3a384] focus:outline-none bg-transparent py-1 text-stone-600 placeholder:text-gray-300 transition-colors"
+                                onSave={(label) => handleUpdateDressLabel(client.id, dress.id, label)}
                               />
                               <button onClick={() => handleDeleteDress(client.id, dress.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black shrink-0">✕</button>
                             </div>
