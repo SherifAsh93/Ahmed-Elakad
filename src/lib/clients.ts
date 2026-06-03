@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 
 export interface Payment {
   id: string;
@@ -14,6 +15,13 @@ export interface Dress {
   createdAt: string;
 }
 
+export interface VoiceNote {
+  id: string;
+  url: string;
+  from: "atelier" | "admin";
+  createdAt: string;
+}
+
 export interface Client {
   id: string; // normalized phone digits — the primary key
   name: string;
@@ -23,6 +31,7 @@ export interface Client {
   totalPrice: number;
   payments: Payment[];
   dresses: Dress[];
+  voiceNotes: VoiceNote[];
   appointmentDate: string;
   nextAppointmentDate: string;
   fittingDate: string;
@@ -36,6 +45,8 @@ export interface Client {
 }
 
 const CLIENTS_FILE = "/home/sherif/data/ahmed-elakad/clients.json";
+const VOICES_DIR = "/home/sherif/data/ahmed-elakad/voices";
+const VOICES_BASE = "https://ahmedelakad.com/voices";
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
@@ -49,6 +60,7 @@ function readAll(): Client[] {
       return raw.map((c) => {
         const payments: Payment[] = c.payments ?? [];
         const dresses: Dress[] = c.dresses ?? [];
+        const voiceNotes: VoiceNote[] = c.voiceNotes ?? [];
         const totalPrice: number = c.totalPrice ?? 0;
         // If phone was lost or is too short, reconstruct it from id so the record stays valid
         const rawPhone = c.phone ?? "";
@@ -69,6 +81,7 @@ function readAll(): Client[] {
           clientImages: c.clientImages ?? [],
           id: phone ? normalizePhone(phone) : (c.id ?? ""),
           dresses,
+          voiceNotes,
           payments,
           status: "pending",
         };
@@ -108,18 +121,19 @@ export async function getClients(): Promise<Client[]> {
   return readLocal();
 }
 
-export async function addClient(data: Omit<Client, "id" | "createdAt">): Promise<Client> {
+// voiceNotes omitted — always initialized to [] on create
+export async function addClient(data: Omit<Client, "id" | "createdAt" | "voiceNotes">): Promise<Client> {
   if (!data.phone) throw new Error("Mobile number is required");
   const id = normalizePhone(data.phone);
   if (id.length < 7) throw new Error("Invalid mobile number");
 
-  // Use readAll so we don't accidentally skip corrupted-but-existing clients
   const all = readAll();
   if (all.some((c) => c.id === id)) throw new Error("A client with this mobile number already exists");
 
   const client: Client = {
     ...data,
     id,
+    voiceNotes: [],
     createdAt: new Date().toISOString(),
   };
   writeLocal([client, ...all]);
@@ -127,7 +141,6 @@ export async function addClient(data: Omit<Client, "id" | "createdAt">): Promise
 }
 
 export async function updateClient(id: string, data: Partial<Omit<Client, "id" | "createdAt">>): Promise<Client | null> {
-  // Use readAll so writes never drop partially-corrupted records
   const all = readAll();
 
   if (data.phone) {
@@ -282,5 +295,52 @@ export async function updateDressLabel(clientId: string, dressId: string, label:
     return c;
   });
   if (updated) writeLocal(next);
+  return updated;
+}
+
+export async function addVoiceNote(clientId: string, data: Omit<VoiceNote, "id" | "createdAt">): Promise<Client | null> {
+  const all = readAll();
+  let updated: Client | null = null;
+  const next = all.map((c) => {
+    if (c.id === clientId) {
+      const newNote: VoiceNote = {
+        ...data,
+        id: Math.random().toString(36).substring(2, 11),
+        createdAt: new Date().toISOString(),
+      };
+      updated = { ...c, voiceNotes: [...c.voiceNotes, newNote] };
+      return updated;
+    }
+    return c;
+  });
+  if (updated) writeLocal(next);
+  return updated;
+}
+
+export async function deleteVoiceNote(clientId: string, voiceNoteId: string): Promise<Client | null> {
+  const all = readAll();
+  let updated: Client | null = null;
+  let deletedUrl = "";
+
+  const next = all.map((c) => {
+    if (c.id === clientId) {
+      const note = c.voiceNotes.find((n) => n.id === voiceNoteId);
+      if (note) deletedUrl = note.url;
+      updated = { ...c, voiceNotes: c.voiceNotes.filter((n) => n.id !== voiceNoteId) };
+      return updated;
+    }
+    return c;
+  });
+
+  if (updated) {
+    writeLocal(next);
+    if (deletedUrl.startsWith(VOICES_BASE)) {
+      try {
+        const filename = deletedUrl.replace(`${VOICES_BASE}/`, "");
+        const filepath = path.join(VOICES_DIR, filename);
+        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+      } catch {}
+    }
+  }
   return updated;
 }

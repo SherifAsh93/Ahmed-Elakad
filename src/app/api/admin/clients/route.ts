@@ -11,6 +11,8 @@ import {
   addDressImages,
   removeDressImage,
   updateDressLabel,
+  addVoiceNote,
+  deleteVoiceNote,
 } from "@/lib/clients";
 
 export async function GET() {
@@ -90,6 +92,20 @@ export async function PUT(req: NextRequest) {
 
   if (action === "updateDressLabel") {
     const updated = await updateDressLabel(id, data.dressId, data.label ?? "");
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "addVoiceNote") {
+    if (!data.url || !data.from) return NextResponse.json({ error: "url and from required" }, { status: 400 });
+    const updated = await addVoiceNote(id, { url: data.url, from: data.from });
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "deleteVoiceNote") {
+    if (!data.voiceNoteId) return NextResponse.json({ error: "voiceNoteId required" }, { status: 400 });
+    const updated = await deleteVoiceNote(id, data.voiceNoteId);
     if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
     return NextResponse.json(updated);
   }

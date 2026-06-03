@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { compressImage } from "@/lib/compressImage";
 
 interface Payment {
@@ -17,6 +17,13 @@ interface Dress {
   createdAt: string;
 }
 
+interface VoiceNote {
+  id: string;
+  url: string;
+  from: "atelier" | "admin";
+  createdAt: string;
+}
+
 interface Client {
   id: string;
   name: string;
@@ -26,6 +33,7 @@ interface Client {
   totalPrice: number;
   payments: Payment[];
   dresses: Dress[];
+  voiceNotes: VoiceNote[];
   appointmentDate: string;
   nextAppointmentDate: string;
   fittingDate: string;
@@ -234,6 +242,167 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
+// ── Voice Note Player ─────────────────────────────────
+function VoiceNotePlayer({ note, onDelete }: { note: VoiceNote; onDelete?: () => void }) {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const fmt = (s: number) => isFinite(s) && s > 0
+    ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
+    : "—";
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else { audioRef.current.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const isAdmin = note.from === "admin";
+
+  return (
+    <div className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${isAdmin ? "bg-indigo-50 border border-indigo-100" : "bg-[#faf9f7] border border-[#e8dfd4]"}`}>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio
+        ref={audioRef}
+        src={note.url}
+        onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
+        onTimeUpdate={e => {
+          const a = e.target as HTMLAudioElement;
+          if (a.duration) setProgress((a.currentTime / a.duration) * 100);
+        }}
+        onEnded={() => { setPlaying(false); setProgress(0); if (audioRef.current) audioRef.current.currentTime = 0; }}
+      />
+      <button
+        onClick={toggle}
+        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-transform active:scale-95 ${isAdmin ? "bg-indigo-500 text-white" : "bg-[#b3a384] text-white"}`}
+      >
+        {playing ? (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        ) : (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="h-1.5 bg-white rounded-full overflow-hidden border border-gray-100 mb-1.5">
+          <div
+            className={`h-full rounded-full transition-all duration-100 ${isAdmin ? "bg-indigo-400" : "bg-[#b3a384]"}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={`text-[11px] font-bold ${isAdmin ? "text-indigo-400" : "text-[#b3a384]"}`}>
+            {isAdmin ? "رد الإدارة" : "من الأتيليه"}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-300">{fmt(duration)}</span>
+            <span className="text-[10px] text-gray-300">
+              {new Date(note.createdAt).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })}
+            </span>
+          </div>
+        </div>
+      </div>
+      {onDelete && (
+        <button onClick={onDelete} className="shrink-0 text-gray-200 hover:text-red-400 transition-colors text-base leading-none">✕</button>
+      )}
+    </div>
+  );
+}
+
+// ── Voice Recorder ────────────────────────────────────
+function VoiceRecorder({ onSave }: { onSave: (url: string) => Promise<void> }) {
+  const [state, setState] = useState<"idle" | "recording" | "uploading">("idle");
+  const [secs, setSecs] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]
+        .find(t => MediaRecorder.isTypeSupported(t)) ?? "";
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const mime = recorder.mimeType || "audio/webm";
+        const ext = mime.includes("mp4") ? "mp4" : mime.includes("ogg") ? "ogg" : "webm";
+        const blob = new Blob(chunksRef.current, { type: mime });
+        setState("uploading");
+        try {
+          const fd = new FormData();
+          fd.append("file", blob, `voice.${ext}`);
+          const res = await fetch("/api/upload/voice", { method: "POST", body: fd });
+          if (!res.ok) throw new Error();
+          const { url } = await res.json();
+          await onSave(url);
+        } catch {
+          alert("فشل رفع الملاحظة الصوتية، يرجى المحاولة مرة أخرى");
+        } finally {
+          setState("idle");
+          setSecs(0);
+        }
+      };
+      recorder.start(250);
+      recorderRef.current = recorder;
+      setState("recording");
+      setSecs(0);
+      timerRef.current = setInterval(() => setSecs(s => s + 1), 1000);
+    } catch {
+      alert("تعذّر الوصول إلى الميكروفون — تأكد من منح الإذن");
+    }
+  };
+
+  const stop = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    recorderRef.current?.stop();
+  };
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  if (state === "uploading") {
+    return (
+      <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
+        <span className="w-2 h-2 rounded-full bg-[#b3a384] animate-pulse" />
+        <span>جاري الرفع...</span>
+      </div>
+    );
+  }
+
+  if (state === "recording") {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+        <span className="text-sm font-black text-red-600 tabular-nums">{fmt(secs)}</span>
+        <button
+          onClick={stop}
+          className="min-h-[44px] px-5 py-2 bg-red-500 text-white rounded-xl text-[13px] font-black hover:bg-red-600 transition-colors flex items-center gap-2"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          إيقاف
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={start}
+      className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 border border-dashed border-[#b3a384] text-[#b3a384] hover:bg-[#b3a384] hover:text-white rounded-xl text-[13px] font-black transition-all w-full justify-center"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      تسجيل ملاحظة صوتية
+    </button>
+  );
+}
+
 // ── Client Card ───────────────────────────────────────
 function ClientCard({
   client,
@@ -433,6 +602,42 @@ function ClientCard({
                 </div>
               ))
             )}
+          </div>
+
+          {/* Voice Notes */}
+          <div>
+            <p className="text-[12px] tracking-[3px] font-black text-gray-400 mb-3 text-right">ملاحظات صوتية</p>
+            <div className="space-y-2 mb-3">
+              {(client.voiceNotes ?? []).length === 0 ? (
+                <p className="text-xs text-gray-300 italic text-right">لا توجد ملاحظات صوتية بعد</p>
+              ) : (
+                (client.voiceNotes ?? []).map(note => (
+                  <VoiceNotePlayer
+                    key={note.id}
+                    note={note}
+                    onDelete={note.from === "atelier" ? async () => {
+                      if (!window.confirm("حذف هذه الملاحظة الصوتية؟")) return;
+                      await fetch("/api/admin/clients", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: client.id, action: "deleteVoiceNote", voiceNoteId: note.id }),
+                      });
+                      onRefresh();
+                    } : undefined}
+                  />
+                ))
+              )}
+            </div>
+            <VoiceRecorder
+              onSave={async (url) => {
+                await fetch("/api/admin/clients", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: client.id, action: "addVoiceNote", url, from: "atelier" }),
+                });
+                onRefresh();
+              }}
+            />
           </div>
 
           {/* Notes */}

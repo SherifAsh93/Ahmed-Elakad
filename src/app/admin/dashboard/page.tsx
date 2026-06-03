@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SiteContent, CategoryYear } from "@/lib/content";
@@ -38,6 +38,13 @@ interface Dress {
   createdAt: string;
 }
 
+interface VoiceNote {
+  id: string;
+  url: string;
+  from: "atelier" | "admin";
+  createdAt: string;
+}
+
 interface Client {
   id: string;
   name: string;
@@ -47,6 +54,7 @@ interface Client {
   totalPrice: number;
   payments: Payment[];
   dresses: Dress[];
+  voiceNotes: VoiceNote[];
   appointmentDate: string;
   nextAppointmentDate: string;
   fittingDate: string;
@@ -1380,6 +1388,167 @@ function FittingModal({
   );
 }
 
+// ── Admin Voice Note Player ───────────────
+function AdminVoiceNotePlayer({ note, onDelete }: { note: VoiceNote; onDelete?: () => void }) {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const fmt = (s: number) => isFinite(s) && s > 0
+    ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
+    : "—";
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else { audioRef.current.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const isAtelier = note.from === "atelier";
+
+  return (
+    <div className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${isAtelier ? "bg-[#faf9f7] border border-[#e8dfd4]" : "bg-indigo-50 border border-indigo-100"}`}>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio
+        ref={audioRef}
+        src={note.url}
+        onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
+        onTimeUpdate={e => {
+          const a = e.target as HTMLAudioElement;
+          if (a.duration) setProgress((a.currentTime / a.duration) * 100);
+        }}
+        onEnded={() => { setPlaying(false); setProgress(0); if (audioRef.current) audioRef.current.currentTime = 0; }}
+      />
+      <button
+        onClick={toggle}
+        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-transform active:scale-95 ${isAtelier ? "bg-[#b3a384] text-white" : "bg-indigo-500 text-white"}`}
+      >
+        {playing ? (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        ) : (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="h-1.5 bg-white rounded-full overflow-hidden border border-gray-100 mb-1.5">
+          <div
+            className={`h-full rounded-full transition-all duration-100 ${isAtelier ? "bg-[#b3a384]" : "bg-indigo-400"}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={`text-[9px] uppercase tracking-[1px] font-black ${isAtelier ? "text-[#b3a384]" : "text-indigo-400"}`}>
+            {isAtelier ? "From Atelier" : "Admin Reply"}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-300">{fmt(duration)}</span>
+            <span className="text-[9px] text-gray-300">
+              {new Date(note.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </span>
+          </div>
+        </div>
+      </div>
+      {onDelete && (
+        <button onClick={onDelete} className="shrink-0 text-gray-200 hover:text-red-400 transition-colors text-sm leading-none font-bold">✕</button>
+      )}
+    </div>
+  );
+}
+
+// ── Admin Voice Recorder ──────────────────
+function AdminVoiceRecorder({ onSave }: { onSave: (url: string) => Promise<void> }) {
+  const [state, setState] = useState<"idle" | "recording" | "uploading">("idle");
+  const [secs, setSecs] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]
+        .find(t => MediaRecorder.isTypeSupported(t)) ?? "";
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const mime = recorder.mimeType || "audio/webm";
+        const ext = mime.includes("mp4") ? "mp4" : mime.includes("ogg") ? "ogg" : "webm";
+        const blob = new Blob(chunksRef.current, { type: mime });
+        setState("uploading");
+        try {
+          const fd = new FormData();
+          fd.append("file", blob, `voice.${ext}`);
+          const res = await fetch("/api/upload/voice", { method: "POST", body: fd });
+          if (!res.ok) throw new Error();
+          const { url } = await res.json();
+          await onSave(url);
+        } catch {
+          alert("Failed to upload voice note — please try again");
+        } finally {
+          setState("idle");
+          setSecs(0);
+        }
+      };
+      recorder.start(250);
+      recorderRef.current = recorder;
+      setState("recording");
+      setSecs(0);
+      timerRef.current = setInterval(() => setSecs(s => s + 1), 1000);
+    } catch {
+      alert("Could not access microphone — please allow permission");
+    }
+  };
+
+  const stop = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    recorderRef.current?.stop();
+  };
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  if (state === "uploading") {
+    return (
+      <div className="flex items-center gap-2 text-[10px] text-gray-400 py-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+        <span>Uploading...</span>
+      </div>
+    );
+  }
+
+  if (state === "recording") {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+        <span className="text-xs font-black text-red-600 tabular-nums">{fmt(secs)}</span>
+        <button
+          onClick={stop}
+          className="min-h-[40px] px-4 py-2 bg-red-500 text-white rounded-lg text-[10px] uppercase tracking-[2px] font-black hover:bg-red-600 transition-colors flex items-center gap-2"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          Stop
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={start}
+      className="flex items-center gap-2 min-h-[40px] px-4 py-2 border border-dashed border-indigo-200 text-indigo-400 hover:bg-indigo-50 rounded-lg text-[10px] uppercase tracking-[2px] font-black transition-all"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      Record Reply
+    </button>
+  );
+}
+
 // ── Dress Label Input ─────────────────────
 // Saves only on blur to avoid one API call per keypress
 function DressLabelInput({ value, onSave }: { value: string; onSave: (label: string) => void }) {
@@ -1514,6 +1683,17 @@ function ClientsPanel({
 
   const handleUpdateDressLabel = async (clientId: string, dressId: string, label: string) => {
     await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "updateDressLabel", dressId, label }) });
+    onRefresh();
+  };
+
+  const handleAddVoiceNote = async (clientId: string, url: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addVoiceNote", url, from: "admin" }) });
+    onRefresh();
+  };
+
+  const handleDeleteVoiceNote = async (clientId: string, voiceNoteId: string) => {
+    if (!window.confirm("Delete this voice note?")) return;
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deleteVoiceNote", voiceNoteId }) });
     onRefresh();
   };
 
@@ -1809,6 +1989,30 @@ function ClientsPanel({
                       <p className="text-sm text-stone-600 leading-relaxed">{client.notes}</p>
                     </div>
                   )}
+
+                  {/* Voice Notes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400">Voice Notes</p>
+                      {(client.voiceNotes ?? []).length > 0 && (
+                        <span className="text-[9px] text-gray-300 font-bold">{(client.voiceNotes ?? []).length} note{(client.voiceNotes ?? []).length !== 1 ? "s" : ""}</span>
+                      )}
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      {(client.voiceNotes ?? []).length === 0 ? (
+                        <p className="text-[10px] text-gray-300 italic">No voice notes yet — atelier can add one from the /atelier page</p>
+                      ) : (
+                        (client.voiceNotes ?? []).map(note => (
+                          <AdminVoiceNotePlayer
+                            key={note.id}
+                            note={note}
+                            onDelete={() => handleDeleteVoiceNote(client.id, note.id)}
+                          />
+                        ))
+                      )}
+                    </div>
+                    <AdminVoiceRecorder onSave={(url) => handleAddVoiceNote(client.id, url)} />
+                  </div>
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-1">
