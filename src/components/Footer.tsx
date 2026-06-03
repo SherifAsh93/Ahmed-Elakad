@@ -18,12 +18,11 @@ export default function Footer({ content }: { content: SiteContent }) {
   const instaPhotos = (content.homepage?.featuredImages ?? []).slice(0, 4);
 
   const quickLinks = [
-    { href: "/bridal", label: "Collections" },
-    { href: "/about", label: "Atelier" },
-    { href: "/bridal", label: "Brides" },
-    { href: "/couture", label: "Experience" },
-    { href: "/about", label: "Journal" },
-    { href: "/contact", label: "Contact" },
+    { href: "/bridal",     label: "Bridal"     },
+    { href: "/couture",    label: "Couture"    },
+    { href: "/about",      label: "About"      },
+    { href: "/experience", label: "Experience" },
+    { href: "/contact",    label: "Contact"    },
   ];
 
   const colHead = "text-[7px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-4 sm:mb-5";
@@ -59,7 +58,7 @@ export default function Footer({ content }: { content: SiteContent }) {
                 Ahmed El Akad
               </p>
               <p className="text-[7px] tracking-[2.5px] uppercase text-white/40 mt-0.5">
-                Couture Atelier
+                Couture House
               </p>
             </div>
           </div>
@@ -124,6 +123,18 @@ export default function Footer({ content }: { content: SiteContent }) {
                   <span className={colLink}>Email</span>
                 </a>
               )}
+              <a href="https://www.threads.com/@ahmedelakad_?igshid=NTc4MTIwNjQ2YQ==" target="_blank" rel="noreferrer" className="flex items-center gap-2 group">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-white/30 group-hover:text-white transition-colors shrink-0">
+                  <path d="M19.49 12.49c-.06-3.4-2.22-5.3-5.78-5.3-.18 0-.36.01-.53.02-1.1.07-2.13.43-2.97 1.09-.71.56-1.22 1.35-1.48 2.24.5.28 1.07.43 1.64.43 1.4 0 2.6-.85 3.12-2.07.12-.3.19-.63.19-.96 0-.09 0-.17-.01-.26.24.08.47.17.68.28.76.42 1.26 1.25 1.18 2.22-.08.97-.78 1.79-1.74 2.01-.44.1-.9.08-1.32-.04.11.44.32.85.62 1.2.65.72 1.6 1.13 2.59 1.08.96-.05 1.88-.5 2.51-1.21.58-.65.9-1.5.91-2.38v-.35zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-.5-13c-2.76 0-5 2.24-5 5s2.24 5 5 5c1.42 0 2.67-.6 3.57-1.54.07.33.11.67.11 1.02 0 1.95-1.57 3.52-3.52 3.52-1.42 0-2.66-.85-3.23-2.08l-1.64.77C7.94 20.52 9.63 21.52 11.66 21.52c2.88 0 5.52-2.37 5.52-5.52 0-.62-.1-1.22-.29-1.78.44-.69.69-1.51.69-2.39 0-2.48-2.02-4.5-4.5-4.5-.67 0-1.31.15-1.88.42-.35-.25-.77-.39-1.2-.39-1.1 0-2 .9-2 2 0 .83.51 1.55 1.24 1.85-.02.2-.03.41-.03.62 0 2.21 1.79 4 4 4s4-1.79 4-4-.95-3.32-2.43-3.83z"/>
+                </svg>
+                <span className={colLink}>Threads</span>
+              </a>
+              <a href="https://www.tiktok.com/@ahmedelakadcouture?_r=1&_t=ZS-96ujy5ez56L" target="_blank" rel="noreferrer" className="flex items-center gap-2 group">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-white/30 group-hover:text-white transition-colors shrink-0">
+                  <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                </svg>
+                <span className={colLink}>TikTok</span>
+              </a>
             </div>
           </div>
 
@@ -152,7 +163,7 @@ export default function Footer({ content }: { content: SiteContent }) {
         {/* ── Divider + copyright ───────────────────────────────── */}
         <div className="w-full h-[0.5px] bg-white/10 mb-4" />
         <p className="text-[8px] tracking-[2px] uppercase text-white/25 text-center">
-          © {new Date().getFullYear()} Ahmed Elakad Couture Atelier. All rights reserved.
+          © {new Date().getFullYear()} Ahmed Elakad Couture House. All rights reserved.
         </p>
 
       </div>

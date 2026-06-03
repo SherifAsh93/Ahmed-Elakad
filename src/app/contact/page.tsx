@@ -16,6 +16,12 @@ export default async function ContactPage() {
   const whatsappNumber = content.social?.whatsapp || "201101548030";
   const waHref = "https://wa.me/" + whatsappNumber.replace(/\D/g, "");
 
+  const intlTitle = (contact as { internationalTitle?: string }).internationalTitle
+    || "Worldwide Shipping Available";
+  const intlText = (contact as { internationalText?: string }).internationalText
+    || "Dreaming of an Ahmed Elakad gown from outside Egypt? We ship our bespoke creations to brides around the world. Whether you are in Europe, the Gulf, the Americas, or anywhere across the globe — we handle every detail of safe international delivery so your gown arrives in perfect condition, wherever your journey begins.";
+  const intlImage = (contact as { internationalImage?: string }).internationalImage || "";
+
   return (
     <main className="bg-[#f9f7f4]">
 
@@ -117,6 +123,87 @@ export default async function ContactPage() {
               <div className="w-8 h-px bg-[#b3a384] mb-8" />
               <ContactForm />
             </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── International Brides ── */}
+      <section className="bg-[#0d0d0d] overflow-hidden">
+        <div className="max-w-screen-xl mx-auto">
+          <div className={`flex flex-col ${intlImage ? "md:flex-row" : ""}`}>
+
+            {/* Text block */}
+            <div className={`flex flex-col justify-center px-8 sm:px-14 md:px-16 lg:px-24 py-16 sm:py-20 md:py-24 ${intlImage ? "md:w-[52%]" : "w-full text-center items-center"}`}>
+              {/* Eyebrow */}
+              <div className="flex items-center gap-3 mb-6">
+                {intlImage ? null : <div className="w-8 h-px bg-[#b3a384]" />}
+                <span className="text-[8px] tracking-[5px] uppercase text-[#b3a384] font-medium">
+                  International Brides
+                </span>
+                {intlImage ? null : <div className="w-8 h-px bg-[#b3a384]" />}
+              </div>
+
+              {/* Globe icon */}
+              <div className="mb-6">
+                <svg
+                  width="38"
+                  height="38"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#b3a384"
+                  strokeWidth="1"
+                  className={intlImage ? "" : "mx-auto"}
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </div>
+
+              <h2 className={`font-display text-3xl sm:text-4xl md:text-5xl uppercase tracking-[0.18em] text-white leading-tight mb-5 ${!intlImage ? "max-w-[600px]" : ""}`}>
+                {intlTitle}
+              </h2>
+              <div className={`w-12 h-px bg-[#b3a384] mb-6 ${!intlImage ? "mx-auto" : ""}`} />
+              <p className={`text-white/55 text-[13px] sm:text-[14px] leading-[1.9] font-light font-serif mb-8 ${!intlImage ? "max-w-[560px]" : ""}`}>
+                {intlText}
+              </p>
+
+              {/* Shipping badges */}
+              <div className={`flex flex-wrap gap-3 mb-8 ${!intlImage ? "justify-center" : ""}`}>
+                {["Europe", "Gulf & MENA", "Americas", "Asia Pacific", "Worldwide"].map((region) => (
+                  <span
+                    key={region}
+                    className="text-[8px] tracking-[2px] uppercase text-white/40 border border-white/15 px-3 py-1.5"
+                  >
+                    {region}
+                  </span>
+                ))}
+              </div>
+
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex items-center gap-3 bg-[#b3a384] text-white text-[8px] tracking-[3px] uppercase px-8 py-4 hover:bg-white hover:text-black transition-colors duration-300 w-fit ${!intlImage ? "self-center" : ""}`}
+              >
+                Enquire Now
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+
+            {/* Optional image */}
+            {intlImage && (
+              <div className="md:w-[48%] min-h-[380px] md:min-h-0 overflow-hidden">
+                <img
+                  src={optimizeImage(intlImage)}
+                  alt="International shipping"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
 
           </div>
         </div>

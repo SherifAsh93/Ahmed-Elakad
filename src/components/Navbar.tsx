@@ -47,12 +47,11 @@ export default function Navbar({ content }: { content: SiteContent }) {
   const brand = content.siteInfo?.brandName ?? "Ahmed El Akad";
 
   const navLinks = [
-    { href: "/bridal",  label: "Collections" },
-    { href: "/about",   label: "Atelier"     },
-    { href: "/bridal",  label: "Brides"      },
-    { href: "/couture", label: "Experience"  },
-    { href: "/about",   label: "Journal"     },
-    { href: "/contact", label: "Contact"     },
+    { href: "/bridal",     label: "Bridal"     },
+    { href: "/couture",    label: "Couture"    },
+    { href: "/about",      label: "About"      },
+    { href: "/experience", label: "Experience" },
+    { href: "/contact",    label: "Contact"    },
   ];
 
   return (
@@ -68,7 +67,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
               {brand.toUpperCase()}
             </span>
             <span className="text-[7px] tracking-[2.5px] uppercase text-white/45">
-              Couture Atelier
+              Couture House
             </span>
           </Link>
 
@@ -119,7 +118,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
               {brand.toUpperCase()}
             </span>
             <span className="text-[7px] tracking-[2.5px] uppercase text-white/45">
-              Couture Atelier
+              Couture House
             </span>
           </Link>
         </div>

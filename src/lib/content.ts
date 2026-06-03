@@ -1,6 +1,22 @@
 import fs from "fs";
 import path from "path";
 
+export interface Testimonial {
+  id: string;
+  quote: string;
+  name: string;
+  subtitle: string;
+  rating?: number;
+}
+
+export interface VideoItem {
+  id: string;
+  url: string;
+  title?: string;
+  clientName?: string;
+  clientSubtitle?: string;
+}
+
 export interface Collection {
   id: string;
   name?: string;
@@ -57,9 +73,11 @@ export interface SiteContent {
   about?: {
     title?: string;
     subtitle?: string;
+    tagline?: string;
     bio?: string[];
     portraitImage?: string;
     sideImage?: string;
+    gallery?: string[];
     metaTitle?: string;
     metaDescription?: string;
   };
@@ -86,6 +104,27 @@ export interface SiteContent {
     email?: string;
     location?: string;
     heroImage?: string;
+    internationalTitle?: string;
+    internationalText?: string;
+    internationalImage?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+  };
+  experience?: {
+    heroImage?: string;
+    heroSubheading?: string;
+    heroHeading?: string;
+    heroDescriptions?: string[];
+    kindWordsTitle?: string;
+    kindWordsIntro?: string;
+    testimonials?: Testimonial[];
+    videoSectionTitle?: string;
+    videoSectionSubtitle?: string;
+    videos?: VideoItem[];
+    ctaImage?: string;
+    ctaHeading?: string;
+    ctaSubtitle?: string;
+    ctaText?: string;
     metaTitle?: string;
     metaDescription?: string;
   };

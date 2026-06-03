@@ -18,6 +18,7 @@ type Section =
   | "about"
   | "bridal"
   | "couture"
+  | "experience"
   | "contact"
   | "social"
   | "media"
@@ -824,6 +825,163 @@ function BioParagraphEditor({
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Testimonials Editor ─────────────────
+interface TestimonialItem {
+  id: string; quote: string; name: string; subtitle: string; rating: number;
+}
+function TestimonialsEditor({
+  testimonials, onChange,
+}: { testimonials: TestimonialItem[]; onChange: (t: TestimonialItem[]) => void }) {
+  const add = () => onChange([...testimonials, { id: `t-${Date.now()}`, quote: "", name: "", subtitle: "", rating: 5 }]);
+  const update = (i: number, field: keyof TestimonialItem, val: string | number) => {
+    const a = [...testimonials]; a[i] = { ...a[i], [field]: val }; onChange(a);
+  };
+  const remove = (i: number) => onChange(testimonials.filter((_, idx) => idx !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const a = [...testimonials]; const j = i + dir;
+    if (j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; onChange(a);
+  };
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between border-b pb-3">
+        <label className="text-xs tracking-[3px] uppercase text-gray-500 font-bold">TESTIMONIALS ({testimonials.length})</label>
+        <button onClick={add} className="text-[10px] font-bold text-[#b3a384] uppercase tracking-widest min-h-[44px] px-3">+ ADD TESTIMONIAL</button>
+      </div>
+      {testimonials.length === 0 && (
+        <div className="py-10 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-[10px] uppercase tracking-widest">No testimonials yet — click + ADD TESTIMONIAL</div>
+      )}
+      {testimonials.map((t, i) => (
+        <div key={t.id} className="border border-gray-100 rounded-lg p-5 space-y-4 bg-white shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-[3px] font-black text-gray-400">Testimonial {i + 1}</p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-black disabled:opacity-20 text-sm font-bold px-1 min-h-[44px]">↑</button>
+              <button onClick={() => move(i, 1)} disabled={i === testimonials.length - 1} className="text-gray-300 hover:text-black disabled:opacity-20 text-sm font-bold px-1 min-h-[44px]">↓</button>
+              <button onClick={() => remove(i)} className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-3 py-1.5 min-h-[44px] rounded hover:bg-red-50 transition-colors">✕ Delete</button>
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1.5 block">QUOTE TEXT</label>
+            <textarea value={t.quote} onChange={(e) => update(i, "quote", e.target.value)} className="admin-input min-h-[100px] font-light leading-relaxed p-4 font-serif italic" placeholder="Enter client quote..." />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1.5 block">CLIENT NAME</label>
+              <input value={t.name} onChange={(e) => update(i, "name", e.target.value)} className="admin-input" placeholder="e.g. Layan" />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1.5 block">SUBTITLE</label>
+              <input value={t.subtitle} onChange={(e) => update(i, "subtitle", e.target.value)} className="admin-input" placeholder="e.g. Bride, Dubai" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">STAR RATING</label>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button key={star} onClick={() => update(i, "rating", star)} className={`text-2xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${star <= (t.rating ?? 5) ? "text-[#b3a384]" : "text-gray-200 hover:text-[#b3a384]/50"}`}>★</button>
+              ))}
+              <span className="text-[10px] text-gray-400 ml-2">{t.rating ?? 5} / 5</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Video List Editor ────────────────────
+interface VideoItemAdmin {
+  id: string; url: string; title: string; clientName: string; clientSubtitle: string;
+}
+function getYoutubeThumbnail(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+  return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : null;
+}
+function VideoListEditor({
+  videos, onChange,
+}: { videos: VideoItemAdmin[]; onChange: (v: VideoItemAdmin[]) => void }) {
+  const add = () => onChange([...videos, { id: `v-${Date.now()}`, url: "", title: "", clientName: "", clientSubtitle: "" }]);
+  const update = (i: number, field: keyof VideoItemAdmin, val: string) => {
+    const a = [...videos]; a[i] = { ...a[i], [field]: val }; onChange(a);
+  };
+  const remove = (i: number) => onChange(videos.filter((_, idx) => idx !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const a = [...videos]; const j = i + dir;
+    if (j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; onChange(a);
+  };
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between border-b pb-3">
+        <label className="text-xs tracking-[3px] uppercase text-gray-500 font-bold">CLIENT VIDEOS ({videos.length})</label>
+        <button onClick={add} className="text-[10px] font-bold text-[#b3a384] uppercase tracking-widest min-h-[44px] px-3">+ ADD VIDEO</button>
+      </div>
+      {videos.length === 0 && (
+        <div className="py-10 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-[10px] uppercase tracking-widest">No videos yet — paste YouTube, Vimeo, or direct MP4 links</div>
+      )}
+      {videos.map((v, i) => {
+        const thumb = getYoutubeThumbnail(v.url);
+        const isVimeo = v.url.includes("vimeo.com");
+        return (
+          <div key={v.id} className="border border-gray-100 rounded-lg p-5 space-y-4 bg-white shadow-sm">
+            <div className="flex items-start gap-4">
+              {/* Thumbnail preview */}
+              <div className="shrink-0 w-[100px] aspect-video bg-gray-100 rounded overflow-hidden border border-gray-100">
+                {thumb ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={thumb} alt="" className="w-full h-full object-cover" />
+                ) : isVimeo ? (
+                  <div className="w-full h-full flex items-center justify-center bg-[#1ab7ea]/10">
+                    <span className="text-[8px] text-[#1ab7ea] font-bold uppercase tracking-widest">Vimeo</span>
+                  </div>
+                ) : v.url.match(/\.(mp4|webm|ogg)/i) ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">MP4</span>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5"><polygon points="6,3 20,12 6,21"/></svg>
+                  </div>
+                )}
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] uppercase tracking-[3px] font-black text-gray-400">Video {i + 1}</p>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-black disabled:opacity-20 text-sm font-bold px-1 min-h-[44px]">↑</button>
+                    <button onClick={() => move(i, 1)} disabled={i === videos.length - 1} className="text-gray-300 hover:text-black disabled:opacity-20 text-sm font-bold px-1 min-h-[44px]">↓</button>
+                    <button onClick={() => remove(i)} className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-3 py-1.5 min-h-[44px] rounded hover:bg-red-50 transition-colors">✕</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">VIDEO URL</label>
+                  <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm" placeholder="https://youtube.com/watch?v=... or Vimeo or .mp4 URL" />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">TITLE (optional)</label>
+                <input value={v.title} onChange={(e) => update(i, "title", e.target.value)} className="admin-input text-sm" placeholder="Video title" />
+              </div>
+              <div>
+                <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">CLIENT NAME</label>
+                <input value={v.clientName} onChange={(e) => update(i, "clientName", e.target.value)} className="admin-input text-sm" placeholder="e.g. Sara" />
+              </div>
+              <div>
+                <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">CLIENT SUBTITLE</label>
+                <input value={v.clientSubtitle} onChange={(e) => update(i, "clientSubtitle", e.target.value)} className="admin-input text-sm" placeholder="e.g. Bride, Cairo" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -2591,6 +2749,7 @@ export default function AdminDashboard() {
                 "about",
                 "bridal",
                 "couture",
+                "experience",
                 "contact",
                 "social",
                 "media",
@@ -2612,17 +2771,19 @@ export default function AdminDashboard() {
               >
                 {s === "about"
                   ? "ABOUT US"
-                  : s === "media"
-                    ? "MEDIA LIBRARY"
-                    : s === "site"
-                      ? "GLOBAL SETTINGS"
-                      : s === "social"
-                        ? "SOCIAL SETTINGS"
-                        : s === "messages"
-                          ? "MESSAGES"
-                          : s === "clients"
-                            ? "CLIENTS"
-                            : s.toUpperCase()}
+                  : s === "experience"
+                    ? "EXPERIENCE"
+                    : s === "media"
+                      ? "MEDIA LIBRARY"
+                      : s === "site"
+                        ? "GLOBAL SETTINGS"
+                        : s === "social"
+                          ? "SOCIAL SETTINGS"
+                          : s === "messages"
+                            ? "MESSAGES"
+                            : s === "clients"
+                              ? "CLIENTS"
+                              : s.toUpperCase()}
                 {s === "clients" && clients.length > 0 && activeSection !== "clients" && (
                   <span className="absolute top-3 right-3 bg-[#b3a384] text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full">
                     {clients.length}
@@ -3059,18 +3220,64 @@ export default function AdminDashboard() {
               </div>
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                   <SingleImageEditor
-                    label="HERO BACKGROUND IMAGE"
+                    label="HERO BACKGROUND IMAGE (Right Panel)"
                     image={content.about?.portraitImage ?? ""}
                     allImages={allImages}
                     onUploadComplete={refreshImages}
                     onChange={(src) => set("about.portraitImage", src)}
                   />
               </div>
+
+              {/* Tagline */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
+                  ITALIC TAGLINE (shown in gold under the heading)
+                </label>
+                <input
+                  value={(content.about as any)?.tagline ?? ""}
+                  onChange={(e) => set("about.tagline", e.target.value)}
+                  className="admin-input font-serif italic"
+                  placeholder="Crafted for the woman who seeks the exceptional."
+                />
+              </div>
+
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <BioParagraphEditor
                   bio={content.about?.bio ?? []}
                   onChange={(b) => set("about.bio", b)}
                 />
+              </div>
+
+              {/* Gallery images */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="flex items-center justify-between border-b pb-3 mb-8">
+                  <label className="text-xs tracking-[3px] uppercase text-gray-500 font-bold">
+                    GALLERY IMAGES (bottom 4-image grid)
+                  </label>
+                  <span className="text-[10px] text-gray-400 uppercase tracking-widest">4 slots</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-12">
+                  {[
+                    { key: 0, label: "LEFT PANEL — Large tall image" },
+                    { key: 1, label: "CENTER TOP — Detail / close-up" },
+                    { key: 2, label: "CENTER BOTTOM — Atelier sign / detail" },
+                    { key: 3, label: "RIGHT PANEL — Large tall image" },
+                  ].map(({ key, label }) => (
+                    <SingleImageEditor
+                      key={key}
+                      label={label}
+                      image={(content.about?.gallery ?? [])[key] ?? ""}
+                      allImages={allImages}
+                      onUploadComplete={refreshImages}
+                      onChange={(src) => {
+                        const g = [...(content.about?.gallery ?? ["", "", "", ""])];
+                        while (g.length < 4) g.push("");
+                        g[key] = src;
+                        set("about.gallery", g);
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -3121,6 +3328,123 @@ export default function AdminDashboard() {
                   onChange={(years) => set("couture.years", years)}
                 />
               </div>
+            </div>
+          )}
+
+          {/* EXPERIENCE SETTINGS */}
+          {activeSection === "experience" && (
+            <div className="space-y-6 lg:space-y-12">
+
+              {/* SEO */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">Experience Page SEO</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <input value={(content.experience as any)?.metaTitle ?? ""} onChange={(e) => set("experience.metaTitle", e.target.value)} className="admin-input" placeholder="Page Title (Browser Tab)" />
+                  <input value={(content.experience as any)?.metaDescription ?? ""} onChange={(e) => set("experience.metaDescription", e.target.value)} className="admin-input" placeholder="Meta Description" />
+                </div>
+              </div>
+
+              {/* Hero Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">HERO SECTION</label>
+                <div className="space-y-6">
+                  <SingleImageEditor
+                    label="HERO BACKGROUND IMAGE"
+                    image={(content.experience as any)?.heroImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(src) => set("experience.heroImage", src)}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">EYEBROW TEXT (small, above heading)</label>
+                      <input value={(content.experience as any)?.heroSubheading ?? ""} onChange={(e) => set("experience.heroSubheading", e.target.value)} className="admin-input" placeholder="THE ELAKAD" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">MAIN HEADING</label>
+                      <input value={(content.experience as any)?.heroHeading ?? ""} onChange={(e) => set("experience.heroHeading", e.target.value)} className="admin-input font-display text-xl" placeholder="EXPERIENCE" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">HERO DESCRIPTION PARAGRAPHS</label>
+                    <BioParagraphEditor
+                      bio={(content.experience as any)?.heroDescriptions ?? []}
+                      onChange={(b) => set("experience.heroDescriptions", b)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Kind Words Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">KIND WORDS — TESTIMONIALS SECTION</label>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION TITLE</label>
+                      <input value={(content.experience as any)?.kindWordsTitle ?? ""} onChange={(e) => set("experience.kindWordsTitle", e.target.value)} className="admin-input font-display text-xl" placeholder="KIND WORDS" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">INTRO TEXT</label>
+                      <textarea value={(content.experience as any)?.kindWordsIntro ?? ""} onChange={(e) => set("experience.kindWordsIntro", e.target.value)} className="admin-input min-h-[80px] font-light p-4" placeholder="We are honored to be a part of our clients' most special moments..." />
+                    </div>
+                  </div>
+                  <TestimonialsEditor
+                    testimonials={(content.experience as any)?.testimonials ?? []}
+                    onChange={(t) => set("experience.testimonials", t)}
+                  />
+                </div>
+              </div>
+
+              {/* Client Videos Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">CLIENT VIDEOS SECTION</label>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION TITLE</label>
+                      <input value={(content.experience as any)?.videoSectionTitle ?? ""} onChange={(e) => set("experience.videoSectionTitle", e.target.value)} className="admin-input font-display text-xl" placeholder="CLIENT STORIES" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION SUBTITLE (optional)</label>
+                      <input value={(content.experience as any)?.videoSectionSubtitle ?? ""} onChange={(e) => set("experience.videoSectionSubtitle", e.target.value)} className="admin-input" placeholder="A few words from our brides..." />
+                    </div>
+                  </div>
+                  <VideoListEditor
+                    videos={(content.experience as any)?.videos ?? []}
+                    onChange={(v) => set("experience.videos", v)}
+                  />
+                </div>
+              </div>
+
+              {/* CTA Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">YOUR STORY — BOTTOM CTA SECTION</label>
+                <div className="space-y-6">
+                  <SingleImageEditor
+                    label="CTA BACKGROUND IMAGE (leave blank to reuse hero image)"
+                    image={(content.experience as any)?.ctaImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(src) => set("experience.ctaImage", src)}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">CTA HEADING</label>
+                      <input value={(content.experience as any)?.ctaHeading ?? ""} onChange={(e) => set("experience.ctaHeading", e.target.value)} className="admin-input font-display text-xl" placeholder="YOUR STORY" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">CTA ITALIC SUBTITLE</label>
+                      <input value={(content.experience as any)?.ctaSubtitle ?? ""} onChange={(e) => set("experience.ctaSubtitle", e.target.value)} className="admin-input font-serif italic" placeholder="deserves to be extraordinary" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">CTA BODY TEXT</label>
+                    <textarea value={(content.experience as any)?.ctaText ?? ""} onChange={(e) => set("experience.ctaText", e.target.value)} className="admin-input min-h-[80px] font-light p-4" placeholder="We would be honored to create something uniquely yours." />
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -3250,6 +3574,47 @@ export default function AdminDashboard() {
                       ),
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* International Brides Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <div className="flex items-center gap-3 border-b pb-4 mb-8">
+                  <span className="text-[10px] text-[#b3a384] font-black uppercase tracking-widest">🌍</span>
+                  <label className="text-xs tracking-[3px] uppercase text-gray-500 font-bold">
+                    INTERNATIONAL BRIDES SECTION
+                  </label>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">
+                      SECTION HEADING
+                    </label>
+                    <input
+                      value={(content.contact as any)?.internationalTitle ?? ""}
+                      onChange={(e) => set("contact.internationalTitle", e.target.value)}
+                      className="admin-input font-display text-xl"
+                      placeholder="Worldwide Shipping Available"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">
+                      SECTION TEXT
+                    </label>
+                    <textarea
+                      value={(content.contact as any)?.internationalText ?? ""}
+                      onChange={(e) => set("contact.internationalText", e.target.value)}
+                      className="admin-input min-h-[130px] font-light leading-relaxed p-4"
+                      placeholder="Dreaming of an Ahmed Elakad gown from outside Egypt? We ship our bespoke creations to brides around the world..."
+                    />
+                  </div>
+                  <SingleImageEditor
+                    label="SIDE IMAGE (optional — leave blank for full-width text layout)"
+                    image={(content.contact as any)?.internationalImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(src) => set("contact.internationalImage", src)}
+                  />
                 </div>
               </div>
             </div>
