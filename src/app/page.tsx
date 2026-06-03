@@ -12,14 +12,44 @@ export default async function HomePage() {
   const bridal = content.bridal ?? {};
   const couture = content.couture ?? {};
 
+  // Hero
   const heroImage = home.heroImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522163/1_21_iznofv.jpg";
+  const heroLabel = home.heroLabel || "Bespoke Bridal Couture";
+  const heroHeading = home.heroHeading || "Crafting Bridal Dreams";
+  const heroSubtitle = home.heroSubtitle || "One Couture Creation at a Time";
+  const heroDescription = home.heroDescription || "Bespoke bridal couture designed and handcrafted in Cairo for brides who seek elegance, artistry, and timeless beauty.";
+  const heroCTAText = home.heroCTAText || "Book a Private Appointment";
+  const heroCTAHref = home.heroCTAHref || "/contact";
+
+  // House of Ahmed Elakad — text from About, image from About sideImage
   const aboutImage = about.sideImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
+  const bio = about.bio ?? [];
+
+  // Collections
   const bridalBanner = bridal.bannerImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
   const coutureBanner = couture.bannerImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
-  const modestBridalImg = (bridal.gallery ?? [])[1] || bridalBanner;
+  const modestFallback = (bridal.gallery ?? [])[1] || bridalBanner;
+
+  const coll1Image = home.collection1Image || bridalBanner;
+  const coll1Label = home.collection1Label || "Bridal Collection";
+  const coll1Href  = home.collection1Href  || "/bridal";
+  const coll2Image = home.collection2Image || coutureBanner;
+  const coll2Label = home.collection2Label || "Evening Couture";
+  const coll2Href  = home.collection2Href  || "/couture";
+  const coll3Image = home.collection3Image || modestFallback;
+  const coll3Label = home.collection3Label || "Modest Bridal";
+  const coll3Href  = home.collection3Href  || "/bridal";
+
+  // Real Brides
   const featuredImages = (home.featuredImages ?? []).slice(0, 6);
-  const ctaDecorImage = (home.featuredImages ?? [])[6] || aboutImage;
-  const bio = about.bio ?? [];
+
+  // Bridal Journey CTA
+  const ctaDecorFallback = (home.featuredImages ?? [])[6] || aboutImage;
+  const ctaImage       = home.ctaImage       || ctaDecorFallback;
+  const ctaHeading     = home.ctaHeading     || "Bridal Journey";
+  const ctaDescription = home.ctaDescription || "Private consultations are available by appointment only at our Cairo atelier.";
+  const ctaBtnText     = home.ctaButtonText  || "Reserve Your Consultation";
+  const ctaBtnHref     = home.ctaButtonHref  || "/contact";
 
   return (
     <main className="bg-[#f9f7f4]">
@@ -34,34 +64,32 @@ export default async function HomePage() {
           fetchPriority="high"
         />
         <div className="absolute inset-0 bg-black/45" />
-
         <div className="absolute inset-0 flex flex-col justify-end pb-16 sm:pb-24 px-6 sm:px-14 md:px-20 max-w-[1440px] mx-auto left-0 right-0">
           <div className="flex items-center gap-4 mb-4 sm:mb-5">
             <span className="block w-8 h-[1px] bg-white/50" />
             <span className="text-[8px] tracking-[4px] uppercase text-white/70 font-medium">
-              Bespoke Bridal Couture
+              {heroLabel}
             </span>
           </div>
-          <h1 className="font-serif text-[42px] sm:text-[62px] md:text-[76px] leading-[1.0] font-light text-white mb-3 sm:mb-4 max-w-[560px]">
-            Crafting Bridal<br />Dreams
+          <h1 className="font-serif text-[42px] sm:text-[62px] md:text-[76px] leading-[1.0] font-light text-white mb-3 sm:mb-4 max-w-[560px] whitespace-pre-line">
+            {heroHeading}
           </h1>
           <p className="font-serif italic text-[16px] sm:text-[22px] text-white/85 mb-4 sm:mb-6 leading-snug">
-            One Couture Creation at a Time
+            {heroSubtitle}
           </p>
           <p className="text-[12px] sm:text-[13px] text-white/65 leading-relaxed max-w-[320px] mb-8 sm:mb-10 font-light">
-            Bespoke bridal couture designed and handcrafted in Cairo for brides who seek elegance, artistry, and timeless beauty.
+            {heroDescription}
           </p>
           <Link
-            href="/contact"
+            href={heroCTAHref}
             className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] sm:text-[9px] tracking-[3px] uppercase px-6 sm:px-7 py-3 sm:py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit"
           >
-            Book a Private Appointment
+            {heroCTAText}
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
-
         <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-14 md:left-20">
           <svg width="14" height="22" viewBox="0 0 14 26" fill="none" stroke="white" strokeWidth="1" opacity="0.45">
             <line x1="7" y1="0" x2="7" y2="24" />
@@ -72,15 +100,13 @@ export default async function HomePage() {
 
       {/* ── 2. The House of Ahmed Elakad ─────────────────────────── */}
       <section className="bg-[#f9f7f4] py-14 sm:py-20 md:py-28">
-        {/* Always 2 columns */}
         <div className="grid grid-cols-[1fr_1.5fr]">
-          {/* Text column */}
           <div className="pl-5 sm:pl-12 md:pl-20 lg:pl-28 pr-5 sm:pr-8 md:pr-12 pt-4 sm:pt-8 pb-6 sm:pb-0 flex flex-col justify-center">
             <p className="text-[7px] sm:text-[9px] tracking-[3px] sm:tracking-[4px] uppercase text-[#b3a384] font-medium mb-2 sm:mb-4">
               The House of
             </p>
             <h2 className="font-serif text-[22px] sm:text-[38px] md:text-[46px] leading-tight text-[#1a1a1a] font-light mb-3 sm:mb-6">
-              Ahmed Elakad
+              {content.siteInfo?.brandName ?? "Ahmed Elakad"}
             </h2>
             <div className="w-6 sm:w-8 h-[1px] bg-[#b3a384] mb-4 sm:mb-8" />
             <div className="space-y-3 text-[10px] sm:text-[13.5px] text-[#5a5a5a] leading-relaxed font-light">
@@ -104,7 +130,6 @@ export default async function HomePage() {
               </svg>
             </Link>
           </div>
-          {/* Image column */}
           <div className="h-[220px] sm:h-[480px] md:h-[580px] overflow-hidden">
             <img
               src={optimizeImage(aboutImage)}
@@ -127,12 +152,11 @@ export default async function HomePage() {
               Discover Our Collections
             </h2>
           </div>
-          {/* Always 3 columns */}
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { img: bridalBanner, label: "Bridal Collection", href: "/bridal" },
-              { img: coutureBanner, label: "Evening Couture", href: "/couture" },
-              { img: modestBridalImg, label: "Modest Bridal", href: "/bridal" },
+              { img: coll1Image, label: coll1Label, href: coll1Href },
+              { img: coll2Image, label: coll2Label, href: coll2Href },
+              { img: coll3Image, label: coll3Label, href: coll3Href },
             ].map((card) => (
               <Link
                 key={card.label}
@@ -204,10 +228,9 @@ export default async function HomePage() {
 
       {/* ── 5. Begin Your Bridal Journey ─────────────────────────── */}
       <section className="relative bg-[#ede8df] overflow-hidden py-20 sm:py-28 md:py-32">
-        {/* Decorative image — left side (all screen sizes) */}
         <div className="absolute left-0 top-0 bottom-0 w-[100px] sm:w-[260px] md:w-[380px] pointer-events-none">
           <img
-            src={optimizeImage(ctaDecorImage)}
+            src={optimizeImage(ctaImage)}
             alt=""
             className="w-full h-full object-cover object-center opacity-30 sm:opacity-25"
             loading="lazy"
@@ -219,17 +242,17 @@ export default async function HomePage() {
             Begin Your
           </p>
           <h2 className="font-serif text-[34px] sm:text-[44px] md:text-[52px] font-light text-[#1a1a1a] mb-4 sm:mb-6 leading-tight">
-            Bridal Journey
+            {ctaHeading}
           </h2>
           <div className="w-7 h-[1px] bg-[#b3a384] mx-auto mb-6 sm:mb-8" />
           <p className="text-[12px] sm:text-[13px] text-[#6a6a6a] leading-relaxed mb-8 sm:mb-10 font-light">
-            Private consultations are available by appointment only at our Cairo atelier.
+            {ctaDescription}
           </p>
           <Link
-            href="/contact"
+            href={ctaBtnHref}
             className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] uppercase px-8 sm:px-10 py-3 sm:py-4 hover:bg-[#b3a384] transition-colors duration-300"
           >
-            Reserve Your Consultation
+            {ctaBtnText}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>

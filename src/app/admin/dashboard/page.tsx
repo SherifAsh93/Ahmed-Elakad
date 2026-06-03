@@ -2816,60 +2816,190 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
+              {/* Hero Image */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <SingleImageEditor
-                  label="MAIN HERO BACKGROUND"
+                  label="HERO BACKGROUND IMAGE"
                   image={content.homepage?.heroImage ?? ""}
                   allImages={allImages}
                   onUploadComplete={refreshImages}
                   onChange={(src) => set("homepage.heroImage", src)}
                 />
               </div>
+
+              {/* Hero Text */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
-                  Hero Buttons (Call to Action)
+                  Hero Text
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold">Button 1 (Beige)</p>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Label (small text above heading)</p>
                     <input
-                      value={content.homepage?.cta1Text ?? ""}
-                      onChange={(e) => set("homepage.cta1Text", e.target.value)}
+                      value={content.homepage?.heroLabel ?? ""}
+                      onChange={(e) => set("homepage.heroLabel", e.target.value)}
                       className="admin-input cursor-text"
-                      placeholder="Find Your Dress"
-                    />
-                    <input
-                      value={content.homepage?.cta1Href ?? ""}
-                      onChange={(e) => set("homepage.cta1Href", e.target.value)}
-                      className="admin-input cursor-text"
-                      placeholder="/bridal"
+                      placeholder="Bespoke Bridal Couture"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold">Button 2 (White)</p>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Main Heading</p>
                     <input
-                      value={content.homepage?.cta2Text ?? ""}
-                      onChange={(e) => set("homepage.cta2Text", e.target.value)}
+                      value={content.homepage?.heroHeading ?? ""}
+                      onChange={(e) => set("homepage.heroHeading", e.target.value)}
                       className="admin-input cursor-text"
-                      placeholder="Book an Appointment"
+                      placeholder="Crafting Bridal Dreams"
                     />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Subtitle (italic)</p>
                     <input
-                      value={content.homepage?.cta2Href ?? ""}
-                      onChange={(e) => set("homepage.cta2Href", e.target.value)}
+                      value={content.homepage?.heroSubtitle ?? ""}
+                      onChange={(e) => set("homepage.heroSubtitle", e.target.value)}
                       className="admin-input cursor-text"
-                      placeholder="/contact"
+                      placeholder="One Couture Creation at a Time"
                     />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Description</p>
+                    <textarea
+                      value={content.homepage?.heroDescription ?? ""}
+                      onChange={(e) => set("homepage.heroDescription", e.target.value)}
+                      className="admin-input cursor-text resize-none"
+                      rows={3}
+                      placeholder="Bespoke bridal couture designed and handcrafted in Cairo..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Button Text</p>
+                      <input
+                        value={content.homepage?.heroCTAText ?? ""}
+                        onChange={(e) => set("homepage.heroCTAText", e.target.value)}
+                        className="admin-input cursor-text"
+                        placeholder="Book a Private Appointment"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Button Link</p>
+                      <input
+                        value={content.homepage?.heroCTAHref ?? ""}
+                        onChange={(e) => set("homepage.heroCTAHref", e.target.value)}
+                        className="admin-input cursor-text"
+                        placeholder="/contact"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Collections Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
+                  Collections Section (3 Cards)
+                </label>
+                <div className="space-y-10">
+                  {([
+                    { n: "1", imgKey: "collection1Image", labelKey: "collection1Label", hrefKey: "collection1Href", defaultLabel: "Bridal Collection", defaultHref: "/bridal" },
+                    { n: "2", imgKey: "collection2Image", labelKey: "collection2Label", hrefKey: "collection2Href", defaultLabel: "Evening Couture", defaultHref: "/couture" },
+                    { n: "3", imgKey: "collection3Image", labelKey: "collection3Label", hrefKey: "collection3Href", defaultLabel: "Modest Bridal", defaultHref: "/bridal" },
+                  ] as const).map((col) => (
+                    <div key={col.n} className="border-t border-gray-100 pt-8 first:border-none first:pt-0">
+                      <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-4">Card {col.n}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 items-start">
+                        <SingleImageEditor
+                          label={`CARD ${col.n} IMAGE`}
+                          image={(content.homepage as Record<string, string>)?.[col.imgKey] ?? ""}
+                          allImages={allImages}
+                          onUploadComplete={refreshImages}
+                          onChange={(src) => set(`homepage.${col.imgKey}`, src)}
+                        />
+                        <div className="space-y-3">
+                          <input
+                            value={(content.homepage as Record<string, string>)?.[col.labelKey] ?? ""}
+                            onChange={(e) => set(`homepage.${col.labelKey}`, e.target.value)}
+                            className="admin-input cursor-text"
+                            placeholder={col.defaultLabel}
+                          />
+                          <input
+                            value={(content.homepage as Record<string, string>)?.[col.hrefKey] ?? ""}
+                            onChange={(e) => set(`homepage.${col.hrefKey}`, e.target.value)}
+                            className="admin-input cursor-text"
+                            placeholder={col.defaultHref}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Real Brides Gallery */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <GalleryEditor
-                  label="FEATURED COLLECTION PREVIEW"
+                  label="REAL BRIDES — GALLERY PHOTOS (first 6 shown)"
                   images={content.homepage?.featuredImages ?? []}
                   allImages={allImages}
                   onUploadComplete={refreshImages}
                   onChange={(imgs) => set("homepage.featuredImages", imgs)}
                 />
+              </div>
+
+              {/* Bridal Journey CTA */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
+                  Bridal Journey CTA Section
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-start">
+                  <SingleImageEditor
+                    label="DECORATIVE SIDE IMAGE"
+                    image={content.homepage?.ctaImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(src) => set("homepage.ctaImage", src)}
+                  />
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Heading</p>
+                      <input
+                        value={content.homepage?.ctaHeading ?? ""}
+                        onChange={(e) => set("homepage.ctaHeading", e.target.value)}
+                        className="admin-input cursor-text"
+                        placeholder="Bridal Journey"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Description</p>
+                      <textarea
+                        value={content.homepage?.ctaDescription ?? ""}
+                        onChange={(e) => set("homepage.ctaDescription", e.target.value)}
+                        className="admin-input cursor-text resize-none"
+                        rows={3}
+                        placeholder="Private consultations are available by appointment only at our Cairo atelier."
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Button Text</p>
+                        <input
+                          value={content.homepage?.ctaButtonText ?? ""}
+                          onChange={(e) => set("homepage.ctaButtonText", e.target.value)}
+                          className="admin-input cursor-text"
+                          placeholder="Reserve Your Consultation"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[2px] text-gray-400 font-bold mb-1">Button Link</p>
+                        <input
+                          value={content.homepage?.ctaButtonHref ?? ""}
+                          onChange={(e) => set("homepage.ctaButtonHref", e.target.value)}
+                          className="admin-input cursor-text"
+                          placeholder="/contact"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

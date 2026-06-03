@@ -19,10 +19,36 @@ export interface SiteContent {
     logo?: string;
   };
   homepage?: {
+    // Hero section
     heroImage?: string;
+    heroLabel?: string;
+    heroHeading?: string;
+    heroSubtitle?: string;
+    heroDescription?: string;
+    heroCTAText?: string;
+    heroCTAHref?: string;
+    // Collections section
+    collection1Image?: string;
+    collection1Label?: string;
+    collection1Href?: string;
+    collection2Image?: string;
+    collection2Label?: string;
+    collection2Href?: string;
+    collection3Image?: string;
+    collection3Label?: string;
+    collection3Href?: string;
+    // Real Brides gallery
     featuredImages?: string[];
+    // Bridal Journey CTA
+    ctaImage?: string;
+    ctaHeading?: string;
+    ctaDescription?: string;
+    ctaButtonText?: string;
+    ctaButtonHref?: string;
+    // SEO
     metaTitle?: string;
     metaDescription?: string;
+    // Legacy (kept for compatibility)
     cta1Text?: string;
     cta1Href?: string;
     cta2Text?: string;
