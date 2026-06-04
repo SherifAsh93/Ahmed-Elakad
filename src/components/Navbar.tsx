@@ -43,7 +43,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
 
   if (pathname.startsWith("/admin")) return null;
 
-  const transparent = isHome && !isScrolled;
+  const transparent = isHome && !isScrolled && !isOpen;
   const brand = content.siteInfo?.brandName ?? "Ahmed El Akad";
 
   const navLinks = [

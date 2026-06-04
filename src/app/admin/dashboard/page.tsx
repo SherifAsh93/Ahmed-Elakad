@@ -275,7 +275,7 @@ function ImagePicker({
       className={
         inline
           ? "w-full flex items-center justify-center"
-          : "fixed inset-0 bg-[#ece8e2]/90 backdrop-blur-sm z-[100] flex items-center justify-center p-2 md:p-4"
+          : "fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 md:p-4"
       }
     >
       <div
@@ -1298,7 +1298,7 @@ function ClientForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#ece8e2]/88 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+    <div className="fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-y-auto max-h-[95vh]">
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <h3 className="font-display text-base uppercase tracking-[4px]">
@@ -1469,7 +1469,7 @@ function AddPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#ece8e2]/88 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+    <div className="fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
       <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <h3 className="font-display text-sm uppercase tracking-[4px]">Add Payment</h3>
@@ -1523,7 +1523,7 @@ function FittingModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#ece8e2]/88 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+    <div className="fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
       <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <h3 className="font-display text-sm uppercase tracking-[4px]">Fitting Appointment</h3>
