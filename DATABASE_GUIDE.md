@@ -287,16 +287,36 @@ nano /home/sherif/data/ahmed-elakad/clients.json
 ## Long-Term Availability Risks & Mitigations
 
 ### Risk 1: VPS disk failure or VPS loss
-**Impact:** All JSON data, all local images (~655 MB), and all voice notes are lost permanently.  
-**Mitigation:** Set up automated daily backups (see below).
+**Severity:** Critical  
+**Impact:** All JSON data, all local images (~655 MB), and all voice notes are permanently lost.  
+**Mitigation:** ✅ Daily automated backup to Windows D: drive (see Backup Strategy below). First backup completed 2026-06-04. Restore test passed.
 
-### Risk 2: Cloudinary account suspension or free-tier exceeded
-**Impact:** All pre-migration legacy images (referenced in content.json as `res.cloudinary.com/...` URLs) will return 404.  
-**Mitigation:** Download Cloudinary images locally and re-assign URLs in content.json via admin, OR upgrade Cloudinary plan. Free tier: 25 GB storage, 25 GB bandwidth/month.
+### Risk 2: content.json corruption mid-write
+**Severity:** Critical (site goes blank instantly)  
+**Impact:** All pages read content.json on every request — a corrupt file takes the entire site down.  
+**Mitigation:** ✅ Atomic writes via `atomicWriteJSON()` — writes to `.tmp` then renames. Readers always see a complete file. Pre-existing backups allow point-in-time recovery.
 
-### Risk 3: content.json corruption
-**Impact:** Entire site goes blank (all pages read content.json).  
-**Mitigation:** Keep daily backups. The API always does a full-JSON overwrite on save — if the process dies mid-write, the file can be partial/corrupt. Symptoms: site shows blank or throws JSON parse error.
+### Risk 3: Cloudinary account suspension or free-tier exceeded
+**Severity:** High  
+**Impact:** All pre-migration legacy images (URLs like `res.cloudinary.com/dzppk5ylt/...`) return 404. These are the older collection photos from before June 2026.  
+**Free tier limits:** 25 GB storage · 25 GB bandwidth/month  
+**Mitigation:** No automated mitigation. Options: (a) migrate legacy images via admin grab-URL, (b) upgrade Cloudinary plan. Check usage at cloudinary.com dashboard.
+
+### Risk 4: NoMachine offline during backup window
+**Severity:** Low  
+**Impact:** One day's backup is skipped. Data on VPS is unchanged.  
+**Mitigation:** ✅ Script detects inaccessibility within 5 seconds, logs warning, exits cleanly. Health check shows last-success timestamp so gaps are visible. Only becomes a problem if the machine stays off for >30 days (older than the retention window).
+
+### Risk 5: VPS disk fills up (no room for new images)
+**Severity:** High  
+**Impact:** Image uploads fail; if full, JSON writes could also fail and corrupt data.  
+**Current state:** 23% used (19 GB of 96 GB). Health check warns at 85%.  
+**Mitigation:** Health check monitors disk usage. At current growth rate (~655 MB / first 2 months), the disk is sufficient for years.
+
+### Risk 6: Backup destination fills up (D: drive)
+**Severity:** Medium  
+**Impact:** rsync fails silently; backup script may report PARTIAL or ERROR.  
+**Mitigation:** Script logs all rsync failures. With 30-snapshot retention and ~655 MB per snapshot (first copy), worst case is ~19 GB on D: drive. Subsequent snapshots only copy new files.
 
 ---
 
@@ -322,63 +342,88 @@ This protects against process crashes mid-write. The temp file (`.content.json.t
 
 ### Automated Daily Backup to Windows D: Drive
 
-A cron job runs every night at 03:00 and backs up all Ahmed-Elakad data to the Windows machine's D: drive via the NoMachine sshfs mount.
+#### Schedule
 
-**Cron entry** (installed, view with `crontab -l`):
+| Property | Value |
+|----------|-------|
+| Cron schedule | `0 3 * * *` — 03:00 daily |
+| Server timezone | UTC (`timedatectl` verified) |
+| Local (Egypt) time | 06:00 EEST (UTC+3, summer) / 05:00 EET (UTC+2, winter) |
+| First backup completed | 2026-06-04 |
+
+View cron entry:
+```bash
+crontab -l
+# → 0 3 * * * /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh >> .../logs/backup.log 2>&1
 ```
-0 3 * * * /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh >> /home/sherif/sites/Ahmed-Elakad/logs/backup.log 2>&1
-```
 
-**Script:** `scripts/backup-ahmed-elakad.sh`  
-**Log:** `logs/backup.log` (local, always available)
+#### Paths
 
-**Source:**  
-`/home/sherif/data/ahmed-elakad/` (JSON files + images/ + voices/)
+| Role | Path |
+|------|------|
+| Script | `/home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh` |
+| Local log | `/home/sherif/sites/Ahmed-Elakad/logs/backup.log` |
+| Last-success marker | `/home/sherif/sites/Ahmed-Elakad/logs/last_backup_success` |
+| Source data | `/home/sherif/data/ahmed-elakad/` |
+| D: drive mount | `/home/sherif/Desktop/D on Player (NoMachine)/` (sshfs via NoMachine) |
+| Backup root (Linux) | `/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/` |
+| Backup root (Windows) | `D:\Development\01-Projects\ahmed-elakad\backup\` |
 
-**Destination:**  
-`/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/`  
-(Windows `D:\Development\01-Projects\ahmed-elakad\backup\`)
+#### What Gets Backed Up
 
-**Snapshot structure:**
+| File / Dir | Size | Priority | Notes |
+|-----------|------|----------|-------|
+| `content.json` | ~108 KB | Critical | Site blank if missing |
+| `clients.json` | ~15 KB | Critical | CRM — no other copy |
+| `messages.json` | grows | High | Contact submissions |
+| `config.json` | ~30 B | Medium | Admin pw — can reset manually |
+| `images/` | ~655 MB | Critical | All photos since June 2026 |
+| `voices/` | grows | High | Client voice notes |
+
+Cloudinary legacy images (pre-June 2026) are **not** backed up — Cloudinary manages its own redundancy.
+
+#### Snapshot Structure
+
 ```
 backup/
-├── 2026-06-04_03-00-01/
+├── 2026-06-04_16-45-04/        ← YYYY-MM-DD_HH-MM-SS
 │   ├── content.json
 │   ├── clients.json
-│   ├── messages.json
-│   ├── config.json
-│   ├── images/
-│   ├── voices/
-│   └── .backup_status    ← "OK <timestamp>" or "PARTIAL <timestamp>"
-├── 2026-06-03_03-00-01/
-└── .last_success         ← timestamp of most recent successful backup
+│   ├── messages.json            (skipped if not yet created)
+│   ├── config.json              (skipped if not yet created)
+│   ├── images/                  (rsync — full copy first time, incremental after)
+│   ├── voices/                  (rsync)
+│   └── .backup_status           ← "OK YYYY-MM-DD_HH-MM-SS" or "PARTIAL ..."
+├── 2026-06-05_03-00-01/
+├── ...
+└── .last_success                ← timestamp of last clean backup
 ```
 
-**Retention:** 30 dated snapshots kept, older ones deleted automatically.
+#### Retention
 
-**When Windows is offline / D: drive not mounted:**
-- Script probes the mount with a 5-second timeout
-- Logs `WARN: D: drive not accessible — skipping backup`
-- Exits cleanly (code 0) — no cron failure mail, no site impact
+30 dated snapshot directories are kept. The script automatically removes the oldest when more than 30 exist. At ~655 MB per full copy (first run only; subsequent runs only copy new/changed files via rsync), worst-case D: drive usage is well under 20 GB.
 
-**What to back up:**
+#### When Windows Is Offline
 
-| Path | Priority |
-|------|----------|
-| `content.json` | Critical — site goes blank if lost |
-| `clients.json` | Critical — CRM data, unrecoverable |
-| `messages.json` | High — contact form submissions |
-| `config.json` | Medium — admin password (can reset manually) |
-| `images/` | Critical — all product photos (June 2026+) |
-| `voices/` | High — client voice notes in Atelier |
+The script probes the mount root (`D on Player (NoMachine)/`) with a 5-second `timeout`. If the machine is off or NoMachine is disconnected:
+- Logs: `[WARN] D: drive not accessible — Skipping backup.`
+- Exits with code 0 (no cron failure mail)
+- Site is completely unaffected
+- One missed night is safe — 30 days of retention give a wide buffer
 
-**Note on Cloudinary legacy images:** Pre-June-2026 images live on Cloudinary's CDN and are not included in the VPS backup. Cloudinary handles its own redundancy.
+#### Transfer Characteristics
 
-### Manual Backup (if needed)
+| Run type | What rsync sends | Duration |
+|----------|-----------------|----------|
+| First run | All ~655 MB of images | ~3–4 hours over sshfs |
+| Subsequent runs | Only new/changed files since last backup | Seconds to minutes |
+
+The first backup was initiated 2026-06-04 at 16:45 UTC and transferred images at ~4 MB/min over the sshfs/NoMachine link. All future nightly runs are incremental.
+
+### Manual Backup (on demand)
 ```bash
-# One-off backup — run as sherif on VPS
-BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
-cp -r /home/sherif/data/ahmed-elakad/ /home/sherif/backups/ahmed-elakad-$BACKUP_DATE/
+bash /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh
+# Logs to logs/backup.log and the D: drive simultaneously
 ```
 
 ---
@@ -431,47 +476,124 @@ Exit code 0 = healthy, 1 = one or more errors detected.
 
 ## Disaster Recovery
 
-### Scenario 1: content.json corrupted (site goes blank)
+> **Restore test verified 2026-06-04:** content.json and clients.json restored from backup snapshot to a temp directory; md5 matched source exactly; JSON parsed successfully (11 sections, 23 clients, 20 payment records).
+
+### Find the right snapshot
 
 ```bash
-# Find the newest backup snapshot
-ls "/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/" | sort | tail -5
+BACKUP_ROOT="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup"
 
-# Restore content.json from last good backup
+# List all snapshots newest-first
+ls "${BACKUP_ROOT}" | sort -r | head -10
+
+# Check if a specific snapshot completed cleanly
+cat "${BACKUP_ROOT}/2026-06-04_16-45-04/.backup_status"
+# → "OK 2026-06-04_16-45-04" means clean
+# → "PARTIAL ..." means rsync had errors — try the previous snapshot
+
+# Read last confirmed success
+cat "/home/sherif/sites/Ahmed-Elakad/logs/last_backup_success"
+```
+
+---
+
+### Scenario 1: Single JSON file corrupted (fastest restore, site stays up)
+
+Symptoms: site shows blank page, PM2 logs show `JSON parse error`, or one CMS section is missing.
+
+```bash
 SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
+
+# Validate the backup file before restoring
+python3 -c "import json; json.load(open('${SNAP}/content.json'))" && echo "Backup is valid JSON"
+
+# Restore — atomicWrite guarantees no partial file
 cp "${SNAP}/content.json" /home/sherif/data/ahmed-elakad/content.json
 
-# Verify the site is up
+# Verify site responds
+curl -sI https://ahmedelakad.com | head -3
 pm2 logs ahmed-elakad --lines 10
 ```
 
+No PM2 restart needed — Next.js reads content.json on every request (no in-memory cache).
+
+---
+
 ### Scenario 2: Full data directory recovery
 
+Use when multiple files are lost or the entire `/home/sherif/data/ahmed-elakad/` is damaged.
+
 ```bash
-# Stop PM2 to prevent writes during restore
+# 1. Prevent new writes during restore
 pm2 stop ahmed-elakad
 
-# Restore from backup snapshot
+# 2. Pick snapshot (newest clean one)
 SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
+
+# 3. Restore JSON files
+for f in content.json clients.json messages.json config.json; do
+  [[ -f "${SNAP}/${f}" ]] && cp "${SNAP}/${f}" /home/sherif/data/ahmed-elakad/ && echo "Restored ${f}"
+done
+
+# 4. Restore images (rsync: fast, skips already-correct files)
+rsync -a --info=progress2 "${SNAP}/images/" /home/sherif/data/ahmed-elakad/images/
+
+# 5. Restore voices
+rsync -a "${SNAP}/voices/" /home/sherif/data/ahmed-elakad/voices/
+
+# 6. Restart
+pm2 start ahmed-elakad
+pm2 logs ahmed-elakad --lines 20
+
+# 7. Verify
+bash /home/sherif/sites/Ahmed-Elakad/scripts/health-check-ahmed-elakad.sh
+```
+
+**Downtime:** Only the `pm2 stop` → `pm2 start` window (~seconds). JSON restore is instant; image rsync runs in background after PM2 is back up (images not in data dir are just 404 until sync completes).
+
+---
+
+### Scenario 3: VPS lost entirely — rebuild from scratch
+
+```bash
+# On new VPS (Ubuntu 22.04+ recommended):
+
+# 1. Install dependencies
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt install -y nodejs nginx certbot python3-certbot-nginx rsync
+npm install -g pm2
+
+# 2. Restore SSH + NoMachine access to Windows machine
+#    (so the D: drive can be mounted again)
+
+# 3. Clone repo
+git clone https://github.com/SherifAsh93/Ahmed-Elakad.git /home/sherif/sites/Ahmed-Elakad
+
+# 4. Create data directories
+mkdir -p /home/sherif/data/ahmed-elakad/{images,voices}
+
+# 5. Mount D: drive via sshfs (adjust Windows IP/user as needed)
+#    NoMachine typically handles this automatically on connect
+
+# 6. Copy latest clean backup
+SNAP="<path-to-backup-root>/YYYY-MM-DD_HH-MM-SS"
 cp "${SNAP}"/content.json  /home/sherif/data/ahmed-elakad/
 cp "${SNAP}"/clients.json  /home/sherif/data/ahmed-elakad/
-cp "${SNAP}"/messages.json /home/sherif/data/ahmed-elakad/
-cp "${SNAP}"/config.json   /home/sherif/data/ahmed-elakad/
 rsync -a "${SNAP}/images/" /home/sherif/data/ahmed-elakad/images/
 rsync -a "${SNAP}/voices/" /home/sherif/data/ahmed-elakad/voices/
 
-# Restart site
-pm2 start ahmed-elakad
-pm2 logs ahmed-elakad --lines 20
+# 7. Configure .env.local — see SETUP_GUIDE.md
+# 8. Configure Nginx — see SETUP_GUIDE.md
+# 9. Build and start
+cd /home/sherif/sites/Ahmed-Elakad
+npm install && npm run build
+pm2 start npm --name ahmed-elakad -- start
+pm2 save && pm2 startup
+
+# 10. SSL
+sudo certbot --nginx -d ahmedelakad.com -d www.ahmedelakad.com
+
+# 11. Reinstall cron
+crontab -e
+# → 0 3 * * * /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh >> .../logs/backup.log 2>&1
 ```
-
-### Scenario 3: VPS lost entirely (rebuild from scratch)
-
-1. Provision new VPS (Ubuntu), install Node 24, PM2, Nginx, Certbot
-2. Clone repo: `git clone https://github.com/SherifAsh93/Ahmed-Elakad.git /home/sherif/sites/Ahmed-Elakad`
-3. Copy data from Windows backup:
-   ```bash
-   mkdir -p /home/sherif/data/ahmed-elakad/{images,voices}
-   # Copy JSON files and images/ from latest Windows backup snapshot
-   ```
-4. Set up `.env.local`, Nginx config, PM2, SSL — see `SETUP_GUIDE.md`
