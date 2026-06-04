@@ -16,7 +16,6 @@ export default function Footer({ content }: { content: SiteContent }) {
   const instagram = (social as { instagram?: string }).instagram || "#";
   const whatsapp = (social as { whatsapp?: string }).whatsapp || "";
   const logoSrc = content.siteInfo?.logo ?? "";
-  const instaPhotos = (content.homepage?.featuredImages ?? []).slice(0, 4);
 
   const colHead = "text-[7px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-4 sm:mb-5";
   const colLink = "text-[10px] sm:text-[11px] text-white/45 hover:text-white transition-colors leading-none";
@@ -26,7 +25,7 @@ export default function Footer({ content }: { content: SiteContent }) {
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-10 md:px-16 pt-10 sm:pt-14 pb-6">
 
         {/* ── Main grid ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr] gap-x-4 sm:gap-x-8 gap-y-10 mb-8 sm:mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1.2fr_1.2fr] gap-x-4 sm:gap-x-8 gap-y-10 mb-8 sm:mb-10">
 
           {/* Col 1 — Brand / Logo */}
           <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start gap-2 pb-4 md:pb-0 border-b border-white/8 md:border-none">
@@ -120,26 +119,6 @@ export default function Footer({ content }: { content: SiteContent }) {
             </div>
           </div>
 
-          {/* Col 5 — @AHMEDELAKAD Instagram grid */}
-          {instaPhotos.length > 0 && (
-            <div className="col-span-2 md:col-span-1">
-              <a href={instagram} target="_blank" rel="noreferrer">
-                <p className={`${colHead} hover:text-white transition-colors cursor-pointer`}>@ahmedelakad</p>
-              </a>
-              <div className="grid grid-cols-4 md:grid-cols-2 gap-1">
-                {instaPhotos.map((img, i) => (
-                  <a key={i} href={instagram} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden block">
-                    <img
-                      src={optimizeImage(img)}
-                      alt=""
-                      className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity duration-300"
-                      loading="lazy"
-                    />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ── Divider + copyright ───────────────────────────────── */}

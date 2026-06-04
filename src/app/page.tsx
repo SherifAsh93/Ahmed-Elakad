@@ -143,7 +143,7 @@ export default async function HomePage() {
               <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Real Brides</p>
               <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Real Moments. Real Love.</h2>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2">
+            <div className="grid grid-cols-6 gap-1">
               {brides.map((img, i) => (
                 <div key={i} className="aspect-[2/3] overflow-hidden">
                   <img src={optimizeImage(img)} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />

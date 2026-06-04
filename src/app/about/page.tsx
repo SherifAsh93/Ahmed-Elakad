@@ -46,34 +46,34 @@ export default async function AboutPage() {
       </section>
 
       {/* ── OUR STORY: text left + image right ── */}
-      <section className="bg-[#f9f7f4] py-12 sm:py-18 md:py-22 px-6 sm:px-12 md:px-20">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-[42%_55%] gap-10 md:gap-14 items-center">
+      <section className="bg-[#f9f7f4] py-10 sm:py-14 md:py-18 px-4 sm:px-10 md:px-16">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-[42%_55%] gap-4 sm:gap-10 md:gap-14 items-center">
 
           {/* Left: text */}
           <div>
-            <p className="font-serif italic text-[#b3a384] text-[14px] sm:text-[15px] mb-2">
+            <p className="font-serif italic text-[#b3a384] text-[11px] sm:text-[14px] mb-2">
               {content.siteInfo?.brandName ?? "Ahmed Elakad"}
             </p>
-            <h2 className="font-display text-[20px] sm:text-[25px] md:text-[30px] uppercase tracking-[0.15em] text-[#1a1a1a] leading-tight mb-4">
+            <h2 className="font-display text-[13px] sm:text-[22px] md:text-[28px] uppercase tracking-[0.12em] text-[#1a1a1a] leading-tight mb-3">
               OUR STORY
             </h2>
-            <div className="w-8 h-px bg-[#b3a384] mb-5" />
-            <div className="space-y-4">
+            <div className="w-6 h-px bg-[#b3a384] mb-4" />
+            <div className="space-y-3">
               {allParagraphs.length > 0 ? (
                 allParagraphs.map((p, i) => (
-                  <p key={i} className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                  <p key={i} className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     {p}
                   </p>
                 ))
               ) : (
                 <>
-                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                  <p className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     Ahmed Elakad Couture House is a destination for custom-made bridal and evening wear, where craftsmanship meets timeless sophistication.
                   </p>
-                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                  <p className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     Every design is created with exceptional attention to detail, combining luxurious fabrics, intricate hand embroidery, and couture techniques to celebrate individuality and femininity.
                   </p>
-                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                  <p className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     Our philosophy is simple: every woman deserves a gown that feels uniquely hers — elegant, unforgettable, and crafted to perfection.
                   </p>
                 </>
@@ -82,7 +82,7 @@ export default async function AboutPage() {
           </div>
 
           {/* Right: image */}
-          <div className="w-full overflow-hidden aspect-[4/3] md:aspect-auto md:h-[400px]">
+          <div className="w-full overflow-hidden aspect-[3/4] sm:aspect-[4/3] md:aspect-auto md:h-[400px]">
             <img
               src={optimizeImage(storyImage)}
               alt="Ahmed Elakad Atelier"
