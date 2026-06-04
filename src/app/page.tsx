@@ -74,32 +74,31 @@ export default async function HomePage() {
 
 
       {/* ── THE HOUSE OF AHMED ELAKAD ─────────────────────────────── */}
-      {/* TEXT left, IMAGE right — exactly like the template */}
       <section className="bg-[#f5f2ee]">
-        <div className="grid grid-cols-[36%_64%]">
+        <div className="grid grid-cols-[38%_62%]">
 
           {/* LEFT: Text */}
-          <div className="flex flex-col justify-center px-6 sm:px-12 md:pl-20 lg:pl-28 pr-6 sm:pr-8 md:pr-10 py-12 sm:py-20 md:py-28">
-            <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-3">The House of</p>
-            <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-4 text-[22px] sm:text-[36px] md:text-[44px]">
+          <div className="flex flex-col justify-center px-5 sm:px-10 md:pl-16 lg:pl-20 pr-4 sm:pr-6 md:pr-8 py-10 sm:py-14 md:py-20">
+            <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">The House of</p>
+            <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-4 text-[18px] sm:text-[26px] md:text-[32px]">
               {content.siteInfo?.brandName ?? "Ahmed Elakad"}
             </h2>
-            <div className="w-7 h-px bg-[#b3a384] mb-6" />
-            <div className="space-y-3 text-[11px] sm:text-[13px] text-[#5a5a5a] leading-relaxed font-light">
+            <div className="w-7 h-px bg-[#b3a384] mb-5" />
+            <div className="space-y-3 text-[11px] sm:text-[12px] text-[#5a5a5a] leading-relaxed font-light">
               {bio.slice(0, 2).map((p, i) => <p key={i}>{p}</p>)}
               {bio.length === 0 && <>
                 <p>For over a decade, Ahmed Elakad Couture has been dedicated to creating bridal masterpieces that celebrate femininity, craftsmanship, and individuality.</p>
                 <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings to ensure each bride experiences a dress made uniquely for her.</p>
               </>}
             </div>
-            <Link href="/about" className="inline-flex items-center gap-2 mt-7 text-[8px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors">
+            <Link href="/about" className="inline-flex items-center gap-2 mt-6 text-[8px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors">
               Discover Our Story
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </Link>
           </div>
 
           {/* RIGHT: Image */}
-          <div className="min-h-[220px] sm:min-h-[400px] md:min-h-[560px]">
+          <div className="min-h-[200px] sm:min-h-[360px] md:min-h-[480px]">
             <img src={optimizeImage(houseImg)} alt="Ahmed Elakad craftsmanship" className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
@@ -107,11 +106,11 @@ export default async function HomePage() {
 
 
       {/* ── COLLECTIONS ──────────────────────────────────────────── */}
-      <section className="bg-[#f5f2ee] py-10 sm:py-16 md:py-20 px-4 sm:px-10 md:px-20">
+      <section className="bg-[#f5f2ee] py-8 sm:py-12 md:py-16 px-4 sm:px-10 md:px-20">
         <div className="max-w-[1440px] mx-auto">
-          <div className="text-center mb-6 sm:mb-10">
-            <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-3">Couture Collections</p>
-            <h2 className="font-serif font-light text-[#1a1a1a] text-[26px] sm:text-[38px] md:text-[44px]">Discover Our Collections</h2>
+          <div className="text-center mb-5 sm:mb-8">
+            <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Couture Collections</p>
+            <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Discover Our Collections</h2>
           </div>
           {/* Always 3 columns exactly like the template */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
@@ -138,11 +137,11 @@ export default async function HomePage() {
 
       {/* ── REAL BRIDES ───────────────────────────────────────────── */}
       {brides.length > 0 && (
-        <section className="bg-[#f5f2ee] py-10 sm:py-16 md:py-20">
+        <section className="bg-[#f5f2ee] py-8 sm:py-12 md:py-16">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
-            <div className="text-center mb-6 sm:mb-10">
-              <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-3">Real Brides</p>
-              <h2 className="font-serif font-light text-[#1a1a1a] text-[24px] sm:text-[36px] md:text-[42px]">Real Moments. Real Love.</h2>
+            <div className="text-center mb-5 sm:mb-8">
+              <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Real Brides</p>
+              <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Real Moments. Real Love.</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2">
               {brides.map((img, i) => (
@@ -162,18 +161,18 @@ export default async function HomePage() {
 
 
       {/* ── BRIDAL JOURNEY ────────────────────────────────────────── */}
-      <section className="relative bg-[#ece6db] overflow-hidden py-20 sm:py-28 md:py-36">
+      <section className="relative bg-[#ece6db] overflow-hidden py-14 sm:py-20 md:py-28">
         {/* Left decorative image */}
-        <div className="absolute left-0 top-0 bottom-0 w-[90px] sm:w-[200px] md:w-[320px] pointer-events-none select-none">
+        <div className="absolute left-0 top-0 bottom-0 w-[80px] sm:w-[160px] md:w-[260px] pointer-events-none select-none">
           <img src={optimizeImage(ctaImg)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#ece6db]" />
         </div>
         {/* Centered content */}
-        <div className="relative z-10 text-center px-6 max-w-sm sm:max-w-md mx-auto">
-          <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-3">Begin Your</p>
-          <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-4 text-[36px] sm:text-[48px] md:text-[54px]">{ctaHead}</h2>
-          <div className="w-7 h-px bg-[#b3a384] mx-auto mb-6" />
-          <p className="text-[12px] sm:text-[13px] text-[#6a6a6a] leading-relaxed font-light mb-9">{ctaDesc}</p>
+        <div className="relative z-10 text-center px-6 max-w-xs sm:max-w-sm mx-auto">
+          <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Begin Your</p>
+          <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-4 text-[28px] sm:text-[38px] md:text-[46px]">{ctaHead}</h2>
+          <div className="w-7 h-px bg-[#b3a384] mx-auto mb-5" />
+          <p className="text-[11px] sm:text-[12px] text-[#6a6a6a] leading-relaxed font-light mb-7">{ctaDesc}</p>
           <Link href={ctaBtnHr} className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[3px] uppercase px-8 sm:px-10 py-4 hover:bg-[#b3a384] transition-colors duration-300">
             {ctaBtn} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>

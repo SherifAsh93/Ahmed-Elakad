@@ -47,11 +47,11 @@ export default function Navbar({ content }: { content: SiteContent }) {
   const brand = content.siteInfo?.brandName ?? "Ahmed El Akad";
 
   const navLinks = [
-    { href: "/bridal",     label: "Bridal"     },
-    { href: "/couture",    label: "Couture"    },
-    { href: "/about",      label: "About"      },
-    { href: "/experience", label: "Experience" },
-    { href: "/contact",    label: "Contact"    },
+    { href: "/bridal",     label: "Bridal"    },
+    { href: "/couture",    label: "Couture"   },
+    { href: "/about",      label: "About Us"  },
+    { href: "/experience", label: "Experience"},
+    { href: "/contact",    label: "Contact"   },
   ];
 
   return (

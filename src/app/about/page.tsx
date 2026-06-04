@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
-import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,181 +11,133 @@ export default async function AboutPage() {
   const bio: string[] = about.bio ?? [];
   const gallery: string[] = about.gallery ?? [];
 
+  const tagline = about.tagline || "Couture is not just what you wear, it is how you feel.";
+  const heroImage = about.portraitImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524454/1_112_zmxnrk.jpg";
+  const storyImage = gallery[0] || heroImage;
+
   const allParagraphs = bio.flatMap((p) => p.split("\n").filter(Boolean));
-  const heroParagraphs = allParagraphs.slice(0, 2);
-  const extraParagraphs = allParagraphs.slice(2);
-
-  const tagline = about.tagline || "Crafted for the woman\nwho seeks the exceptional.";
-
-  const galleryImages = [
-    gallery[0] || null,
-    gallery[1] || null,
-    gallery[2] || null,
-    gallery[3] || null,
-  ];
-  const hasGallery = galleryImages.some(Boolean);
 
   return (
     <div className="bg-[#f9f7f4]">
 
-      {/* ── HERO: text left + image right ── */}
-      <section className="flex flex-col md:flex-row min-h-screen">
-
-        {/* LEFT — warm cream panel */}
-        <div className="w-full md:w-[46%] bg-[#f9f7f4] flex flex-col justify-center px-8 sm:px-14 md:px-16 lg:px-24 pt-32 pb-16 md:pt-28 md:pb-20">
-
-          <h1 className="font-display text-[58px] sm:text-[72px] md:text-[80px] lg:text-[96px] uppercase leading-[0.9] tracking-[0.04em] text-[#1a1a1a] mb-7">
-            ABOUT<br />US
+      {/* ── HERO: full-width banner with overlay ── */}
+      <section className="relative w-full h-[50vh] sm:h-[52vh] flex items-center justify-center overflow-hidden">
+        <img
+          src={optimizeImage(heroImage)}
+          alt="Ahmed Elakad Couture"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-black/52" />
+        <div className="relative z-10 text-center px-6">
+          <h1 className="font-display text-[46px] sm:text-[64px] md:text-[84px] uppercase tracking-[0.1em] text-white leading-none mb-5">
+            ABOUT US
           </h1>
-
-          {/* Gold divider with diamond */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-px bg-[#b3a384]" />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-8 h-px bg-[#b3a384]" />
             <div className="w-[5px] h-[5px] rotate-45 bg-[#b3a384] shrink-0" />
-            <div className="w-10 h-px bg-[#b3a384]" />
+            <div className="w-8 h-px bg-[#b3a384]" />
           </div>
-
-          {/* Tagline */}
-          <p className="font-serif italic text-[#b3a384] text-lg sm:text-xl md:text-2xl leading-snug mb-8 whitespace-pre-line">
-            {tagline}
+          <p className="text-[8px] sm:text-[9px] tracking-[5px] uppercase text-white/65">
+            TIMELESS COUTURE, UNIQUELY YOURS.
           </p>
-
-          {/* Bio paragraphs */}
-          <div className="space-y-4 mb-10">
-            {heroParagraphs.length > 0 ? (
-              heroParagraphs.map((p, i) => (
-                <p key={i} className="text-[#666] text-[13px] sm:text-[14px] leading-[1.85] font-light font-serif">
-                  {p}
-                </p>
-              ))
-            ) : (
-              <>
-                <p className="text-[#666] text-[13px] sm:text-[14px] leading-[1.85] font-light font-serif">
-                  Ahmed Elakad Couture House creates bespoke bridal and eveningwear defined by refined craftsmanship, exquisite fabrics, and meticulous hand embroidery.
-                </p>
-                <p className="text-[#666] text-[13px] sm:text-[14px] leading-[1.85] font-light font-serif">
-                  Every design is a celebration of elegance, individuality, and timeless beauty.
-                </p>
-              </>
-            )}
-          </div>
-
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-3 text-[9px] tracking-[4px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/25 hover:border-[#b3a384] pb-1 w-fit"
-          >
-            EXPLORE THE ATELIER
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* RIGHT — portrait image */}
-        <div className="w-full md:w-[54%] min-h-[72vw] md:min-h-0 overflow-hidden">
-          <img
-            src={optimizeImage(
-              about.portraitImage ||
-              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524454/1_112_zmxnrk.jpg"
-            )}
-            alt="Ahmed Elakad Atelier"
-            className="w-full h-full object-cover"
-            loading="eager"
-            fetchPriority="high"
-          />
         </div>
       </section>
 
-      {/* ── EXTRA BIO PARAGRAPHS ── */}
-      {extraParagraphs.length > 0 && (
-        <section className="bg-[#f9f7f4] py-20 sm:py-28 px-6">
-          <div className="w-12 h-px bg-[#b3a384]/40 mx-auto mb-12" />
-          <div className="max-w-[680px] mx-auto space-y-7 text-center">
-            {extraParagraphs.map((p, i) => (
-              <p key={i} className="text-[#555] leading-[2] text-base sm:text-lg font-light font-serif">
-                {p}
-              </p>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── OUR STORY: text left + image right ── */}
+      <section className="bg-[#f9f7f4] py-12 sm:py-18 md:py-22 px-6 sm:px-12 md:px-20">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-[42%_55%] gap-10 md:gap-14 items-center">
 
-      {/* ── GALLERY GRID ── */}
-      {hasGallery && (
-        <section className="grid grid-cols-2 md:grid-cols-3 gap-[2px] bg-[#e8e4de]">
-          {/* Col 1 — tall left image */}
-          <div className="row-span-2 md:row-span-1 overflow-hidden" style={{ minHeight: "320px" }}>
-            {galleryImages[0] ? (
-              <img
-                src={optimizeImage(galleryImages[0])}
-                alt="Atelier"
-                className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#d5cfc5]" />
-            )}
-          </div>
-
-          {/* Col 2 — top and bottom stacked */}
-          <div className="grid grid-rows-2 gap-[2px]">
-            <div className="overflow-hidden aspect-square">
-              {galleryImages[1] ? (
-                <img
-                  src={optimizeImage(galleryImages[1])}
-                  alt="Atelier detail"
-                  className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
-                  loading="lazy"
-                />
+          {/* Left: text */}
+          <div>
+            <p className="font-serif italic text-[#b3a384] text-[14px] sm:text-[15px] mb-2">
+              {content.siteInfo?.brandName ?? "Ahmed Elakad"}
+            </p>
+            <h2 className="font-display text-[20px] sm:text-[25px] md:text-[30px] uppercase tracking-[0.15em] text-[#1a1a1a] leading-tight mb-4">
+              OUR STORY
+            </h2>
+            <div className="w-8 h-px bg-[#b3a384] mb-5" />
+            <div className="space-y-4">
+              {allParagraphs.length > 0 ? (
+                allParagraphs.map((p, i) => (
+                  <p key={i} className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                    {p}
+                  </p>
+                ))
               ) : (
-                <div className="w-full h-full bg-[#d5cfc5]" />
-              )}
-            </div>
-            <div className="overflow-hidden aspect-square">
-              {galleryImages[2] ? (
-                <img
-                  src={optimizeImage(galleryImages[2])}
-                  alt="Atelier sign"
-                  className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#d5cfc5]" />
+                <>
+                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                    Ahmed Elakad Couture House is a destination for custom-made bridal and evening wear, where craftsmanship meets timeless sophistication.
+                  </p>
+                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                    Every design is created with exceptional attention to detail, combining luxurious fabrics, intricate hand embroidery, and couture techniques to celebrate individuality and femininity.
+                  </p>
+                  <p className="text-[#555] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif">
+                    Our philosophy is simple: every woman deserves a gown that feels uniquely hers — elegant, unforgettable, and crafted to perfection.
+                  </p>
+                </>
               )}
             </div>
           </div>
 
-          {/* Col 3 — tall right image */}
-          <div className="row-span-2 md:row-span-1 overflow-hidden" style={{ minHeight: "320px" }}>
-            {galleryImages[3] ? (
-              <img
-                src={optimizeImage(galleryImages[3])}
-                alt="Atelier studio"
-                className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#d5cfc5]" />
-            )}
+          {/* Right: image */}
+          <div className="w-full overflow-hidden aspect-[4/3] md:aspect-auto md:h-[400px]">
+            <img
+              src={optimizeImage(storyImage)}
+              alt="Ahmed Elakad Atelier"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
-        </section>
-      )}
-
-      {/* ── BOTTOM BRAND BAR ── */}
-      <section className="bg-[#f9f7f4] border-t border-[#e0dbd3] py-8 px-6">
-        <div className="max-w-[900px] mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-center">
-          <span className="text-[8px] tracking-[5px] uppercase text-[#aaa] font-medium">
-            Bespoke Couture
-          </span>
-          <div className="flex items-center gap-3 text-[#b3a384]">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            <span className="font-display text-xl text-[#b3a384] tracking-widest">Æ</span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-          </div>
-          <span className="text-[8px] tracking-[5px] uppercase text-[#aaa] font-medium">
-            Handcrafted with Passion
-          </span>
         </div>
+      </section>
+
+      {/* ── OUR ATELIER: center heading + 4-col images ── */}
+      {gallery.some(Boolean) && (
+        <section className="bg-[#f5f2ee] py-12 sm:py-18 md:py-20 px-6 sm:px-12 md:px-20">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="text-center mb-7 sm:mb-10">
+              <p className="text-[8px] tracking-[5px] uppercase text-[#b3a384] mb-3">Our Atelier</p>
+              <h2 className="font-display text-[15px] sm:text-[19px] md:text-[23px] uppercase tracking-[0.2em] text-[#1a1a1a] mb-4">
+                A PRIVATE SPACE FOR COUTURE CREATION
+              </h2>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-8 h-px bg-[#b3a384]" />
+                <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384] shrink-0" />
+                <div className="w-8 h-px bg-[#b3a384]" />
+              </div>
+              <p className="text-[11px] sm:text-[12px] text-[#666] font-light font-serif max-w-[480px] mx-auto leading-relaxed">
+                Designed for personalized consultations, fittings, and bespoke experiences.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+              {gallery.slice(0, 4).map((img, i) =>
+                img ? (
+                  <div key={i} className="aspect-[3/4] overflow-hidden">
+                    <img
+                      src={optimizeImage(img)}
+                      alt="Atelier"
+                      className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : null
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── BOTTOM QUOTE ── */}
+      <section className="bg-[#f9f7f4] py-12 sm:py-16 px-6 text-center">
+        <div className="font-serif text-[36px] text-[#b3a384] leading-none mb-4 select-none">&ldquo;</div>
+        <p className="font-serif italic text-[#555] text-[14px] sm:text-[16px] leading-relaxed max-w-[480px] mx-auto mb-4">
+          {tagline}
+        </p>
+        <p className="text-[8px] tracking-[3px] uppercase text-[#b3a384] font-medium">
+          — {content.siteInfo?.brandName ?? "Ahmed Elakad"}
+        </p>
       </section>
 
     </div>

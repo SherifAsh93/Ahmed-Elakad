@@ -73,8 +73,8 @@ function Stars({ count = 5 }: { count?: number }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#f5f2ee] px-7 py-8 flex flex-col">
-      <div className="font-serif text-[40px] text-[#b3a384] leading-none mb-5 select-none">&ldquo;</div>
+    <div className="bg-[#f5f2ee] px-7 py-8 flex flex-col items-center text-center">
+      <div className="font-serif text-[32px] text-[#b3a384] leading-none mb-5 select-none">&ldquo;</div>
       <p className="text-[#555] text-[13px] leading-[1.85] font-light font-serif flex-1" dir="auto">{t.quote}</p>
       <div className="w-8 h-px bg-[#b3a384]/40 my-5" />
       <p className="text-[9px] tracking-[3px] uppercase text-[#1a1a1a] font-bold" dir="auto">— {t.name}</p>
@@ -111,8 +111,8 @@ export default async function ExperiencePage() {
   return (
     <main className="bg-[#f9f7f4]">
 
-      {/* ── HERO — full screen, bottom-left text, AE monogram right ── */}
-      <section className="relative w-full min-h-[65vh] md:min-h-screen flex items-end overflow-hidden">
+      {/* ── HERO — bottom-left text, AE monogram right ── */}
+      <section className="relative w-full min-h-[60vh] md:min-h-[75vh] flex items-end overflow-hidden">
         {heroImage ? (
           <img
             src={optimizeImage(heroImage)}
@@ -236,8 +236,8 @@ export default async function ExperiencePage() {
       )}
 
 
-      {/* ── YOUR STORY CTA — full image dark overlay, centered ── */}
-      <section className="relative w-full min-h-[60vh] flex items-center justify-center overflow-hidden py-24 sm:py-32">
+      {/* ── YOUR STORY CTA — full image, two-column: text left / button right ── */}
+      <section className="relative w-full min-h-[50vh] flex items-center overflow-hidden py-16 sm:py-20 md:py-24">
         {ctaImage ? (
           <img
             src={optimizeImage(ctaImage)}
@@ -246,31 +246,44 @@ export default async function ExperiencePage() {
             loading="lazy"
           />
         ) : (
-          <div className="absolute inset-0 bg-[#f5f2ee]" />
+          <div className="absolute inset-0 bg-[#1a1a1a]" />
         )}
-        <div className={`absolute inset-0 ${ctaImage ? "bg-black/50" : "bg-transparent"}`} />
+        <div className={`absolute inset-0 ${ctaImage ? "bg-black/55" : "bg-transparent"}`} />
 
-        <div className="relative z-10 text-center px-6 max-w-sm sm:max-w-md mx-auto">
-          <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-4">Begin Your</p>
-          <h2 className={`font-serif font-light leading-tight mb-3 text-[38px] sm:text-[50px] md:text-[58px] ${ctaImage ? "text-white" : "text-[#1a1a1a]"}`}>
-            {ctaHeading}
-          </h2>
-          {ctaSubtitle && (
-            <p className="font-serif italic text-[#b3a384] text-lg sm:text-xl mb-5">{ctaSubtitle}</p>
-          )}
-          <div className="w-7 h-px bg-[#b3a384] mx-auto mb-6" />
-          <p className={`text-[12px] sm:text-[13px] leading-relaxed font-light mb-9 ${ctaImage ? "text-white/65" : "text-[#666]"}`}>
-            {ctaText}
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[3px] uppercase px-8 sm:px-10 py-4 hover:bg-[#b3a384] transition-colors duration-300"
-          >
-            Book Your Appointment
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
+        <div className="relative z-10 w-full max-w-[1200px] mx-auto px-6 sm:px-12 md:px-20">
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-10 md:gap-16">
+
+            {/* Left: text */}
+            <div>
+              <h2 className="font-display text-[28px] sm:text-[36px] md:text-[44px] uppercase tracking-[0.2em] text-white leading-tight mb-3">
+                {ctaHeading}
+              </h2>
+              {ctaSubtitle && (
+                <p className="font-serif italic text-[#b3a384] text-[15px] sm:text-[17px] mb-5">{ctaSubtitle}</p>
+              )}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-7 h-px bg-[#b3a384]" />
+                <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384] shrink-0" />
+                <div className="w-7 h-px bg-[#b3a384]" />
+              </div>
+              <p className="text-[12px] sm:text-[13px] leading-relaxed font-light text-white/65 max-w-[380px]">
+                {ctaText}
+              </p>
+            </div>
+
+            {/* Right: button */}
+            <div className="flex-shrink-0">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] tracking-[3px] uppercase px-8 sm:px-10 py-4 hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
+              >
+                Book Your Appointment
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
