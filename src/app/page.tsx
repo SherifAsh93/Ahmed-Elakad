@@ -33,8 +33,8 @@ export default async function HomePage() {
   const c3l = home.collection3Label || "Modest Bridal";
   const c3h = home.collection3Href  || "/bridal";
 
-  const brides   = (home.featuredImages ?? []).slice(0, 6);
-  const ctaImg   = home.ctaImage       || (home.featuredImages ?? [])[6] || houseImg;
+  const brides   = home.featuredImages ?? [];
+  const ctaImg   = home.ctaImage || houseImg;
   const ctaHead  = home.ctaHeading     || "Bridal Journey";
   const ctaDesc  = home.ctaDescription || "Private consultations are available by appointment only at our Cairo atelier.";
   const ctaBtn   = home.ctaButtonText  || "Reserve Your Consultation";
@@ -145,7 +145,7 @@ export default async function HomePage() {
               <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Real Brides</p>
               <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Real Moments. Real Love.</h2>
             </div>
-            <div className="flex overflow-x-auto gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="flex overflow-x-auto gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
               {brides.map((img, i) => (
                 <div key={i} className="flex-none aspect-[2/3] overflow-hidden" style={{ width: 'calc((100vw - 2.5rem) / 6)' }}>
                   <img src={optimizeImage(img)} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
