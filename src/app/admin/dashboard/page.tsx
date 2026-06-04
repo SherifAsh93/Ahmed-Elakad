@@ -2944,10 +2944,27 @@ export default function AdminDashboard() {
           {/* HOME SETTINGS */}
           {activeSection === "home" && (
             <div className="space-y-6 lg:space-y-12">
-              {/* Note about The House of Ahmed Elakad */}
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 bg-amber-50 border border-amber-100">
-                <p className="text-xs uppercase tracking-[3px] text-amber-700 font-bold mb-2">THE HOUSE OF AHMED ELAKAD</p>
-                <p className="text-sm text-amber-700/80">This section&apos;s text (bio) and image are managed under <strong>About Us</strong> in the sidebar.</p>
+              {/* The House of Ahmed Elakad */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">
+                  THE HOUSE OF AHMED ELAKAD
+                </label>
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-start">
+                  <div>
+                    <p className="text-xs uppercase tracking-[2px] text-gray-400 mb-4">Text Paragraphs</p>
+                    <BioParagraphEditor
+                      bio={content.homepage?.houseBio ?? []}
+                      onChange={(b) => set("homepage.houseBio", b)}
+                    />
+                  </div>
+                  <SingleImageEditor
+                    label="SECTION IMAGE"
+                    image={content.homepage?.houseImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(img) => set("homepage.houseImage", img)}
+                  />
+                </div>
               </div>
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">

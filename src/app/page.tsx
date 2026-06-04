@@ -20,8 +20,8 @@ export default async function HomePage() {
   const heroCTA     = home.heroCTAText    || "Book a Private Appointment";
   const heroCTALink = home.heroCTAHref    || "/contact";
 
-  const houseImg  = about.sideImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
-  const bio       = about.bio ?? [];
+  const houseImg  = home.houseImage || about.sideImage || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524416/1_105_obr7j0.jpg";
+  const bio       = (home.houseBio && home.houseBio.length > 0) ? home.houseBio : (about.bio ?? []);
 
   const c1i = home.collection1Image || bridal.bannerImage  || "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524478/1_121_ogym9l.jpg";
   const c1l = home.collection1Label || "Bridal Collection";

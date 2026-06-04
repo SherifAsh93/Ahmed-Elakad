@@ -54,6 +54,9 @@ export interface SiteContent {
     collection3Image?: string;
     collection3Label?: string;
     collection3Href?: string;
+    // House of Ahmed Elakad section
+    houseImage?: string;
+    houseBio?: string[];
     // Real Brides gallery
     featuredImages?: string[];
     // Bridal Journey CTA
