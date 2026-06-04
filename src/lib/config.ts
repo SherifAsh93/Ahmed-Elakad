@@ -1,4 +1,5 @@
 import fs from "fs";
+import { atomicWriteJSON } from "@/lib/atomicWrite";
 
 const CONFIG_FILE = "/home/sherif/data/ahmed-elakad/config.json";
 
@@ -16,7 +17,7 @@ function readConfig(): SiteConfig {
 }
 
 function writeConfig(config: SiteConfig): void {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
+  atomicWriteJSON(CONFIG_FILE, config);
 }
 
 export function getAdminPassword(): string {

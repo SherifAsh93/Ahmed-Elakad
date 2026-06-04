@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { atomicWriteJSON } from "@/lib/atomicWrite";
 
 export interface Testimonial {
   id: string;
@@ -156,7 +157,7 @@ export async function getContent(): Promise<SiteContent> {
 
 export async function saveContent(content: SiteContent): Promise<void> {
   try {
-    fs.writeFileSync(CONTENT_FILE, JSON.stringify(content, null, 2), "utf-8");
+    atomicWriteJSON(CONTENT_FILE, content);
   } catch (e) {
     console.error("Error saving content.json:", e);
     throw new Error("Failed to write content file.");

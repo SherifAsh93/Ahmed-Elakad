@@ -1,4 +1,5 @@
 import fs from "fs";
+import { atomicWriteJSON } from "@/lib/atomicWrite";
 
 export interface ContactMessage {
   id: string;
@@ -22,7 +23,7 @@ function readLocal(): ContactMessage[] {
 }
 
 function writeLocal(messages: ContactMessage[]): void {
-  fs.writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), "utf-8");
+  atomicWriteJSON(MESSAGES_FILE, messages);
 }
 
 export async function getMessages(): Promise<ContactMessage[]> {

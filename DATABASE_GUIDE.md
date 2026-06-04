@@ -6,7 +6,7 @@
 
 - **Location:** `/home/sherif/data/ahmed-elakad/` (external to repo, never committed to git)
 - **Format:** Plain JSON files, read/written by Next.js API routes at runtime
-- **ORM/Query Layer:** None — raw `fs.readFileSync` / `fs.writeFileSync` via helper modules in `src/lib/`
+- **ORM/Query Layer:** None — `src/lib/atomicWrite.ts` wraps all writes via `fs.writeFileSync` + `fs.renameSync` (atomic)
 
 This design means the site **must run on the VPS** (not Vercel serverless) for data persistence to work. Vercel deployments cannot write to disk.
 
@@ -300,34 +300,86 @@ nano /home/sherif/data/ahmed-elakad/clients.json
 
 ---
 
+## Atomic Writes
+
+All JSON writes use an atomic write helper (`src/lib/atomicWrite.ts`) to prevent file corruption:
+
+```typescript
+// Pattern used in all lib/*.ts write functions:
+atomicWriteJSON(filePath, data);
+// → writes data to <file>.tmp on the same filesystem
+// → renames .tmp → target (POSIX rename() is atomic)
+// Result: readers always see a complete file, never a partial write
+```
+
+This protects against process crashes mid-write. The temp file (`.content.json.tmp` etc.) is a sibling of the target, ensuring both live on the same filesystem so the rename stays atomic.
+
+---
+
 ## Backup Strategy
 
 **The JSON files and the `images/` + `voices/` directories are the entire database.** They are NOT in git.
 
-```bash
-# Manual backup (run from VPS)
-BACKUP_DATE=$(date +%Y%m%d)
-cp -r /home/sherif/data/ahmed-elakad/ /home/sherif/backups/ahmed-elakad-$BACKUP_DATE/
+### Automated Daily Backup to Windows D: Drive
 
-# Automated daily backup (add to crontab: crontab -e)
-0 3 * * * cp -r /home/sherif/data/ahmed-elakad/ /home/sherif/backups/ahmed-elakad-$(date +\%Y\%m\%d)/
+A cron job runs every night at 03:00 and backs up all Ahmed-Elakad data to the Windows machine's D: drive via the NoMachine sshfs mount.
 
-# Keep only last 7 days of backups
-0 4 * * * find /home/sherif/backups/ -maxdepth 1 -name "ahmed-elakad-*" -mtime +7 -exec rm -rf {} \;
+**Cron entry** (installed, view with `crontab -l`):
 ```
+0 3 * * * /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh >> /home/sherif/sites/Ahmed-Elakad/logs/backup.log 2>&1
+```
+
+**Script:** `scripts/backup-ahmed-elakad.sh`  
+**Log:** `logs/backup.log` (local, always available)
+
+**Source:**  
+`/home/sherif/data/ahmed-elakad/` (JSON files + images/ + voices/)
+
+**Destination:**  
+`/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/`  
+(Windows `D:\Development\01-Projects\ahmed-elakad\backup\`)
+
+**Snapshot structure:**
+```
+backup/
+├── 2026-06-04_03-00-01/
+│   ├── content.json
+│   ├── clients.json
+│   ├── messages.json
+│   ├── config.json
+│   ├── images/
+│   ├── voices/
+│   └── .backup_status    ← "OK <timestamp>" or "PARTIAL <timestamp>"
+├── 2026-06-03_03-00-01/
+└── .last_success         ← timestamp of most recent successful backup
+```
+
+**Retention:** 30 dated snapshots kept, older ones deleted automatically.
+
+**When Windows is offline / D: drive not mounted:**
+- Script probes the mount with a 5-second timeout
+- Logs `WARN: D: drive not accessible — skipping backup`
+- Exits cleanly (code 0) — no cron failure mail, no site impact
 
 **What to back up:**
 
-| Path | Size | Priority |
-|------|------|----------|
-| `content.json` | ~13 KB | Critical — site goes blank if lost |
-| `clients.json` | Grows | Critical — CRM data, no recovery |
-| `messages.json` | Grows | High — contact form submissions |
-| `config.json` | ~30 B | Medium — admin password (can reset manually) |
-| `images/` | ~655 MB | Critical — all product photos since June 2026 |
-| `voices/` | Grows | High — voice notes in Atelier |
+| Path | Priority |
+|------|----------|
+| `content.json` | Critical — site goes blank if lost |
+| `clients.json` | Critical — CRM data, unrecoverable |
+| `messages.json` | High — contact form submissions |
+| `config.json` | Medium — admin password (can reset manually) |
+| `images/` | Critical — all product photos (June 2026+) |
+| `voices/` | High — client voice notes in Atelier |
 
-**Note on Cloudinary images:** Legacy images uploaded before 2026-06-02 are on Cloudinary's servers. They are not in the VPS backup. Cloudinary provides its own redundancy, but if the account is lost, those image URLs will break.
+**Note on Cloudinary legacy images:** Pre-June-2026 images live on Cloudinary's CDN and are not included in the VPS backup. Cloudinary handles its own redundancy.
+
+### Manual Backup (if needed)
+```bash
+# One-off backup — run as sherif on VPS
+BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+cp -r /home/sherif/data/ahmed-elakad/ /home/sherif/backups/ahmed-elakad-$BACKUP_DATE/
+```
 
 ---
 
@@ -354,3 +406,72 @@ location /voices/ {
 ```
 
 Config file: `/etc/nginx/sites-available/ahmedelakad.com`
+
+---
+
+## Health Check
+
+Run anytime to get a full status report:
+
+```bash
+bash /home/sherif/sites/Ahmed-Elakad/scripts/health-check-ahmed-elakad.sh
+```
+
+Checks:
+1. **JSON files** — all four exist and are valid JSON
+2. **Disk space** — warns above 85% full, shows images/ and voices/ sizes
+3. **Directories** — images/ and voices/ exist and are writable
+4. **PM2** — "ahmed-elakad" process is online (shows memory, CPU, uptime)
+5. **Nginx** — service is active
+6. **Backup** — D: drive accessible, last-success timestamp and snapshot count
+
+Exit code 0 = healthy, 1 = one or more errors detected.
+
+---
+
+## Disaster Recovery
+
+### Scenario 1: content.json corrupted (site goes blank)
+
+```bash
+# Find the newest backup snapshot
+ls "/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/" | sort | tail -5
+
+# Restore content.json from last good backup
+SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
+cp "${SNAP}/content.json" /home/sherif/data/ahmed-elakad/content.json
+
+# Verify the site is up
+pm2 logs ahmed-elakad --lines 10
+```
+
+### Scenario 2: Full data directory recovery
+
+```bash
+# Stop PM2 to prevent writes during restore
+pm2 stop ahmed-elakad
+
+# Restore from backup snapshot
+SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
+cp "${SNAP}"/content.json  /home/sherif/data/ahmed-elakad/
+cp "${SNAP}"/clients.json  /home/sherif/data/ahmed-elakad/
+cp "${SNAP}"/messages.json /home/sherif/data/ahmed-elakad/
+cp "${SNAP}"/config.json   /home/sherif/data/ahmed-elakad/
+rsync -a "${SNAP}/images/" /home/sherif/data/ahmed-elakad/images/
+rsync -a "${SNAP}/voices/" /home/sherif/data/ahmed-elakad/voices/
+
+# Restart site
+pm2 start ahmed-elakad
+pm2 logs ahmed-elakad --lines 20
+```
+
+### Scenario 3: VPS lost entirely (rebuild from scratch)
+
+1. Provision new VPS (Ubuntu), install Node 24, PM2, Nginx, Certbot
+2. Clone repo: `git clone https://github.com/SherifAsh93/Ahmed-Elakad.git /home/sherif/sites/Ahmed-Elakad`
+3. Copy data from Windows backup:
+   ```bash
+   mkdir -p /home/sherif/data/ahmed-elakad/{images,voices}
+   # Copy JSON files and images/ from latest Windows backup snapshot
+   ```
+4. Set up `.env.local`, Nginx config, PM2, SSL — see `SETUP_GUIDE.md`

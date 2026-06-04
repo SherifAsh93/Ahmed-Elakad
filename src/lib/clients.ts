@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { atomicWriteJSON } from "@/lib/atomicWrite";
 
 export interface Payment {
   id: string;
@@ -99,7 +100,7 @@ function readLocal(): Client[] {
 }
 
 function writeLocal(clients: Client[]): void {
-  fs.writeFileSync(CLIENTS_FILE, JSON.stringify(clients, null, 2), "utf-8");
+  atomicWriteJSON(CLIENTS_FILE, clients);
 }
 
 export function paidAmount(client: Client): number {

@@ -25,6 +25,7 @@ Browser → Nginx (port 80/443)
 | Critical | `src/lib/clients.ts` | Client CRM logic (clients.json) |
 | Critical | `src/lib/messages.ts` | Contact form submissions (messages.json) |
 | Critical | `src/lib/config.ts` | Admin password management (config.json) |
+| Critical | `src/lib/atomicWrite.ts` | Atomic JSON write helper (used by all above) |
 | Critical | `src/app/api/upload/route.ts` | Image upload/delete → VPS disk |
 | Critical | `src/app/api/images/route.ts` | Image listing (VPS + legacy Cloudinary) |
 | High | `src/app/admin/dashboard/page.tsx` | CMS UI (143KB, monolithic) |
@@ -46,6 +47,11 @@ Browser → Nginx (port 80/443)
 - `/home/sherif/data/ahmed-elakad/images/` — Uploaded images (~1,700+ files, ~655 MB)
 - `/home/sherif/data/ahmed-elakad/voices/` — Voice note audio files
 
+**Scripts (in repo, operated on VPS):**
+- `scripts/backup-ahmed-elakad.sh` — Daily backup to Windows D: drive via NoMachine mount
+- `scripts/health-check-ahmed-elakad.sh` — Full health check (JSON, disk, PM2, Nginx, backup)
+- `logs/backup.log` — Local backup log (always available even if D: drive offline)
+
 ---
 
 ## Image Storage — Critical to Understand
@@ -66,6 +72,34 @@ The site uses **two image storage systems**. New and old images coexist:
 - Cloudinary credentials are optional — omitting them only hides legacy images from the media library; they still display on the public site
 
 Image URLs are stored **as full strings** in `content.json` — the code never distinguishes between local and Cloudinary at render time, it just uses the URL directly.
+
+---
+
+## Atomic Writes — How All JSON Saves Work
+
+All four lib files (`content.ts`, `clients.ts`, `messages.ts`, `config.ts`) write JSON via `atomicWriteJSON()` from `src/lib/atomicWrite.ts`:
+
+```typescript
+// Under the hood:
+fs.writeFileSync(`${filePath}.tmp`, JSON.stringify(data, null, 2));
+fs.renameSync(`${filePath}.tmp`, filePath);   // atomic on Linux (POSIX rename)
+```
+
+**Never use `fs.writeFileSync(targetFile, ...)` directly in lib files** — always go through `atomicWriteJSON`. A direct write leaves a window where a reader could see a zero-byte or partial file if the process crashes.
+
+---
+
+## Backup System
+
+A cron job at 03:00 daily backs up all Ahmed-Elakad data to the Windows D: drive via the NoMachine sshfs mount.
+
+**Mount path:** `/home/sherif/Desktop/D on Player (NoMachine)/`  
+**Destination:** `…/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS/`
+
+The backup script **never touches site data or the PM2 process**. If the D: drive is offline, the script logs a warning and exits cleanly (no cron mail, no site impact).
+
+To run a manual backup: `bash /home/sherif/sites/Ahmed-Elakad/scripts/backup-ahmed-elakad.sh`  
+To check backup status + full health: `bash /home/sherif/sites/Ahmed-Elakad/scripts/health-check-ahmed-elakad.sh`
 
 ---
 
@@ -120,20 +154,23 @@ export async function POST(request: Request) { ... }
 
 ## Common Pitfalls
 
-### 1. Trying to write data on Vercel
+### 1. Direct `fs.writeFileSync` on JSON data files
+Never write `fs.writeFileSync(SOME_JSON_FILE, ...)` directly in lib files. Always use `atomicWriteJSON()` from `@/lib/atomicWrite`. A direct write leaves a corruption window if the process crashes between open and flush.
+
+### 2. Trying to write data on Vercel
 The JSON data files and image directories are at `/home/sherif/data/ahmed-elakad/` — this path only exists on the VPS. Vercel serverless functions will throw ENOENT errors on any write operation. Always test data writes on the VPS, not via `vercel dev`.
 
-### 2. Confusing old (Cloudinary) and new (local) image URLs
+### 3. Confusing old (Cloudinary) and new (local) image URLs
 The `DELETE /api/upload` route handles both URL types:
 - If URL starts with `https://ahmedelakad.com/media/` → deletes file from disk
 - If URL is a Cloudinary URL → extracts `public_id` and calls `cloudinary.uploader.destroy()`
 
 Never call Cloudinary's destroy API with a local `/media/` URL.
 
-### 3. Content JSON structure changes
+### 4. Content JSON structure changes
 If you add a new top-level key to `content.json`, you must also update the TypeScript type in `src/lib/content.ts`. The type mismatch won't cause a runtime crash but will cause TypeScript build errors.
 
-### 4. Admin authentication check
+### 5. Admin authentication check
 API routes that require admin check for:
 ```typescript
 const cookieStore = await cookies();
@@ -144,10 +181,10 @@ if (session !== "authenticated") {
 ```
 Do NOT change this to a different pattern without updating ALL protected routes.
 
-### 5. Large dashboard file
+### 6. Large dashboard file
 `src/app/admin/dashboard/page.tsx` is 143KB. Make targeted edits — do not restructure the entire component. Edit only the specific section/function you need to change.
 
-### 6. Image hostnames in next.config.ts
+### 7. Image hostnames in next.config.ts
 If you use a new image hostname with `<Image>` from next/image, add it to `next.config.ts`:
 ```typescript
 remotePatterns: [
@@ -156,7 +193,7 @@ remotePatterns: [
 ]
 ```
 
-### 7. Disk space
+### 8. Disk space
 The images directory is ~655 MB and growing. Before large uploads, check available disk space:
 ```bash
 df -h /home/sherif/data/
