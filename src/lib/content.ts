@@ -132,7 +132,10 @@ export interface SiteContent {
   social?: {
     pinterest?: string;
     facebook?: string;
+    instagram?: string;
     whatsapp?: string;
+    threads?: string;
+    tiktok?: string;
   };
   footer?: {
     copyright?: string;

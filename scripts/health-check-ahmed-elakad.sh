@@ -15,6 +15,7 @@
 # ==============================================================================
 
 DATA_DIR="/home/sherif/data/ahmed-elakad"
+SOURCE_DIR="${DATA_DIR}"
 LOG_DIR="/home/sherif/sites/Ahmed-Elakad/logs"
 MOUNT_ROOT="/home/sherif/Desktop/D on Player (NoMachine)"
 DEST_ROOT="${MOUNT_ROOT}/Development/01-Projects/ahmed-elakad/backup"
@@ -202,13 +203,30 @@ fi
 if timeout "${TIMEOUT_SECS}" ls "${MOUNT_ROOT}/" &>/dev/null; then
   ok "D: drive (NoMachine) is currently accessible"
 
-  # Count existing backup snapshots
-  if timeout "${TIMEOUT_SECS}" ls "${DEST_ROOT}/" &>/dev/null; then
-    SNAP_COUNT=$(find "${DEST_ROOT}" -maxdepth 1 -type d -name '????-??-??_*' 2>/dev/null | wc -l)
-    NEWEST=$(find "${DEST_ROOT}" -maxdepth 1 -type d -name '????-??-??_*' 2>/dev/null | sort | tail -1)
-    ok "Backup destination: ${SNAP_COUNT} snapshot(s). Newest: $(basename "${NEWEST:-none}")"
+  SNAP_ROOT="${DEST_ROOT}/snapshots"
+  IMAGES_LATEST="${DEST_ROOT}/images-latest"
+
+  # JSON+voices snapshots
+  if timeout "${TIMEOUT_SECS}" ls "${SNAP_ROOT}/" &>/dev/null 2>&1; then
+    SNAP_COUNT=$(find "${SNAP_ROOT}" -maxdepth 1 -type d -name '????-??-??_*' 2>/dev/null | wc -l)
+    NEWEST=$(find "${SNAP_ROOT}" -maxdepth 1 -type d -name '????-??-??_*' 2>/dev/null | sort | tail -1)
+    ok "JSON+voices snapshots: ${SNAP_COUNT} total. Newest: $(basename "${NEWEST:-none}")"
   else
-    warn "Backup destination path not found: ${DEST_ROOT}"
+    warn "snapshots/ directory not found at ${SNAP_ROOT}"
+  fi
+
+  # images-latest rolling sync
+  if timeout "${TIMEOUT_SECS}" ls "${IMAGES_LATEST}/" &>/dev/null 2>&1; then
+    IMG_BACKUP_COUNT=$(find "${IMAGES_LATEST}" -maxdepth 1 -type f 2>/dev/null | wc -l)
+    IMG_BACKUP_SIZE=$(du -sh "${IMAGES_LATEST}" 2>/dev/null | awk '{print $1}')
+    IMG_SRC_COUNT=$(find "${SOURCE_DIR}/images" -maxdepth 1 -type f 2>/dev/null | wc -l)
+    if [[ "${IMG_BACKUP_COUNT}" -eq "${IMG_SRC_COUNT}" ]]; then
+      ok "images-latest/: ${IMG_BACKUP_COUNT}/${IMG_SRC_COUNT} files backed up (${IMG_BACKUP_SIZE}) — complete"
+    else
+      warn "images-latest/: ${IMG_BACKUP_COUNT}/${IMG_SRC_COUNT} files backed up (${IMG_BACKUP_SIZE}) — sync in progress or incomplete"
+    fi
+  else
+    warn "images-latest/ directory not found — images not yet backed up"
   fi
 else
   warn "D: drive not accessible right now (NoMachine offline — backup will be skipped tonight)"

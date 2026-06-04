@@ -2923,27 +2923,15 @@ export default function AdminDashboard() {
                 <h3 className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 border-b pb-4">
                   Footer & Credits
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
-                  <div>
-                    <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
-                      Copyright Text
-                    </label>
-                    <input
-                      value={content.footer?.copyright ?? ""}
-                      onChange={(e) => set("footer.copyright", e.target.value)}
-                      className="admin-input py-3 cursor-text"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
-                      Developer Credit Text
-                    </label>
-                    <input
-                      value={content.footer?.creditText ?? ""}
-                      onChange={(e) => set("footer.creditText", e.target.value)}
-                      className="admin-input py-3 cursor-text"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-3 block">
+                    Copyright Text
+                  </label>
+                  <input
+                    value={content.footer?.copyright ?? ""}
+                    onChange={(e) => set("footer.copyright", e.target.value)}
+                    className="admin-input py-3 cursor-text"
+                  />
                 </div>
               </div>
 
@@ -3624,7 +3612,7 @@ export default function AdminDashboard() {
           {activeSection === "social" && (
             <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
               <div className="space-y-6 lg:space-y-12">
-                {["facebook", "instagram", "whatsapp"].map((s) => (
+                {["facebook", "instagram", "whatsapp", "threads", "tiktok"].map((s) => (
                   <div key={s} className="relative">
                     <label className="text-[10px] uppercase tracking-[5px] text-gray-400 font-bold mb-4 block">
                       {s}
