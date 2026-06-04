@@ -382,41 +382,55 @@ crontab -l
 
 Cloudinary legacy images (pre-June 2026) are **not** backed up — Cloudinary manages its own redundancy.
 
-#### Snapshot Structure
+#### Backup Structure (two zones)
 
 ```
 backup/
-├── 2026-06-04_16-45-04/        ← YYYY-MM-DD_HH-MM-SS
-│   ├── content.json
-│   ├── clients.json
-│   ├── messages.json            (skipped if not yet created)
-│   ├── config.json              (skipped if not yet created)
-│   ├── images/                  (rsync — full copy first time, incremental after)
-│   ├── voices/                  (rsync)
-│   └── .backup_status           ← "OK YYYY-MM-DD_HH-MM-SS" or "PARTIAL ..."
-├── 2026-06-05_03-00-01/
-├── ...
-└── .last_success                ← timestamp of last clean backup
+├── snapshots/                        ← Versioned JSON + voices (small, fast)
+│   ├── 2026-06-04_18-06-52/
+│   │   ├── content.json
+│   │   ├── clients.json
+│   │   ├── messages.json             (skipped if not yet created)
+│   │   ├── config.json               (skipped if not yet created)
+│   │   ├── voices/                   (rsync copy — backed up BEFORE images)
+│   │   └── .backup_status            ← "OK timestamp" or "PARTIAL timestamp"
+│   ├── 2026-06-05_03-00-01/
+│   └── ...
+├── images-latest/                    ← Single rolling rsync of all images
+│   ├── 1780416174964-7dqc8.jpg
+│   └── ...                           (only new/changed files sent each night)
+└── .last_success                     ← timestamp of last fully clean backup
 ```
+
+**Why split?** JSON + voices are tiny and version-worthy. Images are 655 MB and mostly append-only — keeping one rolling sync directory means only new uploads are transferred each night (seconds, not hours).
+
+**rsync flags for images:** `--inplace --partial --delete`
+- `--inplace`: writes directly to destination, no temp file (avoids `mkstemp` errors on sshfs drops)
+- `--partial`: keeps partially-transferred files so retries resume rather than restart
+- `--delete`: removes images from backup if deleted from source
+
+**Retry logic:** rsync attempts up to 3 times with a 30-second pause between attempts, so a brief sshfs hiccup doesn't fail the whole backup.
 
 #### Retention
 
-30 dated snapshot directories are kept. The script automatically removes the oldest when more than 30 exist. At ~655 MB per full copy (first run only; subsequent runs only copy new/changed files via rsync), worst-case D: drive usage is well under 20 GB.
+- `snapshots/`: 30 most-recent kept, older auto-deleted. Each snapshot is ~125 KB (JSON only) + voice files. Total footprint of 30 snapshots: well under 100 MB.
+- `images-latest/`: single directory, no rotation. Always mirrors the current images.
 
 #### When Windows Is Offline
 
-The script probes the mount root (`D on Player (NoMachine)/`) with a 5-second `timeout`. If the machine is off or NoMachine is disconnected:
-- Logs: `[WARN] D: drive not accessible — Skipping backup.`
+The script probes the mount root with a 5-second `timeout`. If the machine is off or NoMachine is disconnected:
+- Logs: `[WARN] D: drive not accessible — skipping backup.`
 - Exits with code 0 (no cron failure mail)
 - Site is completely unaffected
-- One missed night is safe — 30 days of retention give a wide buffer
+- One missed night is safe — 30 snapshots keep 30 days of JSON history
 
-#### Transfer Characteristics
+#### Transfer Duration
 
-| Run type | What rsync sends | Duration |
-|----------|-----------------|----------|
-| First run | All ~655 MB of images | ~3–4 hours over sshfs |
-| Subsequent runs | Only new/changed files since last backup | Seconds to minutes |
+| Run | JSON + voices | Images | Total |
+|-----|--------------|--------|-------|
+| First ever | ~1 s | ~3–4 h over sshfs | ~3–4 h (one-time) |
+| Nightly (no new images) | ~1 s | ~5 s | ~6 s |
+| Nightly (100 new images) | ~1 s | ~2–3 min | ~3 min |
 
 The first backup was initiated 2026-06-04 at 16:45 UTC and transferred images at ~4 MB/min over the sshfs/NoMachine link. All future nightly runs are incremental.
 
@@ -482,13 +496,14 @@ Exit code 0 = healthy, 1 = one or more errors detected.
 
 ```bash
 BACKUP_ROOT="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup"
+SNAP_ROOT="${BACKUP_ROOT}/snapshots"
 
 # List all snapshots newest-first
-ls "${BACKUP_ROOT}" | sort -r | head -10
+ls "${SNAP_ROOT}" | sort -r | head -10
 
 # Check if a specific snapshot completed cleanly
-cat "${BACKUP_ROOT}/2026-06-04_16-45-04/.backup_status"
-# → "OK 2026-06-04_16-45-04" means clean
+cat "${SNAP_ROOT}/2026-06-04_18-06-52/.backup_status"
+# → "OK 2026-06-04_18-06-52" means clean
 # → "PARTIAL ..." means rsync had errors — try the previous snapshot
 
 # Read last confirmed success
@@ -502,12 +517,13 @@ cat "/home/sherif/sites/Ahmed-Elakad/logs/last_backup_success"
 Symptoms: site shows blank page, PM2 logs show `JSON parse error`, or one CMS section is missing.
 
 ```bash
-SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
+BACKUP_ROOT="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup"
+SNAP="${BACKUP_ROOT}/snapshots/YYYY-MM-DD_HH-MM-SS"   # pick newest clean snapshot
 
 # Validate the backup file before restoring
 python3 -c "import json; json.load(open('${SNAP}/content.json'))" && echo "Backup is valid JSON"
 
-# Restore — atomicWrite guarantees no partial file
+# Restore — atomicWrite guarantees no partial file on disk
 cp "${SNAP}/content.json" /home/sherif/data/ahmed-elakad/content.json
 
 # Verify site responds
@@ -524,32 +540,32 @@ No PM2 restart needed — Next.js reads content.json on every request (no in-mem
 Use when multiple files are lost or the entire `/home/sherif/data/ahmed-elakad/` is damaged.
 
 ```bash
+BACKUP_ROOT="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup"
+SNAP="${BACKUP_ROOT}/snapshots/YYYY-MM-DD_HH-MM-SS"   # pick newest clean snapshot
+
 # 1. Prevent new writes during restore
 pm2 stop ahmed-elakad
 
-# 2. Pick snapshot (newest clean one)
-SNAP="/home/sherif/Desktop/D on Player (NoMachine)/Development/01-Projects/ahmed-elakad/backup/YYYY-MM-DD_HH-MM-SS"
-
-# 3. Restore JSON files
+# 2. Restore JSON files from snapshot
 for f in content.json clients.json messages.json config.json; do
   [[ -f "${SNAP}/${f}" ]] && cp "${SNAP}/${f}" /home/sherif/data/ahmed-elakad/ && echo "Restored ${f}"
 done
 
-# 4. Restore images (rsync: fast, skips already-correct files)
-rsync -a --info=progress2 "${SNAP}/images/" /home/sherif/data/ahmed-elakad/images/
-
-# 5. Restore voices
+# 3. Restore voices from snapshot
 rsync -a "${SNAP}/voices/" /home/sherif/data/ahmed-elakad/voices/
 
-# 6. Restart
+# 4. Restore images from rolling images-latest/
+rsync -a --info=progress2 "${BACKUP_ROOT}/images-latest/" /home/sherif/data/ahmed-elakad/images/
+
+# 5. Restart
 pm2 start ahmed-elakad
 pm2 logs ahmed-elakad --lines 20
 
-# 7. Verify
+# 6. Verify
 bash /home/sherif/sites/Ahmed-Elakad/scripts/health-check-ahmed-elakad.sh
 ```
 
-**Downtime:** Only the `pm2 stop` → `pm2 start` window (~seconds). JSON restore is instant; image rsync runs in background after PM2 is back up (images not in data dir are just 404 until sync completes).
+**Downtime:** Only the `pm2 stop` → `pm2 start` window (~seconds). JSON + voices restore is instant. Image rsync runs in background after PM2 is back up — images not yet synced show as 404 until rsync completes.
 
 ---
 
@@ -576,11 +592,12 @@ mkdir -p /home/sherif/data/ahmed-elakad/{images,voices}
 #    NoMachine typically handles this automatically on connect
 
 # 6. Copy latest clean backup
-SNAP="<path-to-backup-root>/YYYY-MM-DD_HH-MM-SS"
+BACKUP_ROOT="<windows-backup-root>/Development/01-Projects/ahmed-elakad/backup"
+SNAP="${BACKUP_ROOT}/snapshots/YYYY-MM-DD_HH-MM-SS"
 cp "${SNAP}"/content.json  /home/sherif/data/ahmed-elakad/
 cp "${SNAP}"/clients.json  /home/sherif/data/ahmed-elakad/
-rsync -a "${SNAP}/images/" /home/sherif/data/ahmed-elakad/images/
 rsync -a "${SNAP}/voices/" /home/sherif/data/ahmed-elakad/voices/
+rsync -a "${BACKUP_ROOT}/images-latest/" /home/sherif/data/ahmed-elakad/images/
 
 # 7. Configure .env.local — see SETUP_GUIDE.md
 # 8. Configure Nginx — see SETUP_GUIDE.md
