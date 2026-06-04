@@ -50,10 +50,20 @@ echo -e "${BOLD}═════════════════════�
 echo ""
 echo -e "${BOLD}[1] JSON Data Files${RESET}"
 
+# content.json and clients.json must exist (site breaks without them)
+# messages.json and config.json are created on first use — warn if absent
+declare -A REQUIRED=([content.json]=fail [clients.json]=fail [messages.json]=warn [config.json]=warn)
+
 for fname in content.json clients.json messages.json config.json; do
   fpath="${DATA_DIR}/${fname}"
+  severity="${REQUIRED[$fname]}"
+
   if [[ ! -f "${fpath}" ]]; then
-    fail "${fname} — FILE MISSING"
+    if [[ "${severity}" == "fail" ]]; then
+      fail "${fname} — FILE MISSING"
+    else
+      warn "${fname} — not yet created (created on first use)"
+    fi
     continue
   fi
 
