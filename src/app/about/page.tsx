@@ -60,7 +60,7 @@ export default async function AboutPage() {
             <div className="w-6 h-px bg-[#b3a384] mb-4" />
             <div className="space-y-3">
               {allParagraphs.length > 0 ? (
-                allParagraphs.map((p, i) => (
+                allParagraphs.slice(0, 2).map((p, i) => (
                   <p key={i} className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     {p}
                   </p>

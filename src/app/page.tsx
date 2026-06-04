@@ -85,11 +85,13 @@ export default async function HomePage() {
             </h2>
             <div className="w-7 h-px bg-[#b3a384] mb-5" />
             <div className="space-y-3 text-[11px] sm:text-[12px] text-[#5a5a5a] leading-relaxed font-light">
-              {bio.slice(0, 2).map((p, i) => <p key={i}>{p}</p>)}
-              {bio.length === 0 && <>
-                <p>For over a decade, Ahmed Elakad Couture has been dedicated to creating bridal masterpieces that celebrate femininity, craftsmanship, and individuality.</p>
-                <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings to ensure each bride experiences a dress made uniquely for her.</p>
-              </>}
+              {bio.length > 0
+                ? bio.flatMap(p => p.split("\n").filter(Boolean)).slice(0, 2).map((p, i) => <p key={i}>{p}</p>)
+                : <>
+                    <p>For over a decade, Ahmed Elakad Couture has been dedicated to creating bridal masterpieces that celebrate femininity, craftsmanship, and individuality.</p>
+                    <p>Each gown is meticulously handcrafted, combining couture techniques, intricate embellishments, and personalized fittings to ensure each bride experiences a dress made uniquely for her.</p>
+                  </>
+              }
             </div>
             <Link href="/about" className="inline-flex items-center gap-2 mt-6 text-[8px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors">
               Discover Our Story
@@ -143,9 +145,9 @@ export default async function HomePage() {
               <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Real Brides</p>
               <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Real Moments. Real Love.</h2>
             </div>
-            <div className="grid grid-cols-6 gap-1">
+            <div className="flex overflow-x-auto gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {brides.map((img, i) => (
-                <div key={i} className="aspect-[2/3] overflow-hidden">
+                <div key={i} className="flex-none aspect-[2/3] overflow-hidden" style={{ width: 'calc((100vw - 2.5rem) / 6)' }}>
                   <img src={optimizeImage(img)} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
                 </div>
               ))}

@@ -25,10 +25,10 @@ export default function Footer({ content }: { content: SiteContent }) {
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-10 md:px-16 pt-10 sm:pt-14 pb-6">
 
         {/* ── Main grid ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1.2fr_1.2fr] gap-x-4 sm:gap-x-8 gap-y-10 mb-8 sm:mb-10">
+        <div className="grid grid-cols-3 md:grid-cols-[1.4fr_1fr_1.2fr_1.2fr] gap-x-3 sm:gap-x-8 gap-y-8 mb-8 sm:mb-10">
 
           {/* Col 1 — Brand / Logo */}
-          <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start gap-2 pb-4 md:pb-0 border-b border-white/8 md:border-none">
+          <div className="col-span-3 md:col-span-1 flex flex-col items-center md:items-start gap-2 pb-4 md:pb-0 border-b border-white/8 md:border-none">
             {logoSrc ? (
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                 <img src={optimizeImage(logoSrc)} alt="Ahmed El Akad" className="w-full h-full object-contain" />
