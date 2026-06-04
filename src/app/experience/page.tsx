@@ -73,12 +73,12 @@ function Stars({ count = 5 }: { count?: number }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#f5f2ee] px-7 py-8 flex flex-col items-center text-center">
-      <div className="font-serif text-[32px] text-[#b3a384] leading-none mb-5 select-none">&ldquo;</div>
-      <p className="text-[#555] text-[13px] leading-[1.85] font-light font-serif flex-1" dir="auto">{t.quote}</p>
-      <div className="w-8 h-px bg-[#b3a384]/40 my-5" />
-      <p className="text-[9px] tracking-[3px] uppercase text-[#1a1a1a] font-bold" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[8px] tracking-[2px] uppercase text-[#aaa] mt-1" dir="auto">{t.subtitle}</p>}
+    <div className="bg-[#e5e0d8] px-6 sm:px-8 py-8 sm:py-10 flex flex-col items-center text-center">
+      <div className="font-serif text-[28px] text-[#b3a384] leading-none mb-6 select-none">&ldquo;</div>
+      <p className="text-[#4a4a4a] text-[13px] leading-[1.9] font-light font-serif flex-1" dir="auto">{t.quote}</p>
+      <div className="w-10 h-px bg-[#b3a384] my-6" />
+      <p className="text-[9px] tracking-[3px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
+      {t.subtitle && <p className="text-[8px] tracking-[2.5px] uppercase text-[#999] mt-1.5" dir="auto">{t.subtitle}</p>}
       <Stars count={t.rating ?? 5} />
     </div>
   );
@@ -158,7 +158,7 @@ export default async function ExperiencePage() {
 
 
       {/* ── KIND WORDS ── */}
-      <section className="bg-[#f9f7f4] py-16 sm:py-24 px-5 sm:px-10">
+      <section className="bg-[#f5f3f0] py-16 sm:py-24 px-5 sm:px-10">
         <div className="max-w-screen-xl mx-auto">
 
           <div className="flex items-center justify-center gap-4 mb-5">
@@ -186,7 +186,7 @@ export default async function ExperiencePage() {
           )}
 
           {testimonials.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
               {testimonials.map((t) => (
                 <TestimonialCard key={t.id} t={t} />
               ))}
