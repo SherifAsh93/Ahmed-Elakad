@@ -184,8 +184,10 @@ echo -e "${BOLD}[6] Backup Status${RESET}"
 # Last success recorded locally
 if [[ -f "${BACKUP_SUCCESS_FILE}" ]]; then
   LAST_SUCCESS=$(cat "${BACKUP_SUCCESS_FILE}")
-  # Compute age in hours
-  LAST_EPOCH=$(date -d "${LAST_SUCCESS//_/ }" '+%s' 2>/dev/null || echo 0)
+  # Convert "YYYY-MM-DD_HH-MM-SS" → "YYYY-MM-DD HH:MM:SS" for date parsing
+  LAST_PARSED="${LAST_SUCCESS//_/ }"
+  LAST_PARSED="${LAST_PARSED:0:10} ${LAST_PARSED:11:2}:${LAST_PARSED:14:2}:${LAST_PARSED:17:2}"
+  LAST_EPOCH=$(date -d "${LAST_PARSED}" '+%s' 2>/dev/null || echo 0)
   NOW_EPOCH=$(date '+%s')
   AGE_HOURS=$(( (NOW_EPOCH - LAST_EPOCH) / 3600 ))
   if [[ "${AGE_HOURS}" -le 25 ]]; then
