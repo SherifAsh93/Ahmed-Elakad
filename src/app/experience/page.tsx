@@ -237,30 +237,34 @@ export default async function ExperiencePage() {
 
 
       {/* ── YOUR STORY CTA ── */}
-      <section className="relative w-full min-h-[55vh] flex items-center overflow-hidden">
+      <section className="relative w-full overflow-hidden">
         {ctaImage ? (
           <img src={optimizeImage(ctaImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="absolute inset-0 bg-[#f5f2ee]" />
         )}
-        <div className={`absolute inset-0 ${ctaImage ? "bg-black/52" : "bg-transparent"}`} />
 
-        {/* MOBILE — centered, stacked, full-width dark button */}
-        <div className="relative z-10 w-full py-20 px-6 flex flex-col items-center text-center md:hidden">
-          <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-4">Begin Your</p>
-          <h2 className={`font-display text-[44px] uppercase tracking-[0.12em] leading-tight mb-3 ${ctaImage ? "text-white" : "text-[#1a1a1a]"}`}>
+        {/* Mobile overlay: very light so background texture shows through with dark text */}
+        <div className={`absolute inset-0 md:hidden ${ctaImage ? "bg-white/30" : "bg-transparent"}`} />
+        {/* Desktop overlay: dark for white text */}
+        <div className={`absolute inset-0 hidden md:block ${ctaImage ? "bg-black/52" : "bg-transparent"}`} />
+
+        {/* MOBILE — centered, fills screen, dark text, full-width dark button */}
+        <div className="relative z-10 min-h-screen w-full px-6 flex flex-col items-center justify-center text-center py-24 md:hidden">
+          <p className="text-[8px] tracking-[5px] uppercase text-[#b3a384] mb-5">Begin Your</p>
+          <h2 className="font-serif font-light text-[#1a1a1a] text-[46px] leading-none mb-4 tracking-[0.03em]">
             {ctaHeading}
           </h2>
           {ctaSubtitle && (
-            <p className="font-serif italic text-[#b3a384] text-[17px] mb-5">{ctaSubtitle}</p>
+            <p className="font-serif italic text-[#b3a384] text-[18px] mb-5">{ctaSubtitle}</p>
           )}
-          <div className="w-7 h-px bg-[#b3a384] mb-6" />
-          <p className={`text-[12px] leading-relaxed font-light mb-9 max-w-[300px] ${ctaImage ? "text-white/65" : "text-[#666]"}`}>
+          <div className="w-10 h-px bg-[#b3a384] mb-7" />
+          <p className="text-[13px] leading-relaxed font-light text-[#555] mb-10 max-w-[300px]">
             {ctaText}
           </p>
           <Link
             href="/contact"
-            className="w-full max-w-[340px] flex items-center justify-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[3px] uppercase py-4 hover:bg-[#b3a384] transition-colors duration-300"
+            className="w-full max-w-[360px] flex items-center justify-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[4px] uppercase py-5 hover:bg-[#b3a384] transition-colors duration-300"
           >
             Book Your Appointment
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -270,9 +274,9 @@ export default async function ExperiencePage() {
         </div>
 
         {/* DESKTOP — two-column: text left, button right */}
-        <div className="relative z-10 w-full hidden md:flex items-end justify-between gap-16 max-w-[1200px] mx-auto px-20 py-24">
+        <div className="relative z-10 w-full hidden md:flex items-end justify-between gap-16 max-w-[1200px] mx-auto px-20 py-24 min-h-[50vh]">
           <div>
-            <h2 className="font-display text-[44px] uppercase tracking-[0.2em] text-white leading-tight mb-3">
+            <h2 className="font-serif font-light text-[42px] lg:text-[52px] uppercase tracking-[0.15em] text-white leading-tight mb-3">
               {ctaHeading}
             </h2>
             {ctaSubtitle && (
@@ -283,7 +287,7 @@ export default async function ExperiencePage() {
               <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384] shrink-0" />
               <div className="w-7 h-px bg-[#b3a384]" />
             </div>
-            <p className="text-[13px] leading-relaxed font-light text-white/65 max-w-[380px]">
+            <p className="text-[13px] leading-relaxed font-light text-white/70 max-w-[360px]">
               {ctaText}
             </p>
           </div>
