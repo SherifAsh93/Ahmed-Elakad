@@ -4,8 +4,8 @@
 
 A luxury Egyptian fashion designer website for Ahmed Elakad Couture. Serves as the public-facing portfolio for bridal and couture collections, a booking/contact channel, and an internal CRM for managing clients and orders.
 
-**Live URL:** ahmedelakad.com  
-**Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Cloudinary · Vercel
+**Live URL:** https://ahmedelakad.com  
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · VPS local disk storage · PM2 · Nginx
 
 ---
 
@@ -34,6 +34,7 @@ Ahmed-Elakad/
 │   │   ├── couture/
 │   │   │   ├── page.tsx            # Redirects to /couture/all
 │   │   │   └── [year]/page.tsx     # Couture collections filtered by year (or "all")
+│   │   ├── experience/page.tsx     # Experience page (testimonials + videos + CTA)
 │   │   ├── contact/page.tsx        # Contact page with form
 │   │   ├── atelier/page.tsx        # Client/order management (Arabic, RTL)
 │   │   ├── admin/
@@ -44,9 +45,11 @@ Ahmed-Elakad/
 │   │       ├── auth/route.ts       # POST=login, DELETE=logout
 │   │       ├── contact/route.ts    # POST contact form submission
 │   │       ├── content/route.ts    # GET/POST site content JSON
-│   │       ├── images/route.ts     # GET Cloudinary image list
-│   │       ├── upload/route.ts     # POST/DELETE Cloudinary images
-│   │       ├── grab-url/route.ts   # POST import external image by URL
+│   │       ├── images/route.ts     # GET image list (local VPS + legacy Cloudinary)
+│   │       ├── upload/
+│   │       │   ├── route.ts        # POST/DELETE images → VPS disk
+│   │       │   └── voice/route.ts  # POST voice recordings → VPS disk
+│   │       ├── grab-url/route.ts   # POST import external image by URL → VPS disk
 │   │       └── admin/
 │   │           ├── clients/route.ts   # Full CRUD: clients, payments, dresses
 │   │           ├── messages/route.ts  # GET/DELETE/PATCH contact messages
@@ -62,27 +65,30 @@ Ahmed-Elakad/
 │   │   ├── messages.ts             # Read/write messages.json
 │   │   ├── clients.ts              # Client CRM logic (read/write clients.json)
 │   │   ├── config.ts               # Admin password read/write (config.json)
-│   │   ├── cloudinary.ts           # Cloudinary SDK initialization
+│   │   ├── cloudinary.ts           # Cloudinary SDK init (legacy image management only)
 │   │   ├── utils.ts                # Image optimization helpers
 │   │   └── compressImage.ts        # Client-side image compression before upload
-│   └── data/                       # JSON data files (gitignored, on VPS disk)
-│       ├── config.json             # Admin password
-│       ├── content.json            # All editable site content
-│       ├── messages.json           # Contact form submissions
-│       └── clients.json            # Client/order records
-├── public/                         # Static SVG icons
-├── screenshots/                    # Documentation screenshots
-├── next.config.ts                  # Next.js config (Cloudinary remote patterns)
+│   └── data/                       # (gitignored) Pointer to VPS data location
+├── public/                         # Static SVG icons and assets
+├── next.config.ts                  # Next.js config (remote image patterns for Cloudinary + ahmedelakad.com)
 ├── tsconfig.json                   # TypeScript config (path alias @/* → src/*)
 ├── postcss.config.mjs              # Tailwind PostCSS config
 ├── eslint.config.mjs               # ESLint config
 ├── package.json
-├── .env.local                      # Local dev secrets
-├── .env.production                 # Production secrets
+├── .env.local                      # Local dev secrets (never commit)
 └── AGENTS.md                       # AI agent instructions
 ```
 
-**Data files live outside the repo** at `/home/sherif/data/ahmed-elakad/` on the VPS and are read at runtime. They are not deployed to Vercel.
+**Data files live outside the repo** at `/home/sherif/data/ahmed-elakad/` on the VPS and are read at runtime:
+```
+/home/sherif/data/ahmed-elakad/
+├── config.json      # Admin password
+├── content.json     # All editable site content + image URLs
+├── messages.json    # Contact form submissions
+├── clients.json     # Client/order CRM records
+├── images/          # Uploaded images (~1,700+ files, ~655 MB)
+└── voices/          # Voice note recordings for Atelier
+```
 
 ---
 
@@ -91,14 +97,15 @@ Ahmed-Elakad/
 | Route | Type | Purpose |
 |-------|------|---------|
 | `/` | Public | Home: hero image + CTAs |
-| `/about` | Public | Designer bio + portrait |
+| `/about` | Public | Designer bio + portrait + gallery |
 | `/bridal` | Public | Redirects to `/bridal/all` |
 | `/bridal/[year]` | Public | Bridal collections by year (or "all") |
 | `/couture` | Public | Redirects to `/couture/all` |
 | `/couture/[year]` | Public | Couture collections by year (or "all") |
-| `/contact` | Public | Contact info + booking form |
-| `/atelier` | Semi-private | Client/order CRM (Arabic RTL) |
-| `/admin` | Protected | Admin login |
+| `/experience` | Public | Testimonials + client videos + CTA |
+| `/contact` | Public | Contact info + booking form + international brides |
+| `/atelier` | Semi-private | Client/order CRM (Arabic RTL, no password) |
+| `/admin` | Protected | Admin login (password: 114891) |
 | `/admin/dashboard` | Protected | Full CMS (content, images, messages) |
 
 All public pages have `export const dynamic = 'force-dynamic'` and `export const revalidate = 0` — no caching, always fresh data.
@@ -112,11 +119,12 @@ RootLayout (layout.tsx)
 ├── Navbar (receives content prop)
 ├── {page children}
 │   ├── Home: hero section inline
-│   ├── About: hero + bio inline
+│   ├── About: hero + bio + gallery inline
 │   ├── Bridal/Couture: CollectionGrid
 │   │   └── modal with MasonryGallery
+│   ├── Experience: testimonials + videos + CTA inline
 │   ├── Contact: ContactForm
-│   └── Atelier: full inline client CRM
+│   └── Atelier: full inline client CRM (RTL, Arabic)
 └── Footer (receives content prop)
 
 AdminLayout (admin/layout.tsx)
@@ -124,11 +132,8 @@ AdminLayout (admin/layout.tsx)
     ├── Login page: inline form
     └── Dashboard: massive single-page CMS
         ├── Sidebar navigation
-        ├── Home section editor
-        ├── Bridal section editor
-        ├── Couture section editor
-        ├── About section editor
-        ├── Contact section editor
+        ├── Home / About / Bridal / Couture / Experience / Contact editors
+        ├── Media Library (browse + upload + grab-by-URL)
         ├── Messages viewer
         └── Settings (password change)
 ```
@@ -151,14 +156,25 @@ Data flow: Server Components fetch content JSON → pass as props to Client Comp
 
 ## API Integrations
 
-### Cloudinary
-All images are stored on Cloudinary in the `Ahmed Elakad` folder.
+### Image Storage (VPS Local Disk — primary)
 
-- Upload: `POST /api/upload` with base64 image data
-- List: `GET /api/images` (cached 30s server-side)
-- Delete: `DELETE /api/upload` with public_id
-- Import by URL: `POST /api/grab-url` (for Instagram/external images)
-- SDK: `cloudinary@2.9.0` initialized in `src/lib/cloudinary.ts`
+All new image uploads (since 2026-06-02) are saved directly to VPS disk and served by Nginx.
+
+- Upload: `POST /api/upload` with multipart form data → saves to `/data/.../images/`
+- List (local): `GET /api/images` returns local images first, then legacy Cloudinary
+- Delete (local): `DELETE /api/upload` with `{ url: "https://ahmedelakad.com/media/..." }` → unlinks file
+- Import by URL: `POST /api/grab-url` → fetches external image, saves to VPS disk, returns `/media/` URL
+- Voice upload: `POST /api/upload/voice` → saves to `/data/.../voices/`, returns `/voices/` URL
+
+Nginx serves `/media/` and `/voices/` directly from disk (not through Next.js), with 1-year immutable caching.
+
+### Cloudinary (legacy — pre-June 2026 images only)
+
+The Cloudinary SDK (`cloudinary@2.9.0`) is still in use for:
+- `GET /api/images`: includes legacy Cloudinary images in the media library listing
+- `DELETE /api/upload` with a `res.cloudinary.com` URL: calls `cloudinary.uploader.destroy()` to remove from Cloudinary
+
+No new images are uploaded to Cloudinary. Cloudinary credentials are optional — omitting them means legacy images still display (their URLs still work), but they won't appear in the admin media library.
 
 ### No other external APIs
 - No email service (contact form saves to JSON only)
@@ -173,7 +189,7 @@ Simple single-password system, no user accounts:
 
 1. User visits `/admin` and enters password
 2. `POST /api/auth` compares submitted password against `ADMIN_PASSWORD` env var
-3. On success: sets `admin_session=authenticated` cookie (httpOnly, 8-hour maxAge)
+3. On success: sets `admin_session=authenticated` cookie (httpOnly, 30-day maxAge, auto-renews on each save)
 4. Protected API routes check `cookies.get("admin_session")?.value === "authenticated"`
 5. Logout: `DELETE /api/auth` clears the cookie
 
@@ -183,16 +199,18 @@ Password can be changed via the Settings section of the admin dashboard, which w
 
 ## Deployment Process
 
-### Production (Vercel)
+### Production (VPS with PM2)
 ```bash
-# Auto-deploys on git push to main via Vercel GitHub integration
-# Manual deploy:
-npx vercel --prod
+cd /home/sherif/sites/Ahmed-Elakad
+git pull
+npm run build
+pm2 restart ahmed-elakad
+pm2 logs ahmed-elakad --lines 20
 ```
 
-Vercel project: `ahmed-elakad` (org: `team_qJJXjiUXt2dFLD5C0UNDRPtb`)
-
-**Important:** The JSON data files (`content.json`, `clients.json`, etc.) live on the VPS at `/home/sherif/data/ahmed-elakad/`, not on Vercel. This means the site **must** run on the VPS (via PM2 + Next.js server) for the data to be accessible, despite being linked to Vercel.
+GitHub repo: `SherifAsh93/Ahmed-Elakad`  
+PM2 process name: `ahmed-elakad`  
+Port: `3000` (proxied by Nginx)
 
 ### Local Development
 ```bash
@@ -201,9 +219,6 @@ npm run dev     # http://localhost:3000
 npm run build   # Production build
 npm start       # Start production server
 ```
-
-### VPS (PM2)
-The site runs as a PM2 process on the VPS, served via Nginx reverse proxy.
 
 ---
 
@@ -234,19 +249,28 @@ Edit `src/app/atelier/page.tsx` (UI) and `src/lib/clients.ts` (data logic) and `
 
 ## Troubleshooting Guide
 
-**Images not loading:**
-- Check Cloudinary credentials in `.env.local` / `.env.production`
-- Verify `CLOUDINARY_FOLDER` matches the folder name on Cloudinary
-- Check `next.config.ts` remote patterns include `**.cloudinary.com`
+**Images not loading (local /media/ URLs):**
+- Check Nginx is running: `sudo nginx -t && sudo systemctl status nginx`
+- Verify files exist: `ls /home/sherif/data/ahmed-elakad/images/`
+- Check Nginx config: `/etc/nginx/sites-available/ahmedelakad.com` — `/media/` alias must point to the images dir
+
+**Legacy Cloudinary images not showing in media library:**
+- Check `CLOUDINARY_CLOUD_NAME` and `CLOUDINARY_API_SECRET` are set in `.env.local`
+- The images themselves still work (their URLs are valid) — only the library listing needs credentials
 
 **Admin login not working:**
-- Verify `ADMIN_PASSWORD` in `.env.local` matches what you're entering
-- Check `/home/sherif/data/ahmed-elakad/config.json` for current password
+- Verify `ADMIN_PASSWORD` in `.env.local` matches what you're entering (default: `114891`)
+- Check `/home/sherif/data/ahmed-elakad/config.json` for current stored password
 - Clear browser cookies and try again
 
 **Data changes not persisting:**
 - Data files are at `/home/sherif/data/ahmed-elakad/` — check write permissions
-- Run `ls -la /home/sherif/data/ahmed-elakad/` to verify files exist
+- Run `ls -la /home/sherif/data/ahmed-elakad/` to verify files exist and are writable
+
+**Upload failing:**
+- Check directory exists and is writable: `ls -la /home/sherif/data/ahmed-elakad/images/`
+- Check disk space: `df -h /home/sherif/data/`
+- Check PM2 logs: `pm2 logs ahmed-elakad --lines 50`
 
 **Build errors:**
 - Run `npm run lint` to check TypeScript/ESLint errors
@@ -254,8 +278,11 @@ Edit `src/app/atelier/page.tsx` (UI) and `src/lib/clients.ts` (data logic) and `
 
 **Atelier page not loading client data:**
 - Check `/home/sherif/data/ahmed-elakad/clients.json` exists and is valid JSON
-- Use `node -e "JSON.parse(require('fs').readFileSync('/home/sherif/data/ahmed-elakad/clients.json','utf8'))"` to validate
+- Validate: `node -e "JSON.parse(require('fs').readFileSync('/home/sherif/data/ahmed-elakad/clients.json','utf8'))"`
 
-**Cloudinary upload failing:**
-- Check `CLOUDINARY_API_SECRET` is correct
-- Cloudinary free tier has storage limits (~25GB) — check usage at cloudinary.com dashboard
+**Site down / PM2 crash:**
+```bash
+pm2 status ahmed-elakad
+pm2 logs ahmed-elakad --lines 50
+pm2 restart ahmed-elakad
+```

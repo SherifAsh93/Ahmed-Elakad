@@ -2,11 +2,15 @@
 
 ## Architecture Overview
 
-This is a **Next.js 16 App Router** application deployed on a VPS. Unlike typical Next.js apps, it uses **JSON files on disk as a database** rather than a SQL database. This is the single most important architectural fact to understand.
+This is a **Next.js 16 App Router** application running on a VPS. Unlike typical Next.js apps, it uses **JSON files on disk as a database** rather than a SQL database, and **VPS local disk** as the primary image storage (not a cloud service).
 
 ```
-Browser → Nginx (port 80/443) → Next.js server (port 3000) → JSON files on disk
-                                                             → Cloudinary API (images)
+Browser → Nginx (port 80/443)
+    ├── /media/*   → /home/sherif/data/ahmed-elakad/images/  (static files, no Next.js)
+    ├── /voices/*  → /home/sherif/data/ahmed-elakad/voices/  (static files, no Next.js)
+    └── /*         → Next.js server (port 3000)
+                        ├── JSON files on disk (content, clients, messages, config)
+                        └── Cloudinary API (read-only, legacy image management only)
 ```
 
 **Key constraint:** The app MUST run as a persistent Node.js server (via PM2), not Vercel serverless, because serverless functions cannot persist file writes between invocations.
@@ -17,25 +21,51 @@ Browser → Nginx (port 80/443) → Next.js server (port 3000) → JSON files on
 
 | Priority | File | What it does |
 |----------|------|-------------|
-| Critical | `src/lib/content.ts` | Read/write all site content |
-| Critical | `src/lib/clients.ts` | Client CRM logic |
-| Critical | `src/lib/messages.ts` | Contact form submissions |
-| Critical | `src/lib/config.ts` | Admin password management |
-| Critical | `src/lib/cloudinary.ts` | Cloudinary SDK init |
+| Critical | `src/lib/content.ts` | Read/write all site content (content.json) |
+| Critical | `src/lib/clients.ts` | Client CRM logic (clients.json) |
+| Critical | `src/lib/messages.ts` | Contact form submissions (messages.json) |
+| Critical | `src/lib/config.ts` | Admin password management (config.json) |
+| Critical | `src/app/api/upload/route.ts` | Image upload/delete → VPS disk |
+| Critical | `src/app/api/images/route.ts` | Image listing (VPS + legacy Cloudinary) |
 | High | `src/app/admin/dashboard/page.tsx` | CMS UI (143KB, monolithic) |
 | High | `src/app/atelier/page.tsx` | Client management UI (RTL Arabic) |
 | High | `src/app/api/*/route.ts` | All backend endpoints |
+| Medium | `src/app/api/grab-url/route.ts` | Fetch external image by URL → VPS disk |
+| Medium | `src/app/api/upload/voice/route.ts` | Voice note upload → VPS disk |
+| Medium | `src/lib/cloudinary.ts` | Cloudinary SDK init (legacy list/delete only) |
 | Medium | `src/components/MasonryGallery.tsx` | Gallery with lightbox |
 | Medium | `src/components/CollectionGrid.tsx` | Collection cards + modal |
-| Medium | `src/app/layout.tsx` | Root layout (navbar + footer) |
-| Config | `next.config.ts` | Image domains |
+| Config | `next.config.ts` | Image remote patterns (ahmedelakad.com + Cloudinary) |
 | Config | `.env.local` | Secrets (never commit) |
 
-**Data files (not in repo, on VPS):**
+**Data files (not in repo, on VPS disk):**
 - `/home/sherif/data/ahmed-elakad/content.json` — All site text and image URLs
 - `/home/sherif/data/ahmed-elakad/clients.json` — CRM records
 - `/home/sherif/data/ahmed-elakad/messages.json` — Contact form submissions
 - `/home/sherif/data/ahmed-elakad/config.json` — Admin password
+- `/home/sherif/data/ahmed-elakad/images/` — Uploaded images (~1,700+ files, ~655 MB)
+- `/home/sherif/data/ahmed-elakad/voices/` — Voice note audio files
+
+---
+
+## Image Storage — Critical to Understand
+
+The site uses **two image storage systems**. New and old images coexist:
+
+### New images (since 2026-06-02) — VPS local disk
+- Stored at: `/home/sherif/data/ahmed-elakad/images/`
+- Served by Nginx at: `https://ahmedelakad.com/media/{filename}`
+- Filename format: `{timestamp}-{5randomchars}.{ext}`
+- Upload API: `POST /api/upload` (multipart form)
+- Delete API: `DELETE /api/upload` with `{ url: "https://ahmedelakad.com/media/..." }`
+
+### Legacy images (before 2026-06-02) — Cloudinary CDN
+- URL pattern: `https://res.cloudinary.com/dzppk5ylt/image/upload/...`
+- These URLs are stored in `content.json` and still work
+- Delete: `DELETE /api/upload` with a Cloudinary URL → calls `cloudinary.uploader.destroy()`
+- Cloudinary credentials are optional — omitting them only hides legacy images from the media library; they still display on the public site
+
+Image URLs are stored **as full strings** in `content.json` — the code never distinguishes between local and Cloudinary at render time, it just uses the URL directly.
 
 ---
 
@@ -91,10 +121,14 @@ export async function POST(request: Request) { ... }
 ## Common Pitfalls
 
 ### 1. Trying to write data on Vercel
-The JSON data files are at `/home/sherif/data/ahmed-elakad/` — this path only exists on the VPS. Vercel serverless functions will throw ENOENT errors on any write operation. Always test data writes on the VPS, not via `vercel dev`.
+The JSON data files and image directories are at `/home/sherif/data/ahmed-elakad/` — this path only exists on the VPS. Vercel serverless functions will throw ENOENT errors on any write operation. Always test data writes on the VPS, not via `vercel dev`.
 
-### 2. Cloudinary public_id format
-When deleting images, you need the `public_id` (e.g., `Ahmed Elakad/filename`), not the full URL. The `DELETE /api/upload` endpoint accepts `public_id` in the request body.
+### 2. Confusing old (Cloudinary) and new (local) image URLs
+The `DELETE /api/upload` route handles both URL types:
+- If URL starts with `https://ahmedelakad.com/media/` → deletes file from disk
+- If URL is a Cloudinary URL → extracts `public_id` and calls `cloudinary.uploader.destroy()`
+
+Never call Cloudinary's destroy API with a local `/media/` URL.
 
 ### 3. Content JSON structure changes
 If you add a new top-level key to `content.json`, you must also update the TypeScript type in `src/lib/content.ts`. The type mismatch won't cause a runtime crash but will cause TypeScript build errors.
@@ -102,9 +136,10 @@ If you add a new top-level key to `content.json`, you must also update the TypeS
 ### 4. Admin authentication check
 API routes that require admin check for:
 ```typescript
-const session = cookies().get("admin_session")?.value;
+const cookieStore = await cookies();
+const session = cookieStore.get("admin_session")?.value;
 if (session !== "authenticated") {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 ```
 Do NOT change this to a different pattern without updating ALL protected routes.
@@ -112,10 +147,19 @@ Do NOT change this to a different pattern without updating ALL protected routes.
 ### 5. Large dashboard file
 `src/app/admin/dashboard/page.tsx` is 143KB. Make targeted edits — do not restructure the entire component. Edit only the specific section/function you need to change.
 
-### 6. Images from Cloudinary require remote patterns
-If you use a new image hostname, add it to `next.config.ts`:
+### 6. Image hostnames in next.config.ts
+If you use a new image hostname with `<Image>` from next/image, add it to `next.config.ts`:
 ```typescript
-remotePatterns: [{ protocol: "https", hostname: "**.cloudinary.com" }]
+remotePatterns: [
+  { protocol: "https", hostname: "**.cloudinary.com" },
+  { protocol: "https", hostname: "ahmedelakad.com" },
+]
+```
+
+### 7. Disk space
+The images directory is ~655 MB and growing. Before large uploads, check available disk space:
+```bash
+df -h /home/sherif/data/
 ```
 
 ---
@@ -138,22 +182,26 @@ Always call `getContent()` at the top of Server Component pages. Don't cache it 
 const cookieStore = await cookies();
 const session = cookieStore.get("admin_session")?.value;
 if (session !== "authenticated") {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 ```
 
-### Pattern: Content update (PUT flow)
+### Pattern: Content update (merge flow)
 ```typescript
 // Admin edits → POST /api/content with full content object
 // Route handler:
 const current = await getContent();
 const updated = { ...current, ...partial };
-fs.writeFileSync(DATA_PATH, JSON.stringify(updated, null, 2));
+await saveContent(updated);
 ```
 Always merge with existing content to avoid overwriting unrelated sections.
 
-### Pattern: Cloudinary image URL stored in JSON
-Images are stored as full Cloudinary URLs in JSON files (not public_ids). When displaying with `next/image`, the URL is used directly. When deleting, extract the public_id from the URL.
+### Pattern: Image URL stored in JSON
+Images are stored as full URLs in JSON files. When displaying with `<img>` or `<Image>`:
+- Local: `https://ahmedelakad.com/media/1780416174964-7dqc8.jpg` → served by Nginx
+- Legacy: `https://res.cloudinary.com/dzppk5ylt/image/upload/...` → served by Cloudinary CDN
+
+Both are used directly — no transformation needed at render time.
 
 ---
 
@@ -181,16 +229,19 @@ Changing the TypeScript type means any existing JSON data must also be migrated.
 The `admin_session` cookie is the only gate to admin functionality. Breaking the login/logout flow locks out the admin.
 
 ### `/home/sherif/data/ahmed-elakad/content.json` — Live data
-This is the live production database. Don't edit it directly with code tools unless you're sure of the schema. Always make a backup first:
+This is the live production database. Don't edit it directly without a backup:
 ```bash
 cp /home/sherif/data/ahmed-elakad/content.json /home/sherif/data/ahmed-elakad/content.json.bak
 ```
 
-### `src/app/admin/dashboard/page.tsx` — CMS (143KB)
-This file is very large. Make minimal, targeted edits. Reading the whole file to understand it is fine, but avoid large-scale refactors.
+### `/home/sherif/data/ahmed-elakad/images/` — Live images
+The production image store. ~655 MB. Deleting files here permanently removes images from the site (no recovery).
 
-### `src/lib/cloudinary.ts` — Image SDK
-All Cloudinary operations flow through this. Changing the initialization breaks image upload/delete site-wide.
+### `src/app/admin/dashboard/page.tsx` — CMS (143KB)
+This file is very large. Make minimal, targeted edits. Avoid large-scale refactors.
+
+### `src/lib/cloudinary.ts` — Legacy SDK
+Only used for listing and deleting pre-June-2026 images. Do not change to route new uploads through Cloudinary.
 
 ### PM2 process management
-The site runs as a PM2 process. After `npm run build`, you must run `pm2 reload ahmed-elakad` (or equivalent) to apply changes. Never `pm2 delete` the process without restarting it.
+The site runs as PM2 process `ahmed-elakad`. After `npm run build`, always run `pm2 restart ahmed-elakad`. Never `pm2 delete` without immediately restarting.

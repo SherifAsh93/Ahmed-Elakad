@@ -4,8 +4,8 @@
 
 - Node.js 18+ (Node 24 recommended)
 - npm
-- A Cloudinary account with a cloud configured
 - A VPS or server capable of writing to disk (Vercel serverless will NOT work for data persistence)
+- Cloudinary account — **optional**, only needed for managing legacy images uploaded before June 2026
 
 ---
 
@@ -18,8 +18,9 @@ cd /home/sherif/sites/Ahmed-Elakad
 # 2. Install dependencies
 npm install
 
-# 3. Create the data directory (if it doesn't exist)
-mkdir -p /home/sherif/data/ahmed-elakad
+# 3. Create the data directories (if they don't exist)
+mkdir -p /home/sherif/data/ahmed-elakad/images
+mkdir -p /home/sherif/data/ahmed-elakad/voices
 
 # 4. Initialize empty data files (if starting fresh)
 echo '{"adminPassword":"114891"}' > /home/sherif/data/ahmed-elakad/config.json
@@ -46,22 +47,38 @@ Create `.env.local` in the project root:
 # Admin panel password
 ADMIN_PASSWORD="114891"
 
-# Cloudinary image hosting
-CLOUDINARY_CLOUD_NAME="your_cloud_name"
+# Site name (shown in browser tab)
+NEXT_PUBLIC_SITE_NAME="Ahmed Elakad Couture"
+
+# Cloudinary — OPTIONAL. Only needed if you need to see/delete pre-June-2026 images.
+# New uploads go to VPS disk and do NOT require Cloudinary.
+CLOUDINARY_CLOUD_NAME="dzppk5ylt"
 CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
 CLOUDINARY_FOLDER="Ahmed Elakad"
-
-# Site name (shown in browser tab)
-NEXT_PUBLIC_SITE_NAME="Ahmed Elakad Couture"
 ```
 
-For production, also create `.env.production` with the same variables (or set them in Vercel/PM2 environment).
+**Without Cloudinary credentials:** The site works fully. New image uploads, image display, and all admin features work. The only thing missing is the ability to browse and delete the legacy Cloudinary image library (pre-June 2026). New uploads always go to VPS disk.
 
-**How to get Cloudinary credentials:**
-1. Sign up at cloudinary.com
+**How to get Cloudinary credentials (if needed):**
+1. Log in at cloudinary.com (account: cloud name `dzppk5ylt`)
 2. Dashboard → Settings → Access Keys
-3. Copy Cloud name, API Key, and API Secret
+3. Copy API Key and API Secret
+
+---
+
+## Image Storage Architecture
+
+Images are stored in **two places** depending on when they were uploaded:
+
+| Era | Where stored | URL pattern |
+|-----|-------------|------------|
+| Before 2026-06-02 | Cloudinary CDN | `https://res.cloudinary.com/dzppk5ylt/image/upload/...` |
+| After 2026-06-02 | VPS disk at `/home/sherif/data/ahmed-elakad/images/` | `https://ahmedelakad.com/media/{filename}` |
+
+Both types of URLs are stored directly in `content.json` and still work. New uploads always use VPS local disk.
+
+Voice recordings (Atelier CRM) are stored at `/home/sherif/data/ahmed-elakad/voices/` and served at `https://ahmedelakad.com/voices/{filename}`.
 
 ---
 
@@ -74,7 +91,7 @@ For production, also create `.env.production` with the same variables (or set th
 | `next` | 16.2.3 | React framework with App Router, Server Components, API routes |
 | `react` | 19.2.4 | UI rendering library |
 | `react-dom` | 19.2.4 | React DOM rendering |
-| `cloudinary` | 2.9.0 | Cloudinary Node.js SDK — upload, delete, and list images |
+| `cloudinary` | 2.9.0 | Cloudinary Node.js SDK — list and delete legacy images only (new uploads go to VPS disk) |
 
 ### Dev Dependencies
 
@@ -111,11 +128,27 @@ npm start
 **Development tips:**
 - Admin panel: Visit `/admin`, password from `ADMIN_PASSWORD` env var (default: `114891`)
 - To reset data, overwrite the JSON files in `/home/sherif/data/ahmed-elakad/`
-- Images are stored on Cloudinary; changing `CLOUDINARY_FOLDER` points to a different folder
+- Uploaded images land in `/home/sherif/data/ahmed-elakad/images/` — make sure this directory is writable
+- In dev mode, uploaded images use `https://ahmedelakad.com/media/` URLs — they will only resolve correctly in production or if you set up a local Nginx alias
 
 ---
 
 ## Build and Deployment Commands
+
+### VPS Deployment with PM2 (production)
+```bash
+cd /home/sherif/sites/Ahmed-Elakad
+
+# Build
+npm run build
+
+# Restart PM2 process to apply new build
+pm2 restart ahmed-elakad
+
+# Verify it's running
+pm2 status ahmed-elakad
+pm2 logs ahmed-elakad --lines 20
+```
 
 ### Local Production Build
 ```bash
@@ -123,22 +156,10 @@ npm run build   # Compiles TypeScript, generates .next/
 npm start       # Starts Next.js server on port 3000
 ```
 
-### VPS Deployment with PM2
-```bash
-# Build
-npm run build
-
-# Start with PM2 (if ecosystem.config.js exists)
-pm2 start ecosystem.config.js --env production
-
-# Or manually
-pm2 start npm --name "ahmed-elakad" -- start
-
-# Reload after code changes
-pm2 reload ahmed-elakad
-```
-
 ### Vercel Deployment
+
+**Important:** Vercel serverless functions cannot write to disk, so JSON data files and uploaded images won't persist between requests. Use Vercel for preview deployments only where data persistence is not critical.
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -146,11 +167,9 @@ npm i -g vercel
 # Deploy preview
 vercel
 
-# Deploy to production
+# Deploy to production (not recommended — use VPS)
 vercel --prod
 ```
-
-**Important for Vercel:** Vercel serverless functions cannot write to disk, so the JSON data files won't persist between requests. The site is designed to run on a persistent VPS server. Vercel can be used for preview deployments where data persistence is not needed.
 
 ---
 
@@ -161,32 +180,60 @@ The Next.js process must have read and write permissions on the data directory:
 ```bash
 # Check permissions
 ls -la /home/sherif/data/ahmed-elakad/
+ls -la /home/sherif/data/ahmed-elakad/images/ | head -5
 
 # Fix permissions if needed
 chmod 644 /home/sherif/data/ahmed-elakad/*.json
-chown -R youruser:youruser /home/sherif/data/ahmed-elakad/
+chmod 755 /home/sherif/data/ahmed-elakad/images/
+chmod 755 /home/sherif/data/ahmed-elakad/voices/
+chown -R sherif:sherif /home/sherif/data/ahmed-elakad/
 ```
 
 ---
 
 ## Nginx Configuration (VPS)
 
-The site typically runs behind Nginx as a reverse proxy:
+Full config at `/etc/nginx/sites-available/ahmedelakad.com`:
 
 ```nginx
 server {
-    listen 80;
     server_name ahmedelakad.com www.ahmedelakad.com;
+    client_max_body_size 50m;
 
+    # Serve uploaded images directly — bypasses Next.js, cached 1 year
+    location /media/ {
+        alias /home/sherif/data/ahmed-elakad/images/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri =404;
+    }
+
+    # Serve voice note audio files directly
+    location /voices/ {
+        alias /home/sherif/data/ahmed-elakad/voices/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Access-Control-Allow-Origin "*";
+        try_files $uri =404;
+    }
+
+    # All other requests → Next.js
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
+
+    listen 443 ssl; # managed by Certbot
+    # ... SSL certs managed by Certbot
 }
 ```
 
-SSL is handled by Certbot/Let's Encrypt on top of this Nginx config.
+SSL certificate: Let's Encrypt via Certbot. Renews automatically. Expires 2026-08-10.
