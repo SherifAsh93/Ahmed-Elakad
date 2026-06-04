@@ -73,8 +73,8 @@ function Stars({ count = 5 }: { count?: number }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#e5e0d8] px-6 sm:px-8 py-8 sm:py-10 flex flex-col items-center text-center">
-      <div className="font-serif text-[28px] text-[#b3a384] leading-none mb-6 select-none">&ldquo;</div>
+    <div className="bg-[#ede9e2] px-6 sm:px-8 py-8 sm:py-10 flex flex-col items-center text-center">
+      <div className="font-serif text-[32px] text-[#b3a384] leading-none mb-6 select-none">&ldquo;</div>
       <p className="text-[#4a4a4a] text-[13px] leading-[1.9] font-light font-serif flex-1" dir="auto">{t.quote}</p>
       <div className="w-10 h-px bg-[#b3a384] my-6" />
       <p className="text-[9px] tracking-[3px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
@@ -186,7 +186,7 @@ export default async function ExperiencePage() {
           )}
 
           {testimonials.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-10">
               {testimonials.map((t) => (
                 <TestimonialCard key={t.id} t={t} />
               ))}
