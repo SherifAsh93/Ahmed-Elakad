@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   const now = Date.now();
   if (cachedResult && now - cacheTimestamp < CACHE_TTL) {
     return NextResponse.json(cachedResult, {
-      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },
+      headers: { "Cache-Control": "private, no-store" },
     });
   }
 
@@ -95,6 +95,6 @@ export async function GET(req: Request) {
   cacheTimestamp = now;
 
   return NextResponse.json(payload, {
-    headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },
+    headers: { "Cache-Control": "private, no-store" },
   });
 }

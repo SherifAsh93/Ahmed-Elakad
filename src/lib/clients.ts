@@ -193,6 +193,23 @@ export async function addPayment(clientId: string, payment: Omit<Payment, "id">)
   return updated;
 }
 
+export async function updatePayment(clientId: string, paymentId: string, data: Partial<Omit<Payment, "id">>): Promise<Client | null> {
+  const all = readAll();
+  let updated: Client | null = null;
+  const next = all.map((c) => {
+    if (c.id === clientId) {
+      const newPayments = c.payments.map((p) =>
+        p.id === paymentId ? { ...p, ...data } : p
+      );
+      updated = { ...c, payments: newPayments, status: autoStatus({ ...c, payments: newPayments }) };
+      return updated;
+    }
+    return c;
+  });
+  if (updated) writeLocal(next);
+  return updated;
+}
+
 export async function deletePayment(clientId: string, paymentId: string): Promise<Client | null> {
   const all = readAll();
   let updated: Client | null = null;

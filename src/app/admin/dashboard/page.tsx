@@ -943,7 +943,7 @@ function VideoListEditor({
               <div className="shrink-0 w-[100px] aspect-video bg-gray-100 rounded overflow-hidden border border-gray-100">
                 {thumb ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={thumb} alt="" className="w-full h-full object-cover" />
+                  <img src={thumb} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 ) : isVimeo ? (
                   <div className="w-full h-full flex items-center justify-center bg-[#1ab7ea]/10">
                     <span className="text-[8px] text-[#1ab7ea] font-bold uppercase tracking-widest">Vimeo</span>
@@ -1191,6 +1191,7 @@ function YearCollectionEditor({
                       alt=""
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      onError={(e) => { const el = e.currentTarget; el.style.display = 'none'; const p = el.parentElement; if (p && !p.querySelector('.error-msg')) { const d = document.createElement('div'); d.className = 'error-msg w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-500 text-center p-1'; d.innerHTML = '<span class="text-base">⚠️</span><span class="text-[7px] font-bold mt-0.5 uppercase">Broken</span>'; p.appendChild(d); } }}
                     />
                     <button
                       title="Remove"
@@ -1416,7 +1417,8 @@ function ClientForm({
                 <div className="mt-3 flex flex-wrap gap-2">
                   {clientImages.map((img, idx) => (
                     <div key={idx} className="relative group">
-                      <img src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-100" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-100" onError={(e) => { e.currentTarget.style.opacity = '0.3'; }} />
                       <button
                         type="button"
                         onClick={() => setClientImages(prev => prev.filter((_, i) => i !== idx))}
@@ -1501,6 +1503,61 @@ function AddPaymentModal({
             <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 min-h-[48px] bg-[#b3a384] text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-black transition-all disabled:opacity-40">
               {saving ? "Saving..." : "Add Payment"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Payment Modal ────────────────────
+function EditPaymentModal({
+  payment,
+  onSave,
+  onClose,
+}: {
+  payment: Payment;
+  onSave: (amount: number, date: string, note: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [date, setDate] = useState(payment.date);
+  const [note, setNote] = useState(payment.note);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || Number(amount) <= 0) return;
+    setSaving(true);
+    await onSave(Number(amount), date, note);
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5 border-b">
+          <h3 className="font-display text-sm uppercase tracking-[4px]">Edit Payment</h3>
+          <button onClick={onClose} className="text-gray-300 hover:text-black text-2xl font-bold transition-colors">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Amount Paid (EGP) *</label>
+            <input type="number" min="1" required value={amount} onChange={e => setAmount(e.target.value)} className="admin-input text-lg font-bold" placeholder="0" autoFocus />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Date</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="admin-input" />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Visit Note (optional)</label>
+            <input value={note} onChange={e => setNote(e.target.value)} className="admin-input" placeholder="e.g. First fitting" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 min-h-[48px] bg-[#b3a384] text-white rounded-xl text-[10px] uppercase tracking-[2px] font-black hover:bg-black transition-all disabled:opacity-40">
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
@@ -1752,6 +1809,7 @@ function ClientsPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [paymentClientId, setPaymentClientId] = useState<string | null>(null);
+  const [editingPayment, setEditingPayment] = useState<{ clientId: string; payment: Payment } | null>(null);
   const [fittingClientId, setFittingClientId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dressPickerInfo, setDressPickerInfo] = useState<{ clientId: string; dressId: string } | null>(null);
@@ -1832,6 +1890,12 @@ function ClientsPanel({
     if (!window.confirm("Remove this payment?")) return;
     await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deletePayment", paymentId }) });
     onRefresh();
+  };
+
+  const handleEditPayment = async (clientId: string, paymentId: string, amount: number, date: string, note: string) => {
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "updatePayment", paymentId, amount, date, note }) });
+    onRefresh();
+    setEditingPayment(null);
   };
 
   const handleDateChange = async (clientId: string, field: "appointmentDate" | "nextAppointmentDate" | "fittingDate", value: string) => {
@@ -2060,6 +2124,7 @@ function ClientsPanel({
                               src={img} alt=""
                               className="w-20 h-20 object-cover rounded-lg border border-gray-100 cursor-zoom-in"
                               onClick={() => setLightboxSrc(img)}
+                              onError={(e) => { e.currentTarget.style.opacity = '0.3'; }}
                             />
                             <button
                               type="button"
@@ -2112,7 +2177,10 @@ function ClientsPanel({
                               {p.note && <span className="text-[10px] text-gray-400 ml-2">· {p.note}</span>}
                             </div>
                             <span className="text-[10px] text-gray-400 font-bold whitespace-nowrap">{new Date(p.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
-                            <button onClick={() => handleDeletePayment(client.id, p.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black ml-1 shrink-0">✕</button>
+                            <button onClick={() => setEditingPayment({ clientId: client.id, payment: p })} className="text-gray-300 hover:text-[#b3a384] transition-colors shrink-0" title="Edit payment">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={() => handleDeletePayment(client.id, p.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black shrink-0">✕</button>
                           </div>
                         ))}
                       </div>
@@ -2151,6 +2219,7 @@ function ClientsPanel({
                                     className="w-full h-full object-cover cursor-zoom-in"
                                     loading="lazy"
                                     onClick={() => setLightboxSrc(src)}
+                                    onError={(e) => { e.currentTarget.style.opacity = '0.3'; }}
                                   />
                                   <button
                                     onClick={() => handleRemoveDressImage(client.id, dress.id, src)}
@@ -2270,6 +2339,13 @@ function ClientsPanel({
           onClose={() => setPaymentClientId(null)}
         />
       )}
+      {editingPayment && (
+        <EditPaymentModal
+          payment={editingPayment.payment}
+          onSave={(amount, date, note) => handleEditPayment(editingPayment.clientId, editingPayment.payment.id, amount, date, note)}
+          onClose={() => setEditingPayment(null)}
+        />
+      )}
       {fittingClientId && (
         <FittingModal
           current={clients.find(c => c.id === fittingClientId)?.fittingDate ?? ""}
@@ -2308,7 +2384,7 @@ function ClientsPanel({
       )}
 
       {/* Mobile FAB: New Client — bottom-left so it doesn't clash with the Save button (bottom-right) */}
-      {!formOpen && !editClient && !paymentClientId && !fittingClientId && !dressPickerInfo && (
+      {!formOpen && !editClient && !paymentClientId && !editingPayment && !fittingClientId && !dressPickerInfo && (
         <button
           onClick={() => setFormOpen(true)}
           className="fixed bottom-6 left-6 z-[40] sm:hidden bg-black text-white px-5 py-3.5 rounded-full shadow-2xl active:scale-95 transition-all font-black text-[11px] tracking-[2px] uppercase flex items-center gap-2 border-2 border-white/10"

@@ -157,6 +157,87 @@ function AddPaymentModal({
   );
 }
 
+// ── Edit Payment Modal ─────────────────────────────────
+function EditPaymentModal({
+  payment,
+  clientName,
+  onSave,
+  onClose,
+}: {
+  payment: Payment;
+  clientName: string;
+  onSave: (amount: number, date: string, note: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [date, setDate] = useState(payment.date);
+  const [note, setNote] = useState(payment.note);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || Number(amount) <= 0) return;
+    setSaving(true);
+    try {
+      await onSave(Number(amount), date, note);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden" dir="rtl">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h3 className="font-bold text-base text-black">تعديل الدفعة</h3>
+          <p className="text-xs text-gray-400">{clientName}</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-black text-xl font-bold transition-colors">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div>
+            <label className="text-[12px] uppercase tracking-[2px] text-gray-400 font-bold block mb-1.5">المبلغ (جنيه) *</label>
+            <input
+              type="number"
+              min="1"
+              required
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-lg font-black text-black focus:border-[#b3a384] focus:outline-none"
+              placeholder="0"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="text-[12px] uppercase tracking-[2px] text-gray-400 font-bold block mb-1.5">التاريخ</label>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:border-[#b3a384] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[12px] uppercase tracking-[2px] text-gray-400 font-bold block mb-1.5">ملاحظة (اختياري)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:border-[#b3a384] focus:outline-none"
+              placeholder="مثال: دفعة مقدمة"
+            />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[13px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">إلغاء</button>
+            <button type="submit" disabled={saving} className="flex-1 min-h-[48px] bg-black text-white rounded-xl text-[13px] uppercase tracking-[2px] font-black hover:bg-[#b3a384] transition-all disabled:opacity-40">
+              {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Edit Client Modal ─────────────────────────────────
 function EditClientModal({
   client,
@@ -408,12 +489,14 @@ function ClientCard({
   client,
   onAddPayment,
   onDeletePayment,
+  onEditPayment,
   onEdit,
   onRefresh,
 }: {
   client: Client;
   onAddPayment: (clientId: string) => void;
   onDeletePayment: (clientId: string, paymentId: string) => void;
+  onEditPayment: (clientId: string, payment: Payment) => void;
   onEdit: (client: Client) => void;
   onRefresh: () => void;
 }) {
@@ -540,6 +623,9 @@ function ClientCard({
                 {client.payments.map(p => (
                   <div key={p.id} className="flex items-center gap-3 bg-white border border-gray-100 rounded-lg px-4 py-2.5">
                     <button onClick={() => onDeletePayment(client.id, p.id)} className="text-red-400 hover:text-red-600 transition-colors text-xs font-black shrink-0">✕</button>
+                    <button onClick={() => onEditPayment(client.id, p)} className="text-gray-300 hover:text-[#b3a384] transition-colors shrink-0" title="تعديل الدفعة">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
                     <span className="text-[13px] text-gray-400 font-bold whitespace-nowrap">{fmtDate(p.date)}</span>
                     <div className="flex-1 min-w-0 text-right">
                       <span className="text-sm font-black text-green-600">+{p.amount.toLocaleString("ar-EG")} جنيه</span>
@@ -654,10 +740,21 @@ function ClientCard({
               <p className="text-[12px] tracking-[3px] font-black text-gray-400 mb-3 text-right">صور من العميل</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {(client.clientImages ?? []).map((src) => (
-                  <button key={src} onClick={() => setLightbox(src)} className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
-                  </button>
+                  <div key={src} className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-sm group">
+                    <button onClick={() => setLightbox(src)} className="w-full h-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("حذف هذه الصورة؟")) return;
+                        const updated = (client.clientImages ?? []).filter(u => u !== src);
+                        await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: client.id, clientImages: updated }) });
+                        onRefresh();
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white text-[13px] w-6 h-6 flex items-center justify-center rounded-full shadow opacity-80 hover:opacity-100 transition-opacity"
+                    >✕</button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -729,6 +826,7 @@ export default function AtelierPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "completed">("all");
   const [paymentClientId, setPaymentClientId] = useState<string | null>(null);
+  const [editingPayment, setEditingPayment] = useState<{ clientId: string; payment: Payment } | null>(null);
   const [editClient, setEditClient] = useState<Client | null>(null);
 
   const refresh = useCallback(async () => {
@@ -787,6 +885,16 @@ export default function AtelierPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: clientId, action: "deletePayment", paymentId }),
     });
+    refresh();
+  };
+
+  const handleEditPayment = async (clientId: string, paymentId: string, amount: number, date: string, note: string) => {
+    await fetch("/api/admin/clients", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: clientId, action: "updatePayment", paymentId, amount, date, note }),
+    });
+    setEditingPayment(null);
     refresh();
   };
 
@@ -870,6 +978,7 @@ export default function AtelierPage() {
                 client={client}
                 onAddPayment={setPaymentClientId}
                 onDeletePayment={handleDeletePayment}
+                onEditPayment={(clientId, payment) => setEditingPayment({ clientId, payment })}
                 onEdit={setEditClient}
                 onRefresh={refresh}
               />
@@ -884,6 +993,16 @@ export default function AtelierPage() {
           clientName={paymentClient.name || paymentClient.phone}
           onSave={(amount, date, note) => handleAddPayment(paymentClientId, amount, date, note)}
           onClose={() => setPaymentClientId(null)}
+        />
+      )}
+
+      {/* Edit Payment Modal */}
+      {editingPayment && (
+        <EditPaymentModal
+          payment={editingPayment.payment}
+          clientName={clients.find(c => c.id === editingPayment.clientId)?.name || editingPayment.clientId}
+          onSave={(amount, date, note) => handleEditPayment(editingPayment.clientId, editingPayment.payment.id, amount, date, note)}
+          onClose={() => setEditingPayment(null)}
         />
       )}
 

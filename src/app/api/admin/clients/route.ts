@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import {
   getClients,
   addClient,
   updateClient,
   deleteClient,
   addPayment,
+  updatePayment,
   deletePayment,
   addDress,
   deleteDress,
@@ -15,7 +17,14 @@ import {
   deleteVoiceNote,
 } from "@/lib/clients";
 
+async function auth() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("admin_session");
+  return session?.value === "authenticated";
+}
+
 export async function GET() {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const clients = await getClients();
   return NextResponse.json(clients);
 }
@@ -56,6 +65,16 @@ export async function PUT(req: NextRequest) {
 
   if (action === "addPayment") {
     const updated = await addPayment(id, { amount: Number(data.amount), date: data.date, note: data.note ?? "" });
+    if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  }
+
+  if (action === "updatePayment") {
+    const updated = await updatePayment(id, data.paymentId, {
+      amount: data.amount !== undefined ? Number(data.amount) : undefined,
+      date: data.date,
+      note: data.note,
+    });
     if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
     return NextResponse.json(updated);
   }

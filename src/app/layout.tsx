@@ -16,6 +16,7 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent();
   return {
+    metadataBase: new URL("https://ahmedelakad.com"),
     title: {
       default: content.siteInfo?.brandName ?? "Ahmed Elakad Couture",
       template: `%s | ${content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}`,
