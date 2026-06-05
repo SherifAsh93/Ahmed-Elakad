@@ -46,21 +46,21 @@ export default async function AboutPage() {
       </section>
 
       {/* ── OUR STORY: text left + image right ── */}
-      <section className="bg-[#f9f7f4] py-10 sm:py-14 md:py-18 px-4 sm:px-10 md:px-16">
+      <section className="bg-[#f9f7f4] py-8 sm:py-12 md:py-16 px-4 sm:px-10 md:px-16">
         <div className="max-w-[1200px] mx-auto grid grid-cols-[42%_55%] gap-4 sm:gap-10 md:gap-14 items-center">
 
           {/* Left: text */}
           <div>
-            <p className="font-serif italic text-[#b3a384] text-[11px] sm:text-[14px] mb-2">
+            <p className="font-serif italic text-[#b3a384] text-[10px] sm:text-[13px] mb-1">
               {content.siteInfo?.brandName ?? "Ahmed Elakad"}
             </p>
-            <h2 className="font-display text-[13px] sm:text-[22px] md:text-[28px] uppercase tracking-[0.12em] text-[#1a1a1a] leading-tight mb-3">
+            <h2 className="font-display text-[14px] sm:text-[20px] md:text-[24px] uppercase tracking-[0.12em] text-[#1a1a1a] leading-tight mb-2">
               OUR STORY
             </h2>
-            <div className="w-6 h-px bg-[#b3a384] mb-4" />
-            <div className="space-y-3">
+            <div className="w-5 h-px bg-[#b3a384] mb-3" />
+            <div className="space-y-2">
               {allParagraphs.length > 0 ? (
-                allParagraphs.slice(0, 2).map((p, i) => (
+                allParagraphs.slice(0, 3).map((p, i) => (
                   <p key={i} className="text-[#555] text-[9px] sm:text-[12px] leading-[1.75] font-light font-serif">
                     {p}
                   </p>
@@ -95,11 +95,11 @@ export default async function AboutPage() {
 
       {/* ── OUR ATELIER: center heading + 4-col images ── */}
       {gallery.some(Boolean) && (
-        <section className="bg-[#f5f2ee] py-12 sm:py-18 md:py-20 px-6 sm:px-12 md:px-20">
+        <section className="bg-[#f5f2ee] py-8 sm:py-12 md:py-16 px-6 sm:px-12 md:px-20">
           <div className="max-w-[1200px] mx-auto">
-            <div className="text-center mb-7 sm:mb-10">
-              <p className="text-[8px] tracking-[5px] uppercase text-[#b3a384] mb-3">Our Atelier</p>
-              <h2 className="font-display text-[15px] sm:text-[19px] md:text-[23px] uppercase tracking-[0.2em] text-[#1a1a1a] mb-4">
+            <div className="text-center mb-5 sm:mb-8">
+              <p className="text-[7px] tracking-[5px] uppercase text-[#b3a384] mb-2">Our Atelier</p>
+              <h2 className="font-display text-[12px] sm:text-[16px] md:text-[20px] uppercase tracking-[0.2em] text-[#1a1a1a] mb-3">
                 A PRIVATE SPACE FOR COUTURE CREATION
               </h2>
               <div className="flex items-center justify-center gap-3 mb-4">

@@ -73,12 +73,12 @@ function Stars({ count = 5 }: { count?: number }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#ede9e2] px-6 sm:px-8 py-8 sm:py-10 flex flex-col items-center text-center">
-      <div className="font-serif text-[32px] text-[#b3a384] leading-none mb-6 select-none">&ldquo;</div>
-      <p className="text-[#4a4a4a] text-[13px] leading-[1.9] font-light font-serif flex-1" dir="auto">{t.quote}</p>
-      <div className="w-10 h-px bg-[#b3a384] my-6" />
-      <p className="text-[9px] tracking-[3px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[8px] tracking-[2.5px] uppercase text-[#999] mt-1.5" dir="auto">{t.subtitle}</p>}
+    <div className="bg-[#ede9e2] px-6 py-7 flex flex-col">
+      <div className="font-serif text-[28px] text-[#b3a384] leading-none mb-4 select-none">&ldquo;</div>
+      <p className="text-[#4a4a4a] text-[12px] leading-[1.85] font-light font-serif flex-1" dir="auto">{t.quote}</p>
+      <div className="w-8 h-px bg-[#b3a384] my-5" />
+      <p className="text-[8px] tracking-[3px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
+      {t.subtitle && <p className="text-[7px] tracking-[2.5px] uppercase text-[#999] mt-1" dir="auto">{t.subtitle}</p>}
       <Stars count={t.rating ?? 5} />
     </div>
   );
@@ -158,7 +158,7 @@ export default async function ExperiencePage() {
 
 
       {/* ── KIND WORDS ── */}
-      <section className="bg-[#f5f3f0] py-16 sm:py-24 px-5 sm:px-10">
+      <section className="bg-[#f5f3f0] py-12 sm:py-16 px-5 sm:px-10">
         <div className="max-w-screen-xl mx-auto">
 
           <div className="flex items-center justify-center gap-4 mb-5">
@@ -167,20 +167,20 @@ export default async function ExperiencePage() {
             <div className="w-12 sm:w-16 h-px bg-[#b3a384]" />
           </div>
 
-          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-4">
+          <h2 className="font-display text-[18px] sm:text-[22px] md:text-[28px] uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-3">
             {kindWordsTitle}
           </h2>
 
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex items-center justify-center gap-2 mb-6">
             <div className="w-7 h-px bg-[#b3a384]/40" />
             <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384]" />
             <div className="w-7 h-px bg-[#b3a384]/40" />
           </div>
 
           {kindWordsIntro && (
-            <div className="text-center mb-12 max-w-[520px] mx-auto">
+            <div className="text-center mb-8 max-w-[520px] mx-auto">
               {kindWordsIntro.split("\n").map((line, i) => (
-                <p key={i} className="text-[#666] text-[13px] sm:text-sm leading-[1.75] font-light font-serif">{line}</p>
+                <p key={i} className="text-[#666] text-[11px] sm:text-[12px] leading-[1.75] font-light font-serif">{line}</p>
               ))}
             </div>
           )}

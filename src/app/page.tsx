@@ -108,11 +108,11 @@ export default async function HomePage() {
 
 
       {/* ── COLLECTIONS ──────────────────────────────────────────── */}
-      <section className="bg-[#f5f2ee] py-8 sm:py-12 md:py-16 px-4 sm:px-10 md:px-20">
+      <section className="bg-[#f5f2ee] py-6 sm:py-10 md:py-14 px-4 sm:px-10 md:px-20">
         <div className="max-w-[1440px] mx-auto">
-          <div className="text-center mb-5 sm:mb-8">
-            <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Couture Collections</p>
-            <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Discover Our Collections</h2>
+          <div className="text-center mb-4 sm:mb-6">
+            <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-1">Couture Collections</p>
+            <h2 className="font-serif font-light text-[#1a1a1a] text-[15px] sm:text-[20px] md:text-[26px]">Discover Our Collections</h2>
           </div>
           {/* Always 3 columns exactly like the template */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
@@ -139,11 +139,11 @@ export default async function HomePage() {
 
       {/* ── REAL BRIDES ───────────────────────────────────────────── */}
       {brides.length > 0 && (
-        <section className="bg-[#f5f2ee] py-8 sm:py-12 md:py-16">
+        <section className="bg-[#f5f2ee] py-6 sm:py-10 md:py-14">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
-            <div className="text-center mb-5 sm:mb-8">
-              <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Real Brides</p>
-              <h2 className="font-serif font-light text-[#1a1a1a] text-[20px] sm:text-[28px] md:text-[34px]">Real Moments. Real Love.</h2>
+            <div className="text-center mb-4 sm:mb-6">
+              <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-1">Real Brides</p>
+              <h2 className="font-serif font-light text-[#1a1a1a] text-[15px] sm:text-[20px] md:text-[26px]">Real Moments. Real Love.</h2>
             </div>
             <div className="flex overflow-x-auto gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
               {brides.map((img, i) => (
@@ -163,7 +163,7 @@ export default async function HomePage() {
 
 
       {/* ── BRIDAL JOURNEY ────────────────────────────────────────── */}
-      <section className="relative bg-[#ece6db] overflow-hidden py-14 sm:py-20 md:py-28">
+      <section className="relative bg-[#ece6db] overflow-hidden py-12 sm:py-16 md:py-22">
         {/* Left decorative image */}
         <div className="absolute left-0 top-0 bottom-0 w-[80px] sm:w-[160px] md:w-[260px] pointer-events-none select-none">
           <img src={optimizeImage(ctaImg)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
@@ -171,10 +171,10 @@ export default async function HomePage() {
         </div>
         {/* Centered content */}
         <div className="relative z-10 text-center px-6 max-w-xs sm:max-w-sm mx-auto">
-          <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] mb-2">Begin Your</p>
-          <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-4 text-[28px] sm:text-[38px] md:text-[46px]">{ctaHead}</h2>
-          <div className="w-7 h-px bg-[#b3a384] mx-auto mb-5" />
-          <p className="text-[11px] sm:text-[12px] text-[#6a6a6a] leading-relaxed font-light mb-7">{ctaDesc}</p>
+          <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-2">Begin Your</p>
+          <h2 className="font-serif font-light text-[#1a1a1a] leading-tight mb-3 text-[22px] sm:text-[30px] md:text-[38px]">{ctaHead}</h2>
+          <div className="w-7 h-px bg-[#b3a384] mx-auto mb-4" />
+          <p className="text-[10px] sm:text-[11px] text-[#6a6a6a] leading-relaxed font-light mb-6">{ctaDesc}</p>
           <Link href={ctaBtnHr} className="inline-flex items-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[3px] uppercase px-8 sm:px-10 py-4 hover:bg-[#b3a384] transition-colors duration-300">
             {ctaBtn} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
