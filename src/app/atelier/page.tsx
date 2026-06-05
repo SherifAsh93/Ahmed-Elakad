@@ -549,7 +549,7 @@ function ClientCard({
           <path d="m6 9 6 6 6-6" />
         </svg>
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-base font-black text-black mb-0.5"><span dir="ltr">{toAr(client.phone)}</span></p>
+          <p className="text-base font-black text-black mb-0.5"><span dir="ltr">{client.phone}</span></p>
           <div className="flex flex-wrap items-center gap-2 mb-1 justify-end">
             <span className={`text-[12px] tracking-[2px] font-black px-2 py-0.5 rounded-full ${statusBg[client.status]}`}>{statusAr[client.status]}</span>
             {client.dressType && <span className="text-[12px] tracking-[1px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">{dressTypeAr[client.dressType]}</span>}
@@ -577,7 +577,7 @@ function ClientCard({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-lg px-4 py-3 text-right">
               <p className="text-[12px] tracking-[2px] font-black text-gray-400 mb-1">رقم الموبايل</p>
-              <a href={`tel:${client.phone}`} className="text-base font-black text-stone-800 hover:text-[#b3a384] transition-colors"><span dir="ltr">{toAr(client.phone)}</span></a>
+              <a href={`tel:${client.phone}`} className="text-base font-black text-stone-800 hover:text-[#b3a384] transition-colors"><span dir="ltr">{client.phone}</span></a>
             </div>
             {client.email && (
               <div className="bg-gray-50 rounded-lg px-4 py-3 text-right">
