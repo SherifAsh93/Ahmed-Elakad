@@ -140,7 +140,7 @@ To check backup status + full health: `bash /home/sherif/sites/Ahmed-Elakad/scri
 
 ### Change admin password logic
 → `src/lib/config.ts` — `getAdminPassword()` and `setAdminPassword()`  
-→ `src/app/api/auth/route.ts` — login handler  
+→ `src/app/api/auth/route.ts` — GET (check session), POST (login), DELETE (logout)  
 → `src/app/api/admin/config/route.ts` — password change handler
 
 ### Add a new API endpoint
@@ -170,8 +170,16 @@ Never call Cloudinary's destroy API with a local `/media/` URL.
 ### 4. Content JSON structure changes
 If you add a new top-level key to `content.json`, you must also update the TypeScript type in `src/lib/content.ts`. The type mismatch won't cause a runtime crash but will cause TypeScript build errors.
 
-### 5. Admin authentication check
-API routes that require admin check for:
+### 5. Admin authentication — how the whole flow works
+The admin panel lives at `/admin/dashboard`. There is **no separate login page** — `/admin` just redirects there.
+
+The dashboard mounts with `isLocked = true` and immediately calls `GET /api/auth`:
+- If the session cookie is valid → `setIsLocked(false)` + `fetchData()`
+- If invalid/missing → stays locked (shows full-screen dark overlay with password form)
+- On correct password → POST `/api/auth`, cookie set, `setIsLocked(false)`, `fetchData()`
+- Logout (TERMINATE SESSION) → DELETE `/api/auth`, `setIsLocked(true)`, clears content
+
+API routes that require admin check for the cookie:
 ```typescript
 const cookieStore = await cookies();
 const session = cookieStore.get("admin_session")?.value;
