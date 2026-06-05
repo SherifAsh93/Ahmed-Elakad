@@ -1755,6 +1755,7 @@ function ClientsPanel({
   const [fittingClientId, setFittingClientId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dressPickerInfo, setDressPickerInfo] = useState<{ clientId: string; dressId: string } | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const statusColor = (s: Client["status"]) =>
     s === "active" ? "bg-green-100 text-green-700" :
@@ -2129,7 +2130,12 @@ function ClientsPanel({
                               {dress.images.map((src) => (
                                 <div key={src} className="relative group aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-sm">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                  <img
+                                    src={src} alt=""
+                                    className="w-full h-full object-cover cursor-zoom-in"
+                                    loading="lazy"
+                                    onClick={() => setLightboxSrc(src)}
+                                  />
                                   <button
                                     onClick={() => handleRemoveDressImage(client.id, dress.id, src)}
                                     className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full opacity-100 z-10 shadow"
@@ -2263,6 +2269,26 @@ function ClientsPanel({
           onSelect={(srcs) => handleAddDressImages(dressPickerInfo.clientId, dressPickerInfo.dressId, srcs)}
           onClose={() => setDressPickerInfo(null)}
         />
+      )}
+
+      {/* Image lightbox */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt=""
+            className="max-w-full max-h-full object-contain rounded shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full text-xl font-bold transition-colors"
+          >✕</button>
+        </div>
       )}
 
       {/* Mobile FAB: New Client — bottom-left so it doesn't clash with the Save button (bottom-right) */}
