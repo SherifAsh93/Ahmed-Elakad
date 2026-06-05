@@ -2,6 +2,7 @@
 import { getContent, Testimonial, VideoItem } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
 import Link from "next/link";
+import TestimonialsSection from "./TestimonialsSection";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -56,28 +57,6 @@ function VideoCard({ video }: { video: VideoItem }) {
   );
 }
 
-
-function TestimonialCard({ t }: { t: Testimonial }) {
-  return (
-    <div className="bg-[#f5f0ea] px-6 sm:px-8 py-8 sm:py-10 flex flex-col h-full">
-      <div className="font-serif text-[36px] sm:text-[40px] text-[#b3a384] leading-none mb-5 select-none">&ldquo;</div>
-      <p className="text-[#4a4a4a] text-[14px] sm:text-[15px] leading-[1.9] font-light font-serif flex-1 text-center" dir="auto">{t.quote}</p>
-      <div className="w-12 h-px bg-[#c4b59a] mx-auto my-6" />
-      <p className="text-[10px] sm:text-[11px] tracking-[3px] uppercase text-[#2a2218] font-medium text-center" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[9px] sm:text-[10px] tracking-[2px] uppercase text-[#aaa] mt-1.5 text-center" dir="auto">{t.subtitle}</p>}
-      <div className="flex items-center justify-center gap-[5px] mt-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <svg key={i} width="13" height="13" viewBox="0 0 24 24"
-            fill={i < (t.rating ?? 5) ? "#b3a384" : "none"}
-            stroke="#b3a384" strokeWidth="1.5"
-          >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default async function ExperiencePage() {
   const content = await getContent();
@@ -192,31 +171,7 @@ export default async function ExperiencePage() {
           )}
 
           {/* 3 cards in one row — horizontal scroll on mobile */}
-          {testimonials.length > 0 ? (
-            <>
-              <div className="-mx-5 sm:-mx-10 px-5 sm:px-10 flex gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-8 sm:mb-10">
-                {testimonials.slice(0, 3).map((t) => (
-                  <div key={t.id} className="flex-none w-[76vw] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-11px)] snap-start">
-                    <TestimonialCard t={t} />
-                  </div>
-                ))}
-              </div>
-
-              {/* VIEW MORE REVIEWS */}
-              <div className="flex justify-center mt-2">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center px-10 sm:px-14 py-3.5 border border-[#b3a384]/70 text-[8px] tracking-[4px] uppercase text-[#b3a384] hover:bg-[#b3a384] hover:text-white transition-all duration-300"
-                >
-                  View More Reviews
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div className="py-16 text-center border border-dashed border-[#d5cfc5]">
-              <p className="text-[10px] tracking-[4px] uppercase text-[#bbb]">No testimonials yet</p>
-            </div>
-          )}
+          <TestimonialsSection testimonials={testimonials} />
 
         </div>
       </section>
