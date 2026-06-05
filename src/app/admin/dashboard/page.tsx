@@ -337,11 +337,11 @@ function ImagePicker({
             >
               {uploadStatus ? "PLEASE WAIT" : "↑ UPLOAD"}
             </label>
-            {/* Close Button with more margin */}
+            {/* Close Button */}
             {!inline && onClose && (
               <button
                 onClick={onClose}
-                className="text-gray-300 hover:text-black transition-colors font-bold p-3 text-2xl ml-6 absolute -top-2 -right-4 md:static"
+                className="text-gray-400 hover:text-black transition-colors font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-xl shrink-0 ml-1"
               >
                 ✕
               </button>
@@ -763,6 +763,15 @@ function SingleImageEditor({
           <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300 text-xs italic">
             NO IMAGE
           </div>
+        )}
+        {image && (
+          <button
+            onClick={() => onChange("")}
+            className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-full shadow transition-colors text-sm font-bold"
+            title="Remove image"
+          >
+            ✕
+          </button>
         )}
       </div>
       {picker && (
