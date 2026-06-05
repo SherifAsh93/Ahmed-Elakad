@@ -155,13 +155,11 @@ export default async function ExperiencePage() {
 
       {/* ── KIND WORDS ── */}
       <section className="relative py-16 sm:py-20 md:py-24 px-5 sm:px-10">
-        {/* Background image — set from admin */}
-        {kindWordsBgImage && (
-          <>
-            <img src={optimizeImage(kindWordsBgImage)} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-[#f5f0e8]/85" />
-          </>
+        {/* Same hero image, light warm overlay */}
+        {heroImage && (
+          <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
+        <div className="absolute inset-0 bg-[#f5f0e8]/90" />
 
         <div className="relative z-10 max-w-screen-xl mx-auto">
 
