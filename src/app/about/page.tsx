@@ -111,10 +111,10 @@ export default async function AboutPage() {
                 Designed for personalized consultations, fittings, and bespoke experiences.
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {gallery.slice(0, 4).map((img, i) =>
                 img ? (
-                  <div key={i} className="aspect-[3/4] overflow-hidden">
+                  <div key={i} className="flex-none w-[72vw] sm:w-[48vw] md:w-[calc(25%-9px)] snap-start aspect-[3/4] overflow-hidden">
                     <img
                       src={optimizeImage(img)}
                       alt="Atelier"

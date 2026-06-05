@@ -186,9 +186,11 @@ export default async function ExperiencePage() {
           )}
 
           {testimonials.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-10">
               {testimonials.map((t) => (
-                <TestimonialCard key={t.id} t={t} />
+                <div key={t.id} className="flex-none w-[80vw] sm:w-[calc(50%-6px)] md:w-[calc(33.333%-8px)] snap-start">
+                  <TestimonialCard t={t} />
+                </div>
               ))}
             </div>
           ) : (
