@@ -73,12 +73,12 @@ function Stars({ count = 5 }: { count?: number }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#ede9e2] px-6 py-7 flex flex-col">
-      <div className="font-serif text-[28px] text-[#b3a384] leading-none mb-4 select-none">&ldquo;</div>
-      <p className="text-[#4a4a4a] text-[12px] leading-[1.85] font-light font-serif flex-1" dir="auto">{t.quote}</p>
-      <div className="w-8 h-px bg-[#b3a384] my-5" />
-      <p className="text-[8px] tracking-[3px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[7px] tracking-[2.5px] uppercase text-[#999] mt-1" dir="auto">{t.subtitle}</p>}
+    <div className="bg-[#ede9e2] px-2 sm:px-5 py-4 sm:py-6 flex flex-col">
+      <div className="font-serif text-[18px] sm:text-[26px] text-[#b3a384] leading-none mb-2 sm:mb-4 select-none">&ldquo;</div>
+      <p className="text-[#4a4a4a] text-[8px] sm:text-[11px] leading-[1.75] font-light font-serif flex-1" dir="auto">{t.quote}</p>
+      <div className="w-5 sm:w-8 h-px bg-[#b3a384] my-3 sm:my-4" />
+      <p className="text-[6px] sm:text-[8px] tracking-[2px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
+      {t.subtitle && <p className="text-[6px] sm:text-[7px] tracking-[1.5px] uppercase text-[#999] mt-0.5" dir="auto">{t.subtitle}</p>}
       <Stars count={t.rating ?? 5} />
     </div>
   );
@@ -186,7 +186,7 @@ export default async function ExperiencePage() {
           )}
 
           {testimonials.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-10">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
               {testimonials.map((t) => (
                 <TestimonialCard key={t.id} t={t} />
               ))}
@@ -236,72 +236,48 @@ export default async function ExperiencePage() {
       )}
 
 
-      {/* ── YOUR STORY CTA ── */}
-      <section className="relative w-full overflow-hidden">
+      {/* ── YOUR STORY CTA — single unified layout matching template ── */}
+      <section className="relative w-full min-h-[40vh] flex items-center overflow-hidden">
         {ctaImage ? (
           <img src={optimizeImage(ctaImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         ) : (
-          <div className="absolute inset-0 bg-[#f5f2ee]" />
+          <div className="absolute inset-0 bg-[#1a1a1a]" />
         )}
+        <div className={`absolute inset-0 ${ctaImage ? "bg-black/52" : "bg-transparent"}`} />
 
-        {/* Mobile overlay: very light so background texture shows through with dark text */}
-        <div className={`absolute inset-0 md:hidden ${ctaImage ? "bg-white/30" : "bg-transparent"}`} />
-        {/* Desktop overlay: dark for white text */}
-        <div className={`absolute inset-0 hidden md:block ${ctaImage ? "bg-black/52" : "bg-transparent"}`} />
+        <div className="relative z-10 w-full px-6 sm:px-12 md:px-20 py-14 sm:py-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 sm:gap-16 max-w-[1440px] mx-auto">
 
-        {/* MOBILE — centered, fills screen, dark text, full-width dark button */}
-        <div className="relative z-10 min-h-screen w-full px-6 flex flex-col items-center justify-center text-center py-24 md:hidden">
-          <p className="text-[8px] tracking-[5px] uppercase text-[#b3a384] mb-5">Begin Your</p>
-          <h2 className="font-serif font-light text-[#1a1a1a] text-[46px] leading-none mb-4 tracking-[0.03em]">
-            {ctaHeading}
-          </h2>
-          {ctaSubtitle && (
-            <p className="font-serif italic text-[#b3a384] text-[18px] mb-5">{ctaSubtitle}</p>
-          )}
-          <div className="w-10 h-px bg-[#b3a384] mb-7" />
-          <p className="text-[13px] leading-relaxed font-light text-[#555] mb-10 max-w-[300px]">
-            {ctaText}
-          </p>
-          <Link
-            href="/contact"
-            className="w-full max-w-[360px] flex items-center justify-center gap-3 bg-[#1a1a1a] text-white text-[8px] tracking-[4px] uppercase py-5 hover:bg-[#b3a384] transition-colors duration-300"
-          >
-            Book Your Appointment
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* DESKTOP — two-column: text left, button right */}
-        <div className="relative z-10 w-full hidden md:flex items-end justify-between gap-16 max-w-[1200px] mx-auto px-20 py-24 min-h-[50vh]">
-          <div>
-            <h2 className="font-serif font-light text-[42px] lg:text-[52px] uppercase tracking-[0.15em] text-white leading-tight mb-3">
+          {/* Left: text */}
+          <div className="flex-1">
+            <h2 className="font-display text-[20px] sm:text-[28px] md:text-[36px] uppercase tracking-[0.15em] text-white leading-tight mb-2">
               {ctaHeading}
             </h2>
             {ctaSubtitle && (
-              <p className="font-serif italic text-[#b3a384] text-[17px] mb-5">{ctaSubtitle}</p>
+              <p className="font-serif italic text-[#b3a384] text-[13px] sm:text-[16px] mb-4">{ctaSubtitle}</p>
             )}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-7 h-px bg-[#b3a384]" />
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-px bg-[#b3a384]" />
               <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384] shrink-0" />
-              <div className="w-7 h-px bg-[#b3a384]" />
+              <div className="w-6 h-px bg-[#b3a384]" />
             </div>
-            <p className="text-[13px] leading-relaxed font-light text-white/70 max-w-[360px]">
+            <p className="text-[10px] sm:text-[12px] leading-relaxed font-light text-white/65 max-w-[340px]">
               {ctaText}
             </p>
           </div>
+
+          {/* Right: button */}
           <div className="flex-shrink-0">
             <Link
               href="/contact"
-              className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] tracking-[3px] uppercase px-10 py-4 hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
+              className="inline-flex items-center gap-3 border border-white/50 text-white text-[7px] sm:text-[8px] tracking-[3px] uppercase px-6 sm:px-10 py-3 sm:py-4 hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
             >
               Book Your Appointment
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
+
         </div>
       </section>
 
