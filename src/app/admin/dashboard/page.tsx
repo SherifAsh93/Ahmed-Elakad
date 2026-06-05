@@ -1856,6 +1856,12 @@ function ClientsPanel({
     setDressPickerInfo(null);
   };
 
+  const handleRemoveClientImage = async (client: Client, imageUrl: string) => {
+    const updated = (client.clientImages ?? []).filter(u => u !== imageUrl);
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: client.id, clientImages: updated }) });
+    onRefresh();
+  };
+
   const handleRemoveDressImage = async (clientId: string, dressId: string, imageUrl: string) => {
     await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "removeDressImage", dressId, imageUrl }) });
     fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: imageUrl }) }).catch(() => {});
@@ -2048,9 +2054,19 @@ function ClientsPanel({
                       <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 mb-3">Photos</p>
                       <div className="flex flex-wrap gap-2">
                         {(client.clientImages ?? []).map((img, idx) => (
-                          <a key={idx} href={img} target="_blank" rel="noopener noreferrer">
-                            <img src={img} alt="" className="w-20 h-20 object-cover rounded-lg border border-gray-100 hover:opacity-80 transition-opacity" />
-                          </a>
+                          <div key={idx} className="relative group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={img} alt=""
+                              className="w-20 h-20 object-cover rounded-lg border border-gray-100 cursor-zoom-in"
+                              onClick={() => setLightboxSrc(img)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveClientImage(client, img)}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center z-10 shadow"
+                            >✕</button>
+                          </div>
                         ))}
                       </div>
                     </div>
