@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef, FormEvent } from "react";
 import Image from "next/image";
 import { SiteContent, CategoryYear } from "@/lib/content";
 import { compressImage } from "@/lib/compressImage";
@@ -2627,8 +2626,7 @@ function MessagesPanel({
 }
 
 // ── Password Change Card ─────────────────
-function PasswordChangeCard() {
-  const router = useRouter();
+function PasswordChangeCard({ onLogout }: { onLogout: () => void }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -2649,9 +2647,8 @@ function PasswordChangeCard() {
     if (res.ok) {
       setMsg("Password updated — logging out now...");
       setStatus("ok");
-      // Clear session so admin must re-login with new password
       await fetch("/api/auth", { method: "DELETE" });
-      setTimeout(() => router.push("/admin"), 1500);
+      setTimeout(() => onLogout(), 1500);
     } else {
       setStatus("error"); setMsg(data.error || "Failed to update password");
     }
@@ -2687,7 +2684,10 @@ function PasswordChangeCard() {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter();
+  const [isLocked, setIsLocked] = useState(true);
+  const [lockPw, setLockPw] = useState("");
+  const [lockErr, setLockErr] = useState("");
+  const [lockLoading, setLockLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("site");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [allImages, setAllImages] = useState<string[]>([]);
@@ -2709,7 +2709,7 @@ export default function AdminDashboard() {
       ]);
       setContent(c);
       setAllImages(imgs.images ?? []);
-      
+
       // Fetch messages
       fetch("/api/admin/messages")
         .then(r => r.json())
@@ -2727,13 +2727,39 @@ export default function AdminDashboard() {
         Object.entries(imgs.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
       }
       setLoading(false);
-    } catch (e) {
-      router.push("/admin");
+    } catch {
+      setIsLocked(true);
     }
-  }, [router]);
+  }, []);
+
+  const handleLockSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLockLoading(true);
+    setLockErr("");
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: lockPw }),
+      });
+      if (res.ok) {
+        setIsLocked(false);
+        setLockPw("");
+        fetchData();
+      } else {
+        setLockErr("كلمة المرور غير صحيحة");
+      }
+    } catch {
+      setLockErr("Connection error. Try again.");
+    } finally {
+      setLockLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchData();
+    fetch("/api/auth")
+      .then(r => { if (r.ok) { setIsLocked(false); fetchData(); } })
+      .catch(() => {});
   }, [fetchData]);
 
   const refreshClients = useCallback(async () => {
@@ -2805,7 +2831,47 @@ export default function AdminDashboard() {
     return () => clearTimeout(id);
   }, [content, hasChanges, loading, save]);
 
-  if (!content) return null;
+  if (isLocked) return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-sm mx-4 bg-[#0e0e0e] border border-white/10 p-10 shadow-2xl">
+        <div className="flex justify-center mb-6">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#b8965a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <p className="text-center font-display text-2xl text-white tracking-widest mb-1">AHMED ELAKAD</p>
+        <p className="text-center text-[10px] tracking-[4px] text-[#b8965a] uppercase mb-8">Admin Panel</p>
+        <form onSubmit={handleLockSubmit} className="space-y-4">
+          <input
+            type="password"
+            value={lockPw}
+            onChange={e => setLockPw(e.target.value)}
+            placeholder="Enter password"
+            className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 text-sm focus:outline-none focus:border-[#b8965a] transition-colors placeholder-white/20"
+            autoFocus
+          />
+          {lockErr && <p className="text-red-400 text-xs text-center">{lockErr}</p>}
+          <button
+            type="submit"
+            disabled={lockLoading}
+            className="w-full bg-[#b8965a] hover:bg-[#8a6e3e] text-white py-3 text-xs tracking-[3px] uppercase font-medium transition-colors disabled:opacity-50"
+          >
+            {lockLoading ? "Verifying..." : "Enter"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  if (!content) return (
+    <div className="fixed inset-0 bg-[#0e0e0e] flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="w-8 h-8 border-2 border-[#b8965a] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-[10px] tracking-[4px] text-[#b8965a] uppercase">Loading</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-[#fcfaf9] overflow-x-hidden">
@@ -2947,9 +3013,10 @@ export default function AdminDashboard() {
           )}
           <button
             onClick={() =>
-              fetch("/api/auth", { method: "DELETE" }).then(() =>
-                router.push("/admin"),
-              )
+              fetch("/api/auth", { method: "DELETE" }).then(() => {
+                setContent(null);
+                setIsLocked(true);
+              })
             }
             className="w-full text-[9px] text-gray-300 uppercase tracking-[4px] text-center py-3 hover:text-red-400 cursor-pointer transition-colors font-bold"
           >
@@ -3063,7 +3130,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
-                <PasswordChangeCard />
+                <PasswordChangeCard onLogout={() => { setContent(null); setIsLocked(true); }} />
               </div>
             </div>
           )}
