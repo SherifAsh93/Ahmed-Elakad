@@ -59,15 +59,15 @@ function VideoCard({ video }: { video: VideoItem }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#f5f0ea] px-5 sm:px-7 py-7 sm:py-9 flex flex-col h-full">
-      <div className="font-serif text-[28px] sm:text-[34px] text-[#b3a384] leading-none mb-4 select-none">&ldquo;</div>
-      <p className="text-[#4a4a4a] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif flex-1 text-center" dir="auto">{t.quote}</p>
-      <div className="w-10 h-px bg-[#c4b59a] mx-auto my-5" />
-      <p className="text-[9px] tracking-[3px] uppercase text-[#2a2218] font-medium text-center" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[8px] tracking-[2px] uppercase text-[#aaa] mt-1 text-center" dir="auto">{t.subtitle}</p>}
-      <div className="flex items-center justify-center gap-[4px] mt-4">
+    <div className="bg-[#f5f0ea] px-6 sm:px-8 py-8 sm:py-10 flex flex-col h-full">
+      <div className="font-serif text-[36px] sm:text-[40px] text-[#b3a384] leading-none mb-5 select-none">&ldquo;</div>
+      <p className="text-[#4a4a4a] text-[14px] sm:text-[15px] leading-[1.9] font-light font-serif flex-1 text-center" dir="auto">{t.quote}</p>
+      <div className="w-12 h-px bg-[#c4b59a] mx-auto my-6" />
+      <p className="text-[10px] sm:text-[11px] tracking-[3px] uppercase text-[#2a2218] font-medium text-center" dir="auto">— {t.name}</p>
+      {t.subtitle && <p className="text-[9px] sm:text-[10px] tracking-[2px] uppercase text-[#aaa] mt-1.5 text-center" dir="auto">{t.subtitle}</p>}
+      <div className="flex items-center justify-center gap-[5px] mt-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <svg key={i} width="11" height="11" viewBox="0 0 24 24"
+          <svg key={i} width="13" height="13" viewBox="0 0 24 24"
             fill={i < (t.rating ?? 5) ? "#b3a384" : "none"}
             stroke="#b3a384" strokeWidth="1.5"
           >
@@ -168,12 +168,12 @@ export default async function ExperiencePage() {
           {/* Eyebrow */}
           <div className="flex items-center justify-center gap-4 mb-5">
             <div className="w-12 sm:w-16 h-px bg-[#b3a384]" />
-            <span className="text-[8px] tracking-[5px] uppercase text-[#b3a384] font-medium whitespace-nowrap">Client Love</span>
+            <span className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-medium whitespace-nowrap">Client Love</span>
             <div className="w-12 sm:w-16 h-px bg-[#b3a384]" />
           </div>
 
           {/* Heading */}
-          <h2 className="font-display text-[24px] sm:text-[30px] md:text-[36px] uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-3">
+          <h2 className="font-display text-[30px] sm:text-[38px] md:text-[46px] uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-3">
             {kindWordsTitle}
           </h2>
 
@@ -188,7 +188,7 @@ export default async function ExperiencePage() {
           {kindWordsIntro && (
             <div className="text-center mb-10 max-w-[540px] mx-auto">
               {kindWordsIntro.split("\n").map((line, i) => (
-                <p key={i} className="text-[#666] text-[12px] sm:text-[13px] leading-[1.75] font-light font-serif">{line}</p>
+                <p key={i} className="text-[#666] text-[13px] sm:text-[14px] leading-[1.75] font-light font-serif">{line}</p>
               ))}
             </div>
           )}
