@@ -3384,7 +3384,14 @@ export default function AdminDashboard() {
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">KIND WORDS — TESTIMONIALS SECTION</label>
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <SingleImageEditor
+                    label="SECTION BACKGROUND IMAGE (optional)"
+                    image={(content.experience as any)?.kindWordsBgImage ?? ""}
+                    allImages={allImages}
+                    onUploadComplete={refreshImages}
+                    onChange={(src) => set("experience.kindWordsBgImage", src)}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                     <div>
                       <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION TITLE</label>
                       <input value={(content.experience as any)?.kindWordsTitle ?? ""} onChange={(e) => set("experience.kindWordsTitle", e.target.value)} className="admin-input font-display text-xl" placeholder="KIND WORDS" />

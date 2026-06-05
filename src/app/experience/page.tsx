@@ -56,30 +56,25 @@ function VideoCard({ video }: { video: VideoItem }) {
   );
 }
 
-function Stars({ count = 5 }: { count?: number }) {
-  return (
-    <div className="flex items-center gap-[3px] mt-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} width="10" height="10" viewBox="0 0 24 24"
-          fill={i < count ? "#b3a384" : "none"}
-          stroke="#b3a384" strokeWidth="1.5"
-        >
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-      ))}
-    </div>
-  );
-}
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="bg-[#ede9e2] px-2 sm:px-5 py-4 sm:py-6 flex flex-col">
-      <div className="font-serif text-[18px] sm:text-[26px] text-[#b3a384] leading-none mb-2 sm:mb-4 select-none">&ldquo;</div>
-      <p className="text-[#4a4a4a] text-[8px] sm:text-[11px] leading-[1.75] font-light font-serif flex-1" dir="auto">{t.quote}</p>
-      <div className="w-5 sm:w-8 h-px bg-[#b3a384] my-3 sm:my-4" />
-      <p className="text-[6px] sm:text-[8px] tracking-[2px] uppercase text-[#1a1a1a] font-medium" dir="auto">— {t.name}</p>
-      {t.subtitle && <p className="text-[6px] sm:text-[7px] tracking-[1.5px] uppercase text-[#999] mt-0.5" dir="auto">{t.subtitle}</p>}
-      <Stars count={t.rating ?? 5} />
+    <div className="bg-[#f5f0ea] px-5 sm:px-7 py-7 sm:py-9 flex flex-col h-full">
+      <div className="font-serif text-[28px] sm:text-[34px] text-[#b3a384] leading-none mb-4 select-none">&ldquo;</div>
+      <p className="text-[#4a4a4a] text-[12px] sm:text-[13px] leading-[1.85] font-light font-serif flex-1 text-center" dir="auto">{t.quote}</p>
+      <div className="w-10 h-px bg-[#c4b59a] mx-auto my-5" />
+      <p className="text-[9px] tracking-[3px] uppercase text-[#2a2218] font-medium text-center" dir="auto">— {t.name}</p>
+      {t.subtitle && <p className="text-[8px] tracking-[2px] uppercase text-[#aaa] mt-1 text-center" dir="auto">{t.subtitle}</p>}
+      <div className="flex items-center justify-center gap-[4px] mt-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <svg key={i} width="11" height="11" viewBox="0 0 24 24"
+            fill={i < (t.rating ?? 5) ? "#b3a384" : "none"}
+            stroke="#b3a384" strokeWidth="1.5"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        ))}
+      </div>
     </div>
   );
 }
@@ -99,6 +94,7 @@ export default async function ExperiencePage() {
   const kindWordsTitle = exp.kindWordsTitle || "KIND WORDS";
   const kindWordsIntro = exp.kindWordsIntro ||
     "We are honored to be a part of our clients' most special moments.\nHere is what they have to say about their journey with us.";
+  const kindWordsBgImage = exp.kindWordsBgImage || "";
 
   const testimonials: Testimonial[] = exp.testimonials ?? [];
   const videos: VideoItem[] = (exp.videos ?? []).filter((v) => getEmbedUrl(v.url));
@@ -158,58 +154,74 @@ export default async function ExperiencePage() {
 
 
       {/* ── KIND WORDS ── */}
-      <section className="bg-[#f5f3f0] py-12 sm:py-16 px-5 sm:px-10">
-        <div className="max-w-screen-xl mx-auto">
+      <section className="relative py-16 sm:py-20 md:py-24 px-5 sm:px-10">
+        {/* Background */}
+        {kindWordsBgImage ? (
+          <>
+            <img src={optimizeImage(kindWordsBgImage)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-[#f2ede6]/88" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-[#f2ede6]" />
+        )}
 
+        <div className="relative z-10 max-w-screen-xl mx-auto">
+
+          {/* Eyebrow */}
           <div className="flex items-center justify-center gap-4 mb-5">
             <div className="w-12 sm:w-16 h-px bg-[#b3a384]" />
             <span className="text-[8px] tracking-[5px] uppercase text-[#b3a384] font-medium whitespace-nowrap">Client Love</span>
             <div className="w-12 sm:w-16 h-px bg-[#b3a384]" />
           </div>
 
-          <h2 className="font-display text-[18px] sm:text-[22px] md:text-[28px] uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-3">
+          {/* Heading */}
+          <h2 className="font-display text-[24px] sm:text-[30px] md:text-[36px] uppercase tracking-[0.25em] text-[#1a1a1a] text-center mb-3">
             {kindWordsTitle}
           </h2>
 
-          <div className="flex items-center justify-center gap-2 mb-6">
+          {/* Diamond separator */}
+          <div className="flex items-center justify-center gap-2 mb-7">
             <div className="w-7 h-px bg-[#b3a384]/40" />
             <div className="w-[4px] h-[4px] rotate-45 bg-[#b3a384]" />
             <div className="w-7 h-px bg-[#b3a384]/40" />
           </div>
 
+          {/* Intro */}
           {kindWordsIntro && (
-            <div className="text-center mb-8 max-w-[520px] mx-auto">
+            <div className="text-center mb-10 max-w-[540px] mx-auto">
               {kindWordsIntro.split("\n").map((line, i) => (
-                <p key={i} className="text-[#666] text-[11px] sm:text-[12px] leading-[1.75] font-light font-serif">{line}</p>
+                <p key={i} className="text-[#666] text-[12px] sm:text-[13px] leading-[1.75] font-light font-serif">{line}</p>
               ))}
             </div>
           )}
 
+          {/* 3 cards in one row — horizontal scroll on mobile */}
           {testimonials.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-10">
-              {testimonials.map((t) => (
-                <div key={t.id} className="flex-none w-[80vw] sm:w-[calc(50%-6px)] md:w-[calc(33.333%-8px)] snap-start">
-                  <TestimonialCard t={t} />
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="-mx-5 sm:-mx-10 px-5 sm:px-10 flex gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-8 sm:mb-10">
+                {testimonials.slice(0, 3).map((t) => (
+                  <div key={t.id} className="flex-none w-[76vw] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-11px)] snap-start">
+                    <TestimonialCard t={t} />
+                  </div>
+                ))}
+              </div>
+
+              {/* VIEW MORE REVIEWS */}
+              <div className="flex justify-center mt-2">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center px-10 sm:px-14 py-3.5 border border-[#b3a384]/70 text-[8px] tracking-[4px] uppercase text-[#b3a384] hover:bg-[#b3a384] hover:text-white transition-all duration-300"
+                >
+                  View More Reviews
+                </Link>
+              </div>
+            </>
           ) : (
             <div className="py-16 text-center border border-dashed border-[#d5cfc5]">
               <p className="text-[10px] tracking-[4px] uppercase text-[#bbb]">No testimonials yet</p>
             </div>
           )}
 
-          {/* View more reviews link — shown when testimonials exist */}
-          {testimonials.length > 0 && (
-            <div className="flex justify-center mt-6">
-              <Link
-                href="/contact"
-                className="inline-flex items-center px-12 py-3.5 border border-[#b3a384]/60 text-[8px] tracking-[4px] uppercase text-[#b3a384] hover:bg-[#b3a384] hover:text-white transition-all duration-300"
-              >
-                View More Reviews
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 

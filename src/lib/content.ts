@@ -121,6 +121,7 @@ export interface SiteContent {
     heroDescriptions?: string[];
     kindWordsTitle?: string;
     kindWordsIntro?: string;
+    kindWordsBgImage?: string;
     testimonials?: Testimonial[];
     videoSectionTitle?: string;
     videoSectionSubtitle?: string;
