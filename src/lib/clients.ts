@@ -34,6 +34,7 @@ export interface Client {
   dresses: Dress[];
   voiceNotes: VoiceNote[];
   appointmentDate: string;
+  appointmentTime: string;
   nextAppointmentDate: string;
   fittingDate: string;
   fittingTime: string;
@@ -75,6 +76,7 @@ function readAll(): Client[] {
           notes: c.notes ?? "",
           totalPrice,
           appointmentDate: c.appointmentDate ?? "",
+          appointmentTime: c.appointmentTime ?? "",
           nextAppointmentDate: c.nextAppointmentDate ?? "",
           fittingDate: c.fittingDate ?? "",
           fittingTime: c.fittingTime ?? "",

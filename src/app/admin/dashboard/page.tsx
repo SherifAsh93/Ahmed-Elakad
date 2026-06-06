@@ -56,6 +56,7 @@ interface Client {
   dresses: Dress[];
   voiceNotes: VoiceNote[];
   appointmentDate: string;
+  appointmentTime: string;
   nextAppointmentDate: string;
   fittingDate: string;
   fittingTime: string;
@@ -73,6 +74,13 @@ function clientPaid(c: Client) {
 }
 function clientRemaining(c: Client) {
   return Math.max(0, c.totalPrice - clientPaid(c));
+}
+function to12h(time: string): string {
+  if (!time) return "";
+  const [h, m] = time.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return time;
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 // ── Image Picker Modal ───────────────────
@@ -1803,11 +1811,11 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editType, setEditType] = useState<"first" | "fitting">("fitting");
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     const id = setInterval(onRefresh, 30_000);
     return () => clearInterval(id);
@@ -1816,16 +1824,21 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const fittingMap = new Map<string, Client[]>();
+  type CalEntry = { client: Client; type: "first" | "fitting"; time: string };
+  const dayMap = new Map<string, CalEntry[]>();
   clients.forEach(c => {
-    if (!c.fittingDate) return;
-    const key = c.fittingDate.slice(0, 10);
-    if (!fittingMap.has(key)) fittingMap.set(key, []);
-    fittingMap.get(key)!.push(c);
+    if (c.fittingDate) {
+      const key = c.fittingDate.slice(0, 10);
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push({ client: c, type: "fitting", time: c.fittingTime ?? "" });
+    }
+    if (c.appointmentDate) {
+      const key = c.appointmentDate.slice(0, 10);
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push({ client: c, type: "first", time: c.appointmentTime ?? "" });
+    }
   });
-
-  // Sort clients within each day by time
-  fittingMap.forEach((arr) => arr.sort((a, b) => (a.fittingTime ?? "").localeCompare(b.fittingTime ?? "")));
+  dayMap.forEach(arr => arr.sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")));
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDow = new Date(year, month, 1).getDay();
@@ -1837,28 +1850,32 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
   const monthLabel = viewDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const todayStr = today.toISOString().slice(0, 10);
 
-  const openEdit = (c: Client) => {
-    setEditingId(c.id);
-    setEditDate(c.fittingDate?.slice(0, 10) ?? "");
-    setEditTime(c.fittingTime ?? "");
+  const openEdit = (c: Client, type: "first" | "fitting") => {
+    setEditingId(c.id + "_" + type);
+    setEditType(type);
+    if (type === "fitting") {
+      setEditDate(c.fittingDate?.slice(0, 10) ?? "");
+      setEditTime(c.fittingTime ?? "");
+    } else {
+      setEditDate(c.appointmentDate?.slice(0, 10) ?? "");
+      setEditTime(c.appointmentTime ?? "");
+    }
   };
 
   const handleSaveEdit = async (clientId: string) => {
     if (!editDate) return;
     setSaving(true);
-    await fetch("/api/admin/clients", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: clientId, fittingDate: editDate, fittingTime: editTime }),
-    });
+    const body = editType === "fitting"
+      ? { id: clientId, fittingDate: editDate, fittingTime: editTime }
+      : { id: clientId, appointmentDate: editDate, appointmentTime: editTime };
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setSaving(false);
     setEditingId(null);
-    // If date changed, update the selected day to follow the client
     setSelectedDay(editDate);
     onRefresh();
   };
 
-  const selectedClients = selectedDay ? (fittingMap.get(selectedDay) ?? []) : [];
+  const selectedEntries = selectedDay ? (dayMap.get(selectedDay) ?? []) : [];
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
@@ -1869,11 +1886,23 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
         </button>
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-800">{monthLabel}</p>
-          <p className="text-[10px] text-gray-400 font-bold tracking-[1px]">FITTING SCHEDULE</p>
+          <p className="text-[10px] text-gray-400 font-bold tracking-[1px]">APPOINTMENTS SCHEDULE</p>
         </div>
         <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 transition-colors text-gray-500">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </button>
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-4 px-5 py-2 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
+          <span className="text-[10px] font-black uppercase tracking-[1px] text-gray-500">1st Appt</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+          <span className="text-[10px] font-black uppercase tracking-[1px] text-gray-500">Fitting</span>
+        </div>
       </div>
 
       {/* Day-of-week labels */}
@@ -1889,26 +1918,31 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
           const dayNum = i - firstDow + 1;
           if (dayNum < 1 || dayNum > daysInMonth) return <div key={i} className="aspect-square" />;
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
-          const fittings = fittingMap.get(dateStr) ?? [];
-          const hasFitting = fittings.length > 0;
+          const entries = dayMap.get(dateStr) ?? [];
+          const hasFirst = entries.some(e => e.type === "first");
+          const hasFitting = entries.some(e => e.type === "fitting");
+          const hasAny = entries.length > 0;
           const isToday = dateStr === todayStr;
           const isSelected = dateStr === selectedDay;
           return (
             <button
               key={i}
               onClick={() => { setSelectedDay(isSelected ? null : dateStr); setEditingId(null); }}
-              disabled={!hasFitting}
+              disabled={!hasAny}
               className={`
                 aspect-square flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-all border border-transparent
-                ${hasFitting ? "cursor-pointer hover:border-rose-300" : "cursor-default text-gray-300"}
-                ${isSelected ? "bg-rose-600 text-white rounded-lg" : ""}
-                ${hasFitting && !isSelected ? "bg-rose-50 text-rose-700" : ""}
+                ${hasAny ? "cursor-pointer" : "cursor-default text-gray-300"}
+                ${isSelected ? "bg-stone-800 text-white rounded-lg" : ""}
+                ${hasAny && !isSelected ? "bg-stone-50 text-stone-700 hover:border-stone-300" : ""}
                 ${isToday && !isSelected ? "ring-2 ring-inset ring-[#b3a384]" : ""}
               `}
             >
               <span className={`text-[13px] leading-none ${isSelected ? "font-black" : ""}`}>{dayNum}</span>
-              {hasFitting && (
-                <span className={`text-[10px] font-black leading-none ${isSelected ? "text-rose-100" : "text-rose-400"}`}>{fittings.length}</span>
+              {hasAny && (
+                <div className="flex gap-0.5">
+                  {hasFirst && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-blue-300" : "bg-blue-400"}`} />}
+                  {hasFitting && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-rose-300" : "bg-rose-400"}`} />}
+                </div>
               )}
             </button>
           );
@@ -1917,94 +1951,138 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
 
       {/* Selected day panel */}
       {selectedDay && (
-        <div className="border-t border-rose-100 bg-rose-50 px-4 py-3">
-          <p className="text-[10px] uppercase tracking-[2px] font-black text-rose-400 mb-3">
-            Fitting — {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+        <div className="border-t border-gray-100 bg-stone-50 px-4 py-3">
+          <p className="text-[10px] uppercase tracking-[2px] font-black text-gray-400 mb-3">
+            {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
           </p>
           <div className="space-y-2">
-            {selectedClients.length === 0 ? (
-              <p className="text-xs text-rose-300 italic">No fittings on this day</p>
-            ) : selectedClients.map(c => (
-              <div key={c.id} className="bg-white rounded-xl border border-rose-100 shadow-sm overflow-hidden">
-                {/* Client row */}
-                <div className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    {c.name && <p className="text-[13px] font-black text-gray-800 truncate">{c.name}</p>}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-[12px] text-gray-400 font-bold" dir="ltr">{c.phone}</p>
-                      {c.fittingTime && (
-                        <span className="text-[11px] font-black text-rose-500 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
-                          {c.fittingTime}
+            {selectedEntries.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No appointments on this day</p>
+            ) : selectedEntries.map((entry, idx) => {
+              const c = entry.client;
+              const editKey = c.id + "_" + entry.type;
+              const isEditing = editingId === editKey;
+              const isFitting = entry.type === "fitting";
+              return (
+                <div key={`${c.id}_${entry.type}_${idx}`} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      {c.name && <p className="text-[13px] font-black text-gray-800 truncate">{c.name}</p>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[12px] text-gray-400 font-bold" dir="ltr">{c.phone}</p>
+                        {entry.time && (
+                          <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${isFitting ? "text-rose-500 bg-rose-50 border-rose-100" : "text-blue-500 bg-blue-50 border-blue-100"}`}>
+                            {to12h(entry.time)}
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-black uppercase tracking-[1px] px-2 py-0.5 rounded-full ${isFitting ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"}`}>
+                          {isFitting ? "FITTING" : "1ST APPT"}
                         </span>
-                      )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => isEditing ? setEditingId(null) : openEdit(c, entry.type)}
+                        className="flex items-center gap-1 text-[11px] font-black tracking-[1px] uppercase px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit
+                      </button>
+                      <a
+                        href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 bg-[#25D366] text-white text-[11px] font-black tracking-[1px] uppercase px-3 py-2 rounded-lg hover:bg-[#1ebe5d] transition-colors"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        WhatsApp
+                      </a>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => editingId === c.id ? setEditingId(null) : openEdit(c)}
-                      className="flex items-center gap-1 text-[11px] font-black tracking-[1px] uppercase px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-                      title="Edit appointment"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      Edit
-                    </button>
-                    <a
-                      href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 bg-[#25D366] text-white text-[11px] font-black tracking-[1px] uppercase px-3 py-2 rounded-lg hover:bg-[#1ebe5d] transition-colors"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                      WhatsApp
-                    </a>
-                  </div>
+                  {isEditing && (
+                    <div className={`border-t px-3 py-3 space-y-2 ${isFitting ? "border-rose-100 bg-rose-50/60" : "border-blue-100 bg-blue-50/60"}`}>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className={`text-[9px] uppercase tracking-[2px] font-black block mb-1 ${isFitting ? "text-rose-400" : "text-blue-400"}`}>Date</label>
+                          <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none bg-white ${isFitting ? "border-rose-200 focus:border-rose-400" : "border-blue-200 focus:border-blue-400"}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`text-[9px] uppercase tracking-[2px] font-black block mb-1 ${isFitting ? "text-rose-400" : "text-blue-400"}`}>Time</label>
+                          <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none bg-white ${isFitting ? "border-rose-200 focus:border-rose-400" : "border-blue-200 focus:border-blue-400"}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingId(null)}
+                          className="flex-1 min-h-[36px] border border-gray-200 rounded-lg text-[10px] uppercase tracking-[1px] font-black text-gray-400 hover:bg-gray-50 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button onClick={() => handleSaveEdit(c.id)} disabled={saving || !editDate}
+                          className={`flex-1 min-h-[36px] text-white rounded-lg text-[10px] uppercase tracking-[1px] font-black transition-all disabled:opacity-40 ${isFitting ? "bg-rose-500 hover:bg-rose-600" : "bg-blue-500 hover:bg-blue-600"}`}
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Inline edit form */}
-                {editingId === c.id && (
-                  <div className="border-t border-rose-100 bg-rose-50/60 px-3 py-3 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[9px] uppercase tracking-[2px] font-black text-rose-400 block mb-1">Date</label>
-                        <input
-                          type="date"
-                          value={editDate}
-                          onChange={e => setEditDate(e.target.value)}
-                          className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm font-bold focus:border-rose-400 focus:outline-none bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[9px] uppercase tracking-[2px] font-black text-rose-400 block mb-1">Time</label>
-                        <input
-                          type="time"
-                          value={editTime}
-                          onChange={e => setEditTime(e.target.value)}
-                          className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm font-bold focus:border-rose-400 focus:outline-none bg-white"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="flex-1 min-h-[36px] border border-gray-200 rounded-lg text-[10px] uppercase tracking-[1px] font-black text-gray-400 hover:bg-gray-50 transition-all"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleSaveEdit(c.id)}
-                        disabled={saving || !editDate}
-                        className="flex-1 min-h-[36px] bg-rose-500 text-white rounded-lg text-[10px] uppercase tracking-[1px] font-black hover:bg-rose-600 transition-all disabled:opacity-40"
-                      >
-                        {saving ? "Saving..." : "Save"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Upcoming Appointments ─────────────────────
+function UpcomingAppointments({ clients }: { clients: Client[] }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  type ApptEntry = { date: string; time: string; name: string; phone: string; type: "first" | "fitting" };
+  const entries: ApptEntry[] = [];
+  clients.forEach(c => {
+    if (c.appointmentDate && c.appointmentDate.slice(0, 10) >= todayStr)
+      entries.push({ date: c.appointmentDate.slice(0, 10), time: c.appointmentTime ?? "", name: c.name, phone: c.phone, type: "first" });
+    if (c.fittingDate && c.fittingDate.slice(0, 10) >= todayStr)
+      entries.push({ date: c.fittingDate.slice(0, 10), time: c.fittingTime ?? "", name: c.name, phone: c.phone, type: "fitting" });
+  });
+  entries.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const upcoming = entries.slice(0, 10);
+  if (upcoming.length === 0) return null;
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+        <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-800">Upcoming Appointments</p>
+      </div>
+      <div className="divide-y divide-gray-50">
+        {upcoming.map((e, i) => (
+          <div key={`${e.phone}_${e.type}_${i}`} className="flex items-center gap-3 px-4 py-2.5">
+            <div className="shrink-0 text-center w-10">
+              <p className="text-[14px] font-black text-gray-800 leading-none">{new Date(e.date + "T12:00:00").getDate()}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase">{new Date(e.date + "T12:00:00").toLocaleDateString("en-GB", { month: "short" })}</p>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-[13px] font-black text-gray-800 truncate">{e.name || e.phone}</p>
+                <span className={`text-[9px] font-black uppercase tracking-[1px] px-1.5 py-0.5 rounded ${e.type === "fitting" ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"}`}>
+                  {e.type === "fitting" ? "FITTING" : "1ST APPT"}
+                </span>
+              </div>
+              {e.time && <p className="text-[11px] text-gray-400 font-bold">{to12h(e.time)}</p>}
+            </div>
+            <a href={`https://wa.me/${e.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+              className="shrink-0 flex items-center gap-1 bg-[#25D366] text-white text-[10px] font-black uppercase px-2.5 py-1.5 rounded-lg hover:bg-[#1ebe5d] transition-colors"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              WA
+            </a>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2201,6 +2279,9 @@ function ClientsPanel({
 
       {/* Fitting Calendar */}
       <FittingCalendar clients={clients} onRefresh={onRefresh} />
+
+      {/* Upcoming Appointments */}
+      <UpcomingAppointments clients={clients} />
 
       {/* Search + Month filter — stacked on mobile, row on sm+ */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -2492,7 +2573,7 @@ function ClientsPanel({
                           <p className="text-[9px] uppercase tracking-[2px] font-black text-rose-400 mb-0.5">Fitting Appointment</p>
                           <p className="text-sm font-bold text-rose-700">
                             {new Date(client.fittingDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-                            {client.fittingTime && <span className="ml-2 text-rose-400">· {client.fittingTime}</span>}
+                            {client.fittingTime && <span className="ml-2 text-rose-400">· {to12h(client.fittingTime)}</span>}
                           </p>
                         </div>
                         <button onClick={() => { handleDateChange(client.id, "fittingDate", ""); handleFittingUpdate(client.id, "", ""); }} className="text-rose-300 hover:text-rose-600 text-lg font-bold transition-colors">✕</button>

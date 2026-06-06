@@ -35,8 +35,10 @@ interface Client {
   dresses: Dress[];
   voiceNotes: VoiceNote[];
   appointmentDate: string;
+  appointmentTime: string;
   nextAppointmentDate: string;
   fittingDate: string;
+  fittingTime: string;
   eventDate: string;
   dressType: "wedding" | "evening" | "";
   branch: "cairo" | "damietta" | "";
@@ -64,6 +66,14 @@ const branchAr = { cairo: "القاهرة", damietta: "دمياط", "": "" };
 function fmtDate(d: string) {
   if (!d) return "";
   return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function to12h(time: string): string {
+  if (!time) return "";
+  const [h, m] = time.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return time;
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 // Normalize search input: handle both Latin and Arabic-Indic digits
@@ -761,7 +771,7 @@ function ClientCard({
               {client.appointmentDate && (
                 <div className="bg-gray-50 rounded-lg px-4 py-3">
                   <p className="text-[12px] tracking-[2px] font-black text-gray-400 mb-1">الموعد الأول</p>
-                  <p className="text-sm font-bold text-stone-700">{fmtDate(client.appointmentDate)}</p>
+                  <p className="text-sm font-bold text-stone-700">{fmtDate(client.appointmentDate)}{client.appointmentTime && <span className="text-gray-400 mr-1.5">· {to12h(client.appointmentTime)}</span>}</p>
                 </div>
               )}
               {client.nextAppointmentDate && (
@@ -773,7 +783,7 @@ function ClientCard({
               {client.fittingDate && (
                 <div className="bg-gray-50 rounded-lg px-4 py-3">
                   <p className="text-[12px] tracking-[2px] font-black text-gray-400 mb-1">موعد القياس</p>
-                  <p className="text-sm font-bold text-stone-700">{fmtDate(client.fittingDate)}</p>
+                  <p className="text-sm font-bold text-stone-700">{fmtDate(client.fittingDate)}{client.fittingTime && <span className="text-gray-400 mr-1.5">· {to12h(client.fittingTime)}</span>}</p>
                 </div>
               )}
               {client.eventDate && (
@@ -810,6 +820,54 @@ function ClientCard({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Upcoming Appointments (Arabic) ────────────────────
+function UpcomingAppointmentsAr({ clients }: { clients: Client[] }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  type ApptEntry = { date: string; time: string; name: string; phone: string; type: "first" | "fitting" };
+  const entries: ApptEntry[] = [];
+  clients.forEach(c => {
+    if (c.appointmentDate && c.appointmentDate.slice(0, 10) >= todayStr)
+      entries.push({ date: c.appointmentDate.slice(0, 10), time: c.appointmentTime ?? "", name: c.name, phone: c.phone, type: "first" });
+    if (c.fittingDate && c.fittingDate.slice(0, 10) >= todayStr)
+      entries.push({ date: c.fittingDate.slice(0, 10), time: c.fittingTime ?? "", name: c.name, phone: c.phone, type: "fitting" });
+  });
+  entries.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const upcoming = entries.slice(0, 10);
+  if (upcoming.length === 0) return null;
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 text-right">
+        <p className="text-[12px] font-black text-gray-500 tracking-wide">المواعيد القادمة</p>
+      </div>
+      <div className="divide-y divide-gray-50">
+        {upcoming.map((e, i) => (
+          <div key={`${e.phone}_${e.type}_${i}`} className="flex items-center gap-3 px-4 py-2.5">
+            <a href={`https://wa.me/${e.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+              className="shrink-0 flex items-center gap-1 bg-[#25D366] text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg hover:bg-[#1ebe5d] transition-colors"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              واتساب
+            </a>
+            <div className="min-w-0 flex-1 text-right">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${e.type === "fitting" ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"}`}>
+                  {e.type === "fitting" ? "قياس" : "موعد أول"}
+                </span>
+                <p className="text-[13px] font-black text-gray-800 truncate">{e.name || e.phone}</p>
+              </div>
+              {e.time && <p className="text-[11px] text-gray-400 font-bold text-right">{to12h(e.time)}</p>}
+            </div>
+            <div className="shrink-0 text-center w-10">
+              <p className="text-[14px] font-black text-gray-800 leading-none">{new Date(e.date + "T12:00:00").getDate()}</p>
+              <p className="text-[9px] font-black text-gray-400">{new Date(e.date + "T12:00:00").toLocaleDateString("en-GB", { month: "short" })}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -923,6 +981,9 @@ export default function AtelierPage() {
             {totalCollected.toLocaleString("en-US")} جنيه محصّل · {totalRemaining.toLocaleString("en-US")} جنيه متبقي
           </p>
         </div>
+
+        {/* Upcoming Appointments */}
+        <UpcomingAppointmentsAr clients={clients} />
 
         {/* Search */}
         <div className="relative">
