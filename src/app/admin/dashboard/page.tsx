@@ -1789,6 +1789,127 @@ function DressLabelInput({ value, onSave }: { value: string; onSave: (label: str
   );
 }
 
+// ── Fitting Calendar ─────────────────────
+function FittingCalendar({ clients }: { clients: Client[] }) {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  // Build set of fitting dates in YYYY-MM-DD form
+  const fittingMap = new Map<string, Client[]>();
+  clients.forEach(c => {
+    if (!c.fittingDate) return;
+    const key = c.fittingDate.slice(0, 10);
+    if (!fittingMap.has(key)) fittingMap.set(key, []);
+    fittingMap.get(key)!.push(c);
+  });
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
+
+  const prevMonth = () => { setViewDate(new Date(year, month - 1, 1)); setSelectedDay(null); };
+  const nextMonth = () => { setViewDate(new Date(year, month + 1, 1)); setSelectedDay(null); };
+
+  const monthLabel = viewDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const selectedClients = selectedDay ? (fittingMap.get(selectedDay) ?? []) : [];
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50">
+        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 transition-colors text-gray-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div className="text-center">
+          <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-800">{monthLabel}</p>
+          <p className="text-[10px] text-gray-400 font-bold tracking-[1px]">FITTING SCHEDULE</p>
+        </div>
+        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 transition-colors text-gray-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      {/* Day-of-week labels */}
+      <div className="grid grid-cols-7 border-b border-gray-100">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+          <div key={d} className="py-1.5 text-center text-[10px] uppercase tracking-[1px] font-black text-gray-400">{d}</div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7">
+        {Array.from({ length: totalCells }).map((_, i) => {
+          const dayNum = i - firstDow + 1;
+          if (dayNum < 1 || dayNum > daysInMonth) {
+            return <div key={i} className="aspect-square" />;
+          }
+          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+          const fittings = fittingMap.get(dateStr) ?? [];
+          const hasFitting = fittings.length > 0;
+          const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedDay;
+
+          return (
+            <button
+              key={i}
+              onClick={() => setSelectedDay(isSelected ? null : dateStr)}
+              disabled={!hasFitting}
+              className={`
+                aspect-square flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-all border border-transparent
+                ${hasFitting ? "cursor-pointer hover:border-rose-300" : "cursor-default text-gray-300"}
+                ${isSelected ? "bg-rose-600 text-white rounded-lg" : ""}
+                ${hasFitting && !isSelected ? "bg-rose-50 text-rose-700" : ""}
+                ${isToday && !isSelected ? "ring-2 ring-inset ring-[#b3a384]" : ""}
+              `}
+            >
+              <span className={`text-[13px] leading-none ${isSelected ? "font-black" : ""}`}>{dayNum}</span>
+              {hasFitting && (
+                <span className={`text-[10px] font-black leading-none ${isSelected ? "text-rose-100" : "text-rose-400"}`}>
+                  {fittings.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected day panel */}
+      {selectedDay && (
+        <div className="border-t border-rose-100 bg-rose-50 px-4 py-3">
+          <p className="text-[10px] uppercase tracking-[2px] font-black text-rose-400 mb-2">
+            Fitting — {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+          <div className="space-y-2">
+            {selectedClients.map(c => (
+              <div key={c.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-rose-100 shadow-sm gap-3">
+                <div className="min-w-0 flex-1">
+                  {c.name && <p className="text-[13px] font-black text-gray-800 truncate">{c.name}</p>}
+                  <p className="text-[12px] text-gray-400 font-bold" dir="ltr">{c.phone}</p>
+                </div>
+                <a
+                  href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 flex items-center gap-1.5 bg-[#25D366] text-white text-[11px] font-black tracking-[1px] uppercase px-3 py-2 rounded-lg hover:bg-[#1ebe5d] transition-colors"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  WhatsApp
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Clients Panel ────────────────────────
 function ClientsPanel({
   clients,
@@ -1967,6 +2088,9 @@ function ClientsPanel({
           </button>
         </div>
       </div>
+
+      {/* Fitting Calendar */}
+      <FittingCalendar clients={clients} />
 
       {/* Search + Month filter — stacked on mobile, row on sm+ */}
       <div className="flex flex-col sm:flex-row gap-2">
