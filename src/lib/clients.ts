@@ -36,6 +36,7 @@ export interface Client {
   appointmentDate: string;
   nextAppointmentDate: string;
   fittingDate: string;
+  fittingTime: string;
   eventDate: string;
   dressType: "wedding" | "evening" | "";
   branch: "cairo" | "damietta" | "";
@@ -76,6 +77,7 @@ function readAll(): Client[] {
           appointmentDate: c.appointmentDate ?? "",
           nextAppointmentDate: c.nextAppointmentDate ?? "",
           fittingDate: c.fittingDate ?? "",
+          fittingTime: c.fittingTime ?? "",
           eventDate: c.eventDate ?? "",
           dressType: c.dressType ?? "",
           branch: c.branch ?? "",
