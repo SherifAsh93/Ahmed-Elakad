@@ -819,10 +819,66 @@ function ClientCard({
   );
 }
 
+// ── Login Overlay ─────────────────────────────────────
+function LoginOverlay({ onSuccess }: { onSuccess: () => void }) {
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (res.ok) {
+        onSuccess();
+      } else {
+        setError(true);
+        setPw("");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-[#faf9f7] z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-xs text-right" dir="rtl">
+        <h1 className="text-xl font-black text-black mb-1">الأتيليه</h1>
+        <p className="text-xs text-gray-400 font-bold tracking-[2px] mb-8">أدخل كلمة المرور للمتابعة</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="password"
+            value={pw}
+            onChange={e => setPw(e.target.value)}
+            placeholder="كلمة المرور"
+            autoFocus
+            className={`w-full border rounded-xl px-4 py-3 text-base focus:outline-none bg-white ${error ? "border-red-300 focus:border-red-400" : "border-gray-200 focus:border-[#b3a384]"}`}
+          />
+          {error && <p className="text-xs text-red-500 font-bold">كلمة المرور غير صحيحة</p>}
+          <button
+            type="submit"
+            disabled={saving || !pw}
+            className="w-full min-h-[52px] bg-black text-white rounded-xl text-[13px] tracking-[3px] font-black hover:bg-[#b3a384] transition-all disabled:opacity-40"
+          >
+            {saving ? "جاري التحقق..." : "دخول"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────
 export default function AtelierPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "pending" | "completed">("all");
   const [paymentClientId, setPaymentClientId] = useState<string | null>(null);
@@ -831,7 +887,13 @@ export default function AtelierPage() {
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/admin/clients");
+    if (res.status === 401) {
+      setAuthed(false);
+      setLoading(false);
+      return;
+    }
     const data = await res.json();
+    setAuthed(true);
     setClients(Array.isArray(data) ? data : []);
     setLoading(false);
   }, []);
@@ -899,6 +961,12 @@ export default function AtelierPage() {
   };
 
   const paymentClient = clients.find(c => c.id === paymentClientId);
+
+  if (authed === false) {
+    return (
+      <LoginOverlay onSuccess={() => { setAuthed(null); setLoading(true); refresh(); }} />
+    );
+  }
 
   return (
     <div dir="rtl" lang="ar" className="atelier-root min-h-screen bg-[#faf9f7]" style={{ fontFamily: "'Tajawal', 'Segoe UI', Arial, sans-serif" }}>
