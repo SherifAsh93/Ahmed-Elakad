@@ -63,12 +63,7 @@ const branchAr = { cairo: "القاهرة", damietta: "دمياط", "": "" };
 
 function fmtDate(d: string) {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
-}
-
-// Convert Latin digits to Arabic-Indic (٠١٢٣٤٥٦٧٨٩)
-function toAr(n: number | string): string {
-  return String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[+d]);
+  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 // Normalize search input: handle both Latin and Arabic-Indic digits
@@ -511,9 +506,9 @@ function ClientCard({
     try {
       const uploaded: string[] = [];
       for (let i = 0; i < files.length; i++) {
-        setUploadStatus(`ضغط ${toAr(i + 1)}/${toAr(files.length)}...`);
+        setUploadStatus(`ضغط ${i + 1}/${files.length}...`);
         const compressed = await compressImage(files[i]);
-        setUploadStatus(`رفع ${toAr(i + 1)}/${toAr(files.length)}...`);
+        setUploadStatus(`رفع ${i + 1}/${files.length}...`);
         const fd = new FormData();
         fd.append("files", compressed, compressed.name);
         const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -557,7 +552,7 @@ function ClientCard({
             <span className="text-xs text-stone-500">{client.name}</span>
           </div>
           <p className="text-xs text-stone-400">
-            {paidAmt.toLocaleString("ar-EG")} جنيه مدفوع · {remainAmt.toLocaleString("ar-EG")} جنيه متبقي
+            {paidAmt.toLocaleString("en-US")} جنيه مدفوع · {remainAmt.toLocaleString("en-US")} جنيه متبقي
           </p>
           <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden w-full max-w-xs mr-auto">
             <div className="h-full bg-[#b3a384] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -593,21 +588,21 @@ function ClientCard({
             <div className="grid grid-cols-3 gap-2 text-center mb-4">
               <div>
                 <p className="text-[12px] tracking-[1px] font-bold text-gray-400 mb-0.5">الإجمالي</p>
-                <p className="text-sm sm:text-base font-black text-black">{client.totalPrice.toLocaleString("ar-EG")} ج</p>
+                <p className="text-sm sm:text-base font-black text-black">{client.totalPrice.toLocaleString("en-US")} ج</p>
               </div>
               <div>
                 <p className="text-[12px] tracking-[1px] font-bold text-gray-400 mb-0.5">المدفوع</p>
-                <p className="text-sm sm:text-base font-black text-green-600">{paidAmt.toLocaleString("ar-EG")} ج</p>
+                <p className="text-sm sm:text-base font-black text-green-600">{paidAmt.toLocaleString("en-US")} ج</p>
               </div>
               <div>
                 <p className="text-[12px] tracking-[1px] font-bold text-gray-400 mb-0.5">المتبقي</p>
-                <p className="text-sm sm:text-base font-black text-amber-600">{remainAmt.toLocaleString("ar-EG")} ج</p>
+                <p className="text-sm sm:text-base font-black text-amber-600">{remainAmt.toLocaleString("en-US")} ج</p>
               </div>
             </div>
             <div className="h-2 bg-white rounded-full overflow-hidden border border-[#e8dfd4]">
               <div className="h-full bg-[#b3a384] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[13px] text-gray-400 font-bold mt-1.5 text-left">{toAr(pct)}٪ مدفوع</p>
+            <p className="text-[13px] text-gray-400 font-bold mt-1.5 text-left">{pct}% مدفوع</p>
           </div>
 
           {/* Payments */}
@@ -628,7 +623,7 @@ function ClientCard({
                     </button>
                     <span className="text-[13px] text-gray-400 font-bold whitespace-nowrap">{fmtDate(p.date)}</span>
                     <div className="flex-1 min-w-0 text-right">
-                      <span className="text-sm font-black text-green-600">+{p.amount.toLocaleString("ar-EG")} جنيه</span>
+                      <span className="text-sm font-black text-green-600">+{p.amount.toLocaleString("en-US")} جنيه</span>
                       {p.note && <span className="text-[13px] text-gray-400 mr-2">· {p.note}</span>}
                     </div>
                   </div>
@@ -923,9 +918,9 @@ export default function AtelierPage() {
 
         {/* Summary */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 text-right">
-          <p className="text-2xl font-black text-black mb-0.5">{toAr(clients.length)} عميل</p>
+          <p className="text-2xl font-black text-black mb-0.5">{clients.length} عميل</p>
           <p className="text-xs text-gray-400 font-bold">
-            {totalCollected.toLocaleString("ar-EG")} جنيه محصّل · {totalRemaining.toLocaleString("ar-EG")} جنيه متبقي
+            {totalCollected.toLocaleString("en-US")} جنيه محصّل · {totalRemaining.toLocaleString("en-US")} جنيه متبقي
           </p>
         </div>
 
@@ -948,7 +943,7 @@ export default function AtelierPage() {
         <div className="grid grid-cols-3 gap-3">
           {([["active", "نشط"], ["pending", "جديد"], ["completed", "مكتمل"]] as const).map(([s, label]) => (
             <div key={s} className="bg-white border border-gray-100 rounded-xl p-3 text-center shadow-sm">
-              <p className="text-xl font-black text-black">{toAr(counts[s])}</p>
+              <p className="text-xl font-black text-black">{counts[s]}</p>
               <p className="text-[12px] tracking-[2px] font-bold text-gray-400 mt-0.5">{label}</p>
             </div>
           ))}
@@ -956,7 +951,7 @@ export default function AtelierPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-2 flex-wrap">
-          {([["all", `الكل (${toAr(clients.length)})`], ["active", `نشط (${toAr(counts.active)})`], ["pending", `جديد (${toAr(counts.pending)})`], ["completed", `مكتمل (${toAr(counts.completed)})`]] as const).map(([f, label]) => (
+          {([["all", `الكل (${clients.length})`], ["active", `نشط (${counts.active})`], ["pending", `جديد (${counts.pending})`], ["completed", `مكتمل (${counts.completed})`]] as const).map(([f, label]) => (
             <button key={f} onClick={() => setFilter(f)} className={`min-h-[40px] px-4 py-2 text-[13px] tracking-[1px] font-black rounded-full transition-all ${filter === f ? "bg-black text-white" : "bg-white border border-gray-100 text-gray-400 hover:bg-gray-50"}`}>
               {label}
             </button>
