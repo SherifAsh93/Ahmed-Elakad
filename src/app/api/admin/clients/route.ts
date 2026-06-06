@@ -24,7 +24,6 @@ async function auth() {
 }
 
 export async function GET() {
-  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const clients = await getClients();
   return NextResponse.json(clients);
 }
