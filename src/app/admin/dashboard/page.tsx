@@ -1269,6 +1269,9 @@ function ClientForm({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [totalPrice, setTotalPrice] = useState(String(initial?.totalPrice ?? ""));
   const [appointmentDate, setAppointmentDate] = useState(initial?.appointmentDate ?? "");
+  const [appointmentTime, setAppointmentTime] = useState(initial?.appointmentTime ?? "");
+  const [fittingDate, setFittingDate] = useState(initial?.fittingDate ?? "");
+  const [fittingTime, setFittingTime] = useState(initial?.fittingTime ?? "");
   const [nextAppointmentDate, setNextAppointmentDate] = useState(initial?.nextAppointmentDate ?? "");
   const [eventDate, setEventDate] = useState(initial?.eventDate ?? "");
   const [dressType, setDressType] = useState<Client["dressType"]>(initial?.dressType ?? "");
@@ -1309,11 +1312,18 @@ function ClientForm({
     if (dupClient) return;
     setSaving(true);
     try {
-      await onSave({ name, email, phone, notes, totalPrice: Number(totalPrice) || 0, appointmentDate, nextAppointmentDate, eventDate, dressType, branch, clientImages, status });
+      await onSave({ name, email, phone, notes, totalPrice: Number(totalPrice) || 0, appointmentDate, appointmentTime, fittingDate, fittingTime, nextAppointmentDate, eventDate, dressType, branch, clientImages, status });
     } finally {
       setSaving(false);
     }
   };
+
+  const SectionHeader = ({ label }: { label: string }) => (
+    <div className="sm:col-span-2 flex items-center gap-3 pt-1">
+      <p className="text-[9px] uppercase tracking-[3px] font-black text-gray-400 shrink-0">{label}</p>
+      <div className="flex-1 h-px bg-gray-100" />
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 bg-[#2a2218]/80 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
@@ -1324,12 +1334,15 @@ function ClientForm({
           </h3>
           <button onClick={onClose} className="text-gray-300 hover:text-black text-2xl font-bold transition-colors">✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Phone first — it's the primary reference */}
+
+            {/* ── Client Info ── */}
+            <SectionHeader label="Client Info" />
+
             <div className="sm:col-span-2">
               <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">
-                Mobile Number <span className="text-[#b3a384]">— main reference *</span>
+                Mobile Number <span className="text-rose-400">*</span> <span className="text-gray-300 normal-case tracking-normal font-normal">— used as unique ID</span>
               </label>
               <input
                 required
@@ -1343,14 +1356,15 @@ function ClientForm({
                 <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                   <span className="text-amber-500 text-base shrink-0">⚠️</span>
                   <p className="text-[10px] text-amber-700 font-bold leading-relaxed">
-                    This number is already registered under <span className="underline">{dupClient.name || dupClient.id}</span>. Each mobile number can only have one client profile.
+                    Already registered as <span className="underline">{dupClient.name || dupClient.id}</span>. Each mobile number can only have one profile.
                   </p>
                 </div>
               )}
             </div>
+
             <div>
               <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">
-                Client Name * <span className="text-[#b3a384] normal-case tracking-normal">— بالعربي</span>
+                Client Name <span className="text-rose-400">*</span> <span className="text-[#b3a384] normal-case tracking-normal font-normal">— بالعربي</span>
               </label>
               <input
                 required
@@ -1362,35 +1376,15 @@ function ClientForm({
                 placeholder="الاسم بالعربي"
               />
               {/[a-zA-Z]/.test(name) && (
-                <p className="mt-1.5 text-[10px] text-red-500 font-bold flex items-center gap-1">
-                  ⚠️ الاسم يجب أن يكون بالعربي — يبدو أنك كتبت بالإنجليزي
-                </p>
+                <p className="mt-1.5 text-[10px] text-red-500 font-bold">⚠️ الاسم يجب أن يكون بالعربي</p>
               )}
             </div>
+
             <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Total Price (EGP)</label>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Total Price <span className="text-gray-300 font-normal normal-case tracking-normal">(EGP)</span></label>
               <input type="number" min="0" value={totalPrice} onChange={e => setTotalPrice(e.target.value)} className="admin-input" placeholder="0" />
             </div>
-            <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value as Client["status"])} className="admin-input">
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Appointment Date</label>
-              <input type="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} className="admin-input" />
-            </div>
-            <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Next Appointment</label>
-              <input type="date" value={nextAppointmentDate} onChange={e => setNextAppointmentDate(e.target.value)} className="admin-input" />
-            </div>
-            <div>
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Event Date</label>
-              <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="admin-input" />
-            </div>
+
             <div>
               <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Dress Type</label>
               <select value={dressType} onChange={e => setDressType(e.target.value as Client["dressType"])} className="admin-input">
@@ -1399,6 +1393,7 @@ function ClientForm({
                 <option value="evening">Evening Dress</option>
               </select>
             </div>
+
             <div>
               <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Branch</label>
               <select value={branch} onChange={e => setBranch(e.target.value as Client["branch"])} className="admin-input">
@@ -1407,19 +1402,68 @@ function ClientForm({
                 <option value="damietta">Damietta</option>
               </select>
             </div>
+
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value as Client["status"])} className="admin-input">
+                <option value="pending">New / Pending</option>
+                <option value="active">Active — in progress</option>
+                <option value="completed">Completed — fully paid</option>
+              </select>
+            </div>
+
+            {/* ── Appointments ── */}
+            <SectionHeader label="Appointments" />
+
+            {/* 1st Appointment */}
+            <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
+              <p className="text-[9px] uppercase tracking-[2px] font-black text-blue-500 mb-2.5">1st Appointment <span className="font-normal normal-case tracking-normal text-blue-400">— first visit / consultation</span></p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] uppercase tracking-[2px] font-bold text-blue-400 block mb-1">Date</label>
+                  <input type="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} className="admin-input text-sm" />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-[2px] font-bold text-blue-400 block mb-1">Time <span className="font-normal normal-case tracking-normal text-blue-300">(optional)</span></label>
+                  <input type="time" value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} className="admin-input text-sm" />
+                </div>
+              </div>
+            </div>
+
+            {/* Fitting Appointment */}
+            <div className="sm:col-span-2 bg-rose-50 border border-rose-100 rounded-xl p-3">
+              <p className="text-[9px] uppercase tracking-[2px] font-black text-rose-500 mb-2.5">Fitting Appointment <span className="font-normal normal-case tracking-normal text-rose-400">— dress fitting session</span></p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] uppercase tracking-[2px] font-bold text-rose-400 block mb-1">Date</label>
+                  <input type="date" value={fittingDate} onChange={e => setFittingDate(e.target.value)} className="admin-input text-sm" />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-[2px] font-bold text-rose-400 block mb-1">Time <span className="font-normal normal-case tracking-normal text-rose-300">(optional)</span></label>
+                  <input type="time" value={fittingTime} onChange={e => setFittingTime(e.target.value)} className="admin-input text-sm" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Next Appointment <span className="font-normal normal-case tracking-normal text-gray-300">— follow-up date</span></label>
+              <input type="date" value={nextAppointmentDate} onChange={e => setNextAppointmentDate(e.target.value)} className="admin-input" />
+            </div>
+
+            <div>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Event Date <span className="font-normal normal-case tracking-normal text-gray-300">— wedding / occasion</span></label>
+              <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="admin-input" />
+            </div>
+
+            {/* ── Notes & Media ── */}
+            <SectionHeader label="Notes & Media" />
+
             <div className="sm:col-span-2">
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Upload Images <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Client Photos <span className="text-gray-300 normal-case tracking-normal font-normal">(optional)</span></label>
               <label className="flex items-center justify-center gap-2 w-full min-h-[48px] border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#b3a384] transition-colors text-[10px] uppercase tracking-[2px] font-bold text-gray-400 hover:text-[#b3a384]">
                 <span>📷</span>
                 <span>{imageUploadStatus ?? "Tap to upload photos"}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={!!imageUploadStatus}
-                />
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} disabled={!!imageUploadStatus} />
               </label>
               {clientImages.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -1427,9 +1471,7 @@ function ClientForm({
                     <div key={idx} className="relative group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-100" onError={(e) => { e.currentTarget.style.opacity = '0.3'; }} />
-                      <button
-                        type="button"
-                        onClick={() => setClientImages(prev => prev.filter((_, i) => i !== idx))}
+                      <button type="button" onClick={() => setClientImages(prev => prev.filter((_, i) => i !== idx))}
                         className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >✕</button>
                     </div>
@@ -1437,12 +1479,14 @@ function ClientForm({
                 </div>
               )}
             </div>
+
             <div className="sm:col-span-2">
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Email <span className="text-gray-300 normal-case tracking-normal">(optional)</span></label>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Email <span className="text-gray-300 normal-case tracking-normal font-normal">(optional)</span></label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="admin-input" placeholder="client@email.com" />
             </div>
+
             <div className="sm:col-span-2">
-              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Notes <span className="text-gray-300 normal-case tracking-normal">— ملاحظات (اختياري)</span></label>
+              <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold block mb-1.5">Notes <span className="text-gray-300 normal-case tracking-normal font-normal">— ملاحظات (اختياري)</span></label>
               <textarea
                 dir="rtl"
                 lang="ar"
@@ -1453,6 +1497,7 @@ function ClientForm({
                 placeholder="مثال: تفضل اللون العاجي، مقاس ٣٨..."
               />
             </div>
+
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 min-h-[48px] border border-gray-200 rounded-xl text-[10px] uppercase tracking-[2px] font-black text-gray-400 hover:bg-gray-50 transition-all">Cancel</button>
