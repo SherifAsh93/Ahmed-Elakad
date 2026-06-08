@@ -48,3 +48,6 @@ src/data/content.json
 src/data/messages.json
 logs/*.log
 logs/last_backup_success
+
+# dev screenshots
+screenshots/
