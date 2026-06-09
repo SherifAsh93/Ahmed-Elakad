@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 declare global {
   interface Window {
@@ -16,38 +16,28 @@ export default function InstagramEmbed({
   clientName?: string;
   clientSubtitle?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const load = () => {
-      if (window.instgrm) {
-        window.instgrm.Embeds.process();
-      } else if (!document.getElementById('ig-embed-js')) {
-        const s = document.createElement('script');
-        s.id = 'ig-embed-js';
-        s.src = 'https://www.instagram.com/embed.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-    };
-    load();
+    if (window.instgrm) {
+      window.instgrm.Embeds.process();
+    } else if (!document.getElementById('ig-embed-js')) {
+      const s = document.createElement('script');
+      s.id = 'ig-embed-js';
+      s.src = 'https://www.instagram.com/embed.js';
+      s.async = true;
+      document.body.appendChild(s);
+    }
   }, [url]);
 
   return (
-    <div ref={ref} className="flex-none" style={{ width: 'clamp(300px, 50vw, 400px)' }}>
+    <div className="flex-none" style={{ width: 'clamp(300px, 50vw, 400px)' }}>
       <blockquote
         className="instagram-media"
+        data-instgrm-captioned
         data-instgrm-permalink={url}
         data-instgrm-version="14"
-        style={{
-          background: '#fff',
-          border: 0,
-          margin: 0,
-          padding: 0,
-          width: '100%',
-          minWidth: '300px',
-        }}
-      />
+        style={{ background: '#fff', border: 0, margin: 0, padding: 0, width: '100%', minWidth: '300px' }}
+      >
+      </blockquote>
       {clientName && (
         <div className="pt-4 px-1">
           <p className="text-[9px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-1">{clientName}</p>
