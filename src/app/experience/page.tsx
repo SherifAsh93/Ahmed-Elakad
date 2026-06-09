@@ -24,7 +24,7 @@ function VideoCard({ video }: { video: VideoItem }) {
   const embedUrl = getEmbedUrl(video.url);
   if (!embedUrl) return null;
   return (
-    <div className="flex flex-col">
+    <div className="flex-none overflow-hidden" style={{ width: 'clamp(280px, 85vw, 560px)' }}>
       <div className="aspect-video bg-[#1a1a1a] overflow-hidden">
         {isDirectVideo(video.url) ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
@@ -36,20 +36,15 @@ function VideoCard({ video }: { video: VideoItem }) {
             allowFullScreen
             className="w-full h-full border-0"
             loading="lazy"
-            title={video.title || video.clientName || "Client video"}
+            title={video.clientName || video.title || "Client video"}
           />
         )}
       </div>
-      {(video.clientName || video.title) && (
+      {video.clientName && (
         <div className="pt-4 px-1">
-          {video.clientName && (
-            <p className="text-[9px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-1">{video.clientName}</p>
-          )}
+          <p className="text-[9px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-1">{video.clientName}</p>
           {video.clientSubtitle && (
             <p className="text-[9px] tracking-[2px] uppercase text-[#aaa]">{video.clientSubtitle}</p>
-          )}
-          {video.title && !video.clientName && (
-            <p className="text-[11px] text-[#555] font-light">{video.title}</p>
           )}
         </div>
       )}
@@ -179,19 +174,21 @@ export default async function ExperiencePage() {
 
       {/* ── CLIENT VIDEOS ── */}
       {videos.length > 0 && (
-        <section className="bg-[#f5f2ee] py-16 sm:py-24 px-5 sm:px-10 border-t border-[#ece8e2]">
-          <div className="max-w-screen-xl mx-auto">
-            <div className="text-center mb-12">
-              <p className="text-[8px] tracking-[5px] uppercase text-[#b3a384] mb-3">In Their Own Words</p>
-              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-[0.25em] text-[#1a1a1a] mb-4">
+        <section className="bg-[#f5f2ee] py-6 sm:py-10 md:py-14">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
+            <div className="text-center mb-4 sm:mb-6">
+              <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-1">In Their Own Words</p>
+              <h2 className="font-serif font-light text-[#1a1a1a] text-[15px] sm:text-[20px] md:text-[26px]">
                 {exp.videoSectionTitle || "CLIENT STORIES"}
               </h2>
               {exp.videoSectionSubtitle && (
-                <p className="text-[#666] text-sm font-light font-serif mt-2 max-w-[440px] mx-auto">{exp.videoSectionSubtitle}</p>
+                <p className="text-[#666] text-[12px] font-light font-serif mt-2">{exp.videoSectionSubtitle}</p>
               )}
-              <div className="w-12 h-px bg-[#b3a384]/40 mx-auto mt-5" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div
+              className="flex overflow-x-auto gap-3"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+            >
               {videos.map((v) => (
                 <VideoCard key={v.id} video={v} />
               ))}
