@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, FormEvent } from "react";
+import React, { useState, useEffect, useCallback, useRef, FormEvent } from "react";
 import Image from "next/image";
 import { SiteContent, CategoryYear } from "@/lib/content";
 import { compressImage } from "@/lib/compressImage";
@@ -922,6 +922,7 @@ function getYoutubeThumbnail(url: string): string | null {
 function VideoListEditor({
   videos, onChange,
 }: { videos: VideoItemAdmin[]; onChange: (v: VideoItemAdmin[]) => void }) {
+  const [downloading, setDownloading] = React.useState<Record<string, boolean>>({});
   const add = () => onChange([...videos, { id: `v-${Date.now()}`, url: "", title: "", clientName: "", clientSubtitle: "" }]);
   const update = (i: number, field: keyof VideoItemAdmin, val: string) => {
     const a = [...videos]; a[i] = { ...a[i], [field]: val }; onChange(a);
@@ -931,6 +932,16 @@ function VideoListEditor({
     const a = [...videos]; const j = i + dir;
     if (j < 0 || j >= a.length) return;
     [a[i], a[j]] = [a[j], a[i]]; onChange(a);
+  };
+  const downloadIg = async (i: number, igUrl: string) => {
+    setDownloading(d => ({ ...d, [videos[i].id]: true }));
+    try {
+      const res = await fetch('/api/ig-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: igUrl }) });
+      const data = await res.json();
+      if (data.url) { update(i, 'url', data.url); }
+      else alert(data.error || 'Download failed');
+    } catch { alert('Download failed'); }
+    finally { setDownloading(d => ({ ...d, [videos[i].id]: false })); }
   };
   return (
     <div className="space-y-5">
@@ -978,7 +989,21 @@ function VideoListEditor({
                 </div>
                 <div>
                   <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">VIDEO URL</label>
-                  <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm" placeholder="https://youtube.com/watch?v=... or Vimeo or .mp4 URL" />
+                  <div className="flex gap-2 items-center">
+                    <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm flex-1" placeholder="YouTube, Vimeo, .mp4, or Instagram link" />
+                    {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && (
+                      <button
+                        onClick={() => downloadIg(i, v.url)}
+                        disabled={downloading[v.id]}
+                        className="shrink-0 text-[9px] uppercase tracking-[2px] font-bold bg-[#b3a384] text-white px-3 py-2 rounded hover:bg-[#9a8b6e] disabled:opacity-50 transition-colors whitespace-nowrap min-h-[44px]"
+                      >
+                        {downloading[v.id] ? 'Downloading…' : '⬇ Save to site'}
+                      </button>
+                    )}
+                  </div>
+                  {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && !downloading[v.id] && (
+                    <p className="text-[9px] text-[#b3a384] mt-1">Instagram link detected — click &quot;Save to site&quot; to download it for inline playback</p>
+                  )}
                 </div>
               </div>
             </div>

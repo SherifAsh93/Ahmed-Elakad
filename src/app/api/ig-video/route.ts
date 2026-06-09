@@ -1,47 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Referer': 'https://www.instagram.com/',
-};
+const execFileAsync = promisify(execFile);
+const MEDIA_DIR = '/home/sherif/data/ahmed-elakad/images';
+const PUBLIC_BASE = 'https://ahmedelakad.com/media';
+const YTDLP = '/home/sherif/yt-dlp';
 
-const cache = new Map<string, { videoUrl: string; expires: number }>();
+async function auth() {
+  const cookieStore = await cookies();
+  return cookieStore.get('admin_session')?.value === 'authenticated';
+}
 
-export async function GET(req: NextRequest) {
-  const igUrl = req.nextUrl.searchParams.get('url');
-  if (!igUrl) return new NextResponse('Missing url', { status: 400 });
+export async function POST(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const cached = cache.get(igUrl);
-  if (cached && Date.now() < cached.expires) {
-    return NextResponse.redirect(cached.videoUrl);
+  const { url } = await req.json();
+  if (!url?.trim()) return NextResponse.json({ error: 'No URL provided' }, { status: 400 });
+
+  if (!/instagram\.com\/(?:p|reel|tv)\//.test(url)) {
+    return NextResponse.json({ error: 'Not an Instagram URL' }, { status: 400 });
   }
 
+  fs.mkdirSync(MEDIA_DIR, { recursive: true });
+
+  const filename = `ig-${Date.now()}.mp4`;
+  const outPath = path.join(MEDIA_DIR, filename);
+
   try {
-    const res = await fetch(igUrl, { headers: HEADERS, redirect: 'follow' });
-    if (!res.ok) return new NextResponse(`Instagram fetch failed: ${res.status}`, { status: 502 });
+    await execFileAsync(YTDLP, [
+      '--no-warnings',
+      '-f', 'mp4',
+      '-o', outPath,
+      url.trim(),
+    ], { timeout: 60000 });
 
-    const html = await res.text();
-
-    const match =
-      html.match(/property=["']og:video:secure_url["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/content=["']([^"']+)["'][^>]+property=["']og:video:secure_url["']/i) ||
-      html.match(/property=["']og:video["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/content=["']([^"']+)["'][^>]+property=["']og:video["']/i);
-
-    if (!match?.[1]) {
-      return new NextResponse('Video URL not found in page', { status: 422 });
+    if (!fs.existsSync(outPath)) {
+      return NextResponse.json({ error: 'Download failed — file not created' }, { status: 500 });
     }
 
-    const videoUrl = match[1].replace(/&amp;/g, '&');
-    cache.set(igUrl, { videoUrl, expires: Date.now() + 20 * 60 * 1000 });
-
-    return NextResponse.redirect(videoUrl);
+    return NextResponse.json({ url: `${PUBLIC_BASE}/${filename}` });
   } catch (err) {
-    console.error('ig-video error:', err);
-    return new NextResponse('Error resolving video', { status: 500 });
+    console.error('yt-dlp error:', err);
+    return NextResponse.json({ error: 'Download failed' }, { status: 500 });
   }
 }
