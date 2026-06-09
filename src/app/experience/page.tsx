@@ -3,6 +3,7 @@ import { getContent, Testimonial, VideoItem } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
 import Link from "next/link";
 import TestimonialsSection from "./TestimonialsSection";
+import InstagramEmbed from "./InstagramEmbed";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,8 +13,7 @@ function getEmbedUrl(url: string): string | null {
   if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
   const vm = url.match(/vimeo\.com\/(\d+)/);
   if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
-  const ig = url.match(/instagram\.com\/(?:p|reel|tv)\/([^/?#]+)/);
-  if (ig) return `https://www.instagram.com/reel/${ig[1]}/embed/`;
+  if (/instagram\.com\/(?:p|reel|tv)\//.test(url)) return url;
   if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return url;
   return null;
 }
@@ -29,16 +29,20 @@ function isInstagram(url: string) {
 function VideoCard({ video }: { video: VideoItem }) {
   const embedUrl = getEmbedUrl(video.url);
   if (!embedUrl) return null;
-  const portrait = isInstagram(video.url);
+
+  if (isInstagram(video.url)) {
+    return (
+      <InstagramEmbed
+        url={video.url}
+        clientName={video.clientName}
+        clientSubtitle={video.clientSubtitle}
+      />
+    );
+  }
+
   return (
-    <div
-      className="flex-none overflow-hidden"
-      style={{ width: portrait ? 'clamp(200px, 50vw, 340px)' : 'clamp(280px, 85vw, 560px)' }}
-    >
-      <div
-        className="bg-[#1a1a1a] overflow-hidden"
-        style={{ aspectRatio: portrait ? '4/5' : '16/9' }}
-      >
+    <div className="flex-none overflow-hidden" style={{ width: 'clamp(280px, 85vw, 560px)' }}>
+      <div className="bg-[#1a1a1a] overflow-hidden" style={{ aspectRatio: '16/9' }}>
         {isDirectVideo(video.url) ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
           <video src={embedUrl} controls playsInline className="w-full h-full object-cover" />
