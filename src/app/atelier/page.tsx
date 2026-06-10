@@ -846,12 +846,6 @@ function UpcomingAppointmentsAr({ clients }: { clients: Client[] }) {
       <div className="divide-y divide-gray-50">
         {upcoming.map((e, i) => (
           <div key={`${e.phone}_${e.type}_${i}`} className="flex items-center gap-3 px-4 py-2.5">
-            <a href={`https://wa.me/${e.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
-              className="shrink-0 flex items-center gap-1 bg-[#25D366] text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg hover:bg-[#1ebe5d] transition-colors"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              واتساب
-            </a>
             <div className="min-w-0 flex-1 text-right">
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${e.type === "fitting" ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"}`}>
@@ -863,11 +857,239 @@ function UpcomingAppointmentsAr({ clients }: { clients: Client[] }) {
             </div>
             <div className="shrink-0 text-center w-10">
               <p className="text-[14px] font-black text-gray-800 leading-none">{new Date(e.date + "T12:00:00").getDate()}</p>
-              <p className="text-[9px] font-black text-gray-400">{new Date(e.date + "T12:00:00").toLocaleDateString("en-GB", { month: "short" })}</p>
+              <p className="text-[9px] font-black text-gray-400">{new Date(e.date + "T12:00:00").toLocaleDateString("ar-EG", { month: "short" })}</p>
             </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Atelier Calendar (Arabic) ─────────────────────────
+function AtelierCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh: () => void }) {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editType, setEditType] = useState<"first" | "fitting">("fitting");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(onRefresh, 30_000);
+    return () => clearInterval(id);
+  }, [onRefresh]);
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  type CalEntry = { client: Client; type: "first" | "fitting"; time: string };
+  const dayMap = new Map<string, CalEntry[]>();
+  clients.forEach(c => {
+    if (c.fittingDate) {
+      const key = c.fittingDate.slice(0, 10);
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push({ client: c, type: "fitting", time: c.fittingTime ?? "" });
+    }
+    if (c.appointmentDate) {
+      const key = c.appointmentDate.slice(0, 10);
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push({ client: c, type: "first", time: c.appointmentTime ?? "" });
+    }
+  });
+  dayMap.forEach(arr => arr.sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")));
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay();
+  const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
+
+  const prevMonth = () => { setViewDate(new Date(year, month - 1, 1)); setSelectedDay(null); setEditingId(null); };
+  const nextMonth = () => { setViewDate(new Date(year, month + 1, 1)); setSelectedDay(null); setEditingId(null); };
+
+  const monthLabel = viewDate.toLocaleDateString("ar-EG", { month: "long", year: "numeric" });
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const openEdit = (c: Client, type: "first" | "fitting") => {
+    setEditingId(c.id + "_" + type);
+    setEditType(type);
+    if (type === "fitting") {
+      setEditDate(c.fittingDate?.slice(0, 10) ?? "");
+      setEditTime(c.fittingTime ?? "");
+    } else {
+      setEditDate(c.appointmentDate?.slice(0, 10) ?? "");
+      setEditTime(c.appointmentTime ?? "");
+    }
+  };
+
+  const handleSaveEdit = async (clientId: string) => {
+    if (!editDate) return;
+    setSaving(true);
+    const body = editType === "fitting"
+      ? { id: clientId, fittingDate: editDate, fittingTime: editTime }
+      : { id: clientId, appointmentDate: editDate, appointmentTime: editTime };
+    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    setSaving(false);
+    setEditingId(null);
+    setSelectedDay(editDate);
+    onRefresh();
+  };
+
+  const selectedEntries = selectedDay ? (dayMap.get(selectedDay) ?? []) : [];
+  const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50">
+        {/* In RTL: first item = RIGHT side = next month */}
+        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 transition-colors text-gray-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div className="text-center">
+          <p className="text-[13px] font-black text-gray-800">{monthLabel}</p>
+          <p className="text-[11px] text-gray-400 font-bold">جدول المواعيد</p>
+        </div>
+        {/* In RTL: last item = LEFT side = prev month */}
+        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 transition-colors text-gray-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-4 px-5 py-2 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
+          <span className="text-[11px] font-black text-gray-500">موعد أول</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+          <span className="text-[11px] font-black text-gray-500">قياس</span>
+        </div>
+      </div>
+
+      {/* Day-of-week labels */}
+      <div className="grid grid-cols-7 border-b border-gray-100">
+        {dayNames.map(d => (
+          <div key={d} className="py-1.5 text-center text-[10px] font-black text-gray-400">{d}</div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7">
+        {Array.from({ length: totalCells }).map((_, i) => {
+          const dayNum = i - firstDow + 1;
+          if (dayNum < 1 || dayNum > daysInMonth) return <div key={i} className="aspect-square" />;
+          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+          const entries = dayMap.get(dateStr) ?? [];
+          const hasFirst = entries.some(e => e.type === "first");
+          const hasFitting = entries.some(e => e.type === "fitting");
+          const hasAny = entries.length > 0;
+          const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedDay;
+          return (
+            <button
+              key={i}
+              onClick={() => { setSelectedDay(isSelected ? null : dateStr); setEditingId(null); }}
+              disabled={!hasAny}
+              className={`
+                aspect-square flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition-all border border-transparent
+                ${hasAny ? "cursor-pointer" : "cursor-default text-gray-300"}
+                ${isSelected ? "bg-stone-800 text-white rounded-lg" : ""}
+                ${hasAny && !isSelected ? "bg-stone-50 text-stone-700 hover:border-stone-300" : ""}
+                ${isToday && !isSelected ? "ring-2 ring-inset ring-[#b3a384]" : ""}
+              `}
+            >
+              <span className={`text-[13px] leading-none ${isSelected ? "font-black" : ""}`}>{dayNum}</span>
+              {hasAny && (
+                <div className="flex gap-0.5">
+                  {hasFirst && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-blue-300" : "bg-blue-400"}`} />}
+                  {hasFitting && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-rose-300" : "bg-rose-400"}`} />}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected day panel */}
+      {selectedDay && (
+        <div className="border-t border-gray-100 bg-stone-50 px-4 py-3">
+          <p className="text-[11px] font-black text-gray-400 mb-3 text-right">
+            {new Date(selectedDay + "T12:00:00").toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+          <div className="space-y-2">
+            {selectedEntries.length === 0 ? (
+              <p className="text-xs text-gray-400 italic text-right">لا توجد مواعيد في هذا اليوم</p>
+            ) : selectedEntries.map((entry, idx) => {
+              const c = entry.client;
+              const editKey = c.id + "_" + entry.type;
+              const isEditing = editingId === editKey;
+              const isFitting = entry.type === "fitting";
+              return (
+                <div key={`${c.id}_${entry.type}_${idx}`} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => isEditing ? setEditingId(null) : openEdit(c, entry.type)}
+                        className="flex items-center gap-1 text-[11px] font-black px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        تعديل
+                      </button>
+                    </div>
+                    <div className="min-w-0 flex-1 text-right">
+                      {c.name && <p className="text-[13px] font-black text-gray-800 truncate">{c.name}</p>}
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <p className="text-[12px] text-gray-400 font-bold" dir="ltr">{c.phone}</p>
+                        {entry.time && (
+                          <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${isFitting ? "text-rose-500 bg-rose-50 border-rose-100" : "text-blue-500 bg-blue-50 border-blue-100"}`}>
+                            {to12h(entry.time)}
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isFitting ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600"}`}>
+                          {isFitting ? "قياس" : "موعد أول"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {isEditing && (
+                    <div className={`border-t px-3 py-3 space-y-2 ${isFitting ? "border-rose-100 bg-rose-50/60" : "border-blue-100 bg-blue-50/60"}`}>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className={`text-[9px] font-black block mb-1 text-right ${isFitting ? "text-rose-400" : "text-blue-400"}`}>الوقت</label>
+                          <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none bg-white ${isFitting ? "border-rose-200 focus:border-rose-400" : "border-blue-200 focus:border-blue-400"}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`text-[9px] font-black block mb-1 text-right ${isFitting ? "text-rose-400" : "text-blue-400"}`}>التاريخ</label>
+                          <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none bg-white ${isFitting ? "border-rose-200 focus:border-rose-400" : "border-blue-200 focus:border-blue-400"}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingId(null)}
+                          className="flex-1 min-h-[36px] border border-gray-200 rounded-lg text-[11px] font-black text-gray-400 hover:bg-gray-50 transition-all"
+                        >
+                          إلغاء
+                        </button>
+                        <button onClick={() => handleSaveEdit(c.id)} disabled={saving || !editDate}
+                          className={`flex-1 min-h-[36px] text-white rounded-lg text-[11px] font-black transition-all disabled:opacity-40 ${isFitting ? "bg-rose-500 hover:bg-rose-600" : "bg-blue-500 hover:bg-blue-600"}`}
+                        >
+                          {saving ? "..." : "حفظ"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -984,6 +1206,9 @@ export default function AtelierPage() {
 
         {/* Upcoming Appointments */}
         <UpcomingAppointmentsAr clients={clients} />
+
+        {/* Calendar */}
+        <AtelierCalendar clients={clients} onRefresh={refresh} />
 
         {/* Search */}
         <div className="relative">
