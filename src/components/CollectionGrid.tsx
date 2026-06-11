@@ -83,11 +83,6 @@ export default function CollectionGrid({
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
 
-                  {coll.images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold tracking-[2px] px-2.5 py-1 rounded-full">
-                      {coll.images.length}
-                    </div>
-                  )}
                 </div>
 
                 {coll.name && (

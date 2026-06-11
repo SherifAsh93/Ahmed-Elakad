@@ -74,7 +74,7 @@ export default async function HomePage() {
 
 
       {/* ── THE HOUSE OF AHMED ELAKAD ─────────────────────────────── */}
-      <section className="bg-[#f5f2ee]">
+      <section className="bg-[#f5f2ee] mt-6 sm:mt-10 md:mt-14">
         <div className="grid grid-cols-[38%_62%]">
 
           {/* LEFT: Text */}
