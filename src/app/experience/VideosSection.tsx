@@ -38,7 +38,14 @@ function VideoCard({ video }: { video: VideoItem }) {
       <div className="bg-[#1a1a1a] overflow-hidden" style={{ aspectRatio: '16/9' }}>
         {isDirect ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
-          <video src={embedUrl} controls playsInline preload="metadata" className="w-full h-full object-cover" />
+          <video
+            src={embedUrl}
+            poster={embedUrl.replace(/\.(mp4|webm|ogg)(\?.*)?$/i, '-poster.jpg')}
+            controls
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover"
+          />
         ) : (
           <iframe
             src={embedUrl}
