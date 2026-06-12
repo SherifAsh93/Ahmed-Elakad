@@ -3,72 +3,19 @@ import { getContent, Testimonial, VideoItem } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
 import Link from "next/link";
 import TestimonialsSection from "./TestimonialsSection";
-import InstagramEmbed from "./InstagramEmbed";
+import VideosSection from "./VideosSection";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function getEmbedUrl(url: string): string | null {
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
-  const vm = url.match(/vimeo\.com\/(\d+)/);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
-  if (/instagram\.com\/(?:p|reel|tv)\//.test(url)) return url;
-  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return url;
-  return null;
-}
-
-function isDirectVideo(url: string) {
-  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
-}
-
-function isInstagram(url: string) {
-  return /instagram\.com\/(?:p|reel|tv)\//.test(url);
-}
-
-function VideoCard({ video }: { video: VideoItem }) {
-  const embedUrl = getEmbedUrl(video.url);
-  if (!embedUrl) return null;
-
-  if (isInstagram(video.url)) {
-    return (
-      <InstagramEmbed
-        url={video.url}
-        clientName={video.clientName}
-        clientSubtitle={video.clientSubtitle}
-      />
-    );
-  }
-
+function hasValidUrl(v: VideoItem) {
   return (
-    <div className="flex-none overflow-hidden" style={{ width: 'clamp(280px, 85vw, 560px)' }}>
-      <div className="bg-[#1a1a1a] overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        {isDirectVideo(video.url) ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption
-          <video src={embedUrl} controls playsInline className="w-full h-full object-cover" />
-        ) : (
-          <iframe
-            src={embedUrl}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full border-0"
-            loading="lazy"
-            title={video.clientName || video.title || "Client video"}
-          />
-        )}
-      </div>
-      {video.clientName && (
-        <div className="pt-4 px-1">
-          <p className="text-[9px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-1">{video.clientName}</p>
-          {video.clientSubtitle && (
-            <p className="text-[9px] tracking-[2px] uppercase text-[#aaa]">{video.clientSubtitle}</p>
-          )}
-        </div>
-      )}
-    </div>
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(v.url) ||
+    /vimeo\.com\/\d+/.test(v.url) ||
+    /instagram\.com\/(?:p|reel|tv)\//.test(v.url) ||
+    /\.(mp4|webm|ogg)(\?.*)?$/i.test(v.url)
   );
 }
-
 
 export default async function ExperiencePage() {
   const content = await getContent();
@@ -88,7 +35,7 @@ export default async function ExperiencePage() {
   const kindWordsBgImage = exp.kindWordsBgImage || "";
 
   const testimonials: Testimonial[] = exp.testimonials ?? [];
-  const videos: VideoItem[] = (exp.videos ?? []).filter((v) => getEmbedUrl(v.url));
+  const videos: VideoItem[] = (exp.videos ?? []).filter(hasValidUrl);
 
   const ctaImage = exp.ctaImage || heroImage;
   const ctaHeading = exp.ctaHeading || "YOUR STORY";
@@ -148,7 +95,7 @@ export default async function ExperiencePage() {
       <section className="relative py-16 sm:py-20 md:py-24 px-5 sm:px-10">
         {/* Same hero image, light warm overlay */}
         {heroImage && (
-          <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         )}
         <div className="absolute inset-0 bg-[#f5f0e8]/90" />
 
@@ -193,23 +140,11 @@ export default async function ExperiencePage() {
       {videos.length > 0 && (
         <section className="bg-[#f5f2ee] py-6 sm:py-10 md:py-14">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-10 md:px-20">
-            <div className="text-center mb-4 sm:mb-6">
-              <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-1">In Their Own Words</p>
-              <h2 className="font-serif font-light text-[#1a1a1a] text-[15px] sm:text-[20px] md:text-[26px]">
-                {exp.videoSectionTitle || "CLIENT STORIES"}
-              </h2>
-              {exp.videoSectionSubtitle && (
-                <p className="text-[#666] text-[12px] font-light font-serif mt-2">{exp.videoSectionSubtitle}</p>
-              )}
-            </div>
-            <div
-              className="flex overflow-x-auto gap-3"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-            >
-              {videos.map((v) => (
-                <VideoCard key={v.id} video={v} />
-              ))}
-            </div>
+            <VideosSection
+              videos={videos}
+              title={exp.videoSectionTitle || "CLIENT STORIES"}
+              subtitle={exp.videoSectionSubtitle}
+            />
           </div>
         </section>
       )}
