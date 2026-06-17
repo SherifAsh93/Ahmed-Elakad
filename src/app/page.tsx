@@ -1,6 +1,7 @@
 import { getContent } from "@/lib/content";
 import Link from "next/link";
 import { optimizeImage } from "@/lib/utils";
+import RealBridesCarousel from "@/components/RealBridesCarousel";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -145,13 +146,7 @@ export default async function HomePage() {
               <p className="text-[7px] tracking-[4px] uppercase text-[#b3a384] mb-1">Real Brides</p>
               <h2 className="font-serif font-light text-[#1a1a1a] text-[15px] sm:text-[20px] md:text-[26px]">Real Moments. Real Love.</h2>
             </div>
-            <div className="flex overflow-x-auto gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
-              {brides.map((img, i) => (
-                <div key={i} className="flex-none aspect-[2/3] overflow-hidden" style={{ width: 'calc((100vw - 2.5rem) / 6)' }}>
-                  <img src={optimizeImage(img)} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
-                </div>
-              ))}
-            </div>
+            <RealBridesCarousel images={brides} />
             <div className="text-center mt-6 sm:mt-8">
               <Link href="/bridal" className="inline-flex items-center gap-2 text-[8px] tracking-[3px] uppercase text-[#1a1a1a] hover:text-[#b3a384] transition-colors border-b border-[#1a1a1a]/20 pb-1 hover:border-[#b3a384]">
                 View More Real Brides <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

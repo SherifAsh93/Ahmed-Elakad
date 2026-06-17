@@ -18,6 +18,30 @@ function adaptiveGrid(count: number): { grid: string; wrap: string } {
   return { grid: "grid-cols-2 lg:grid-cols-3", wrap: "" };
 }
 
+function ArrowBtn({
+  dir,
+  onClick,
+}: {
+  dir: "left" | "right";
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={dir === "left" ? "Previous" : "Next"}
+      className={`absolute top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/85 backdrop-blur-sm border border-black/10 text-[#1a1a1a] shadow-md hover:bg-white hover:scale-105 transition-all duration-150 ${
+        dir === "left" ? "left-2" : "right-2"
+      }`}
+    >
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {dir === "left"
+          ? <polyline points="15 18 9 12 15 6" />
+          : <polyline points="9 18 15 12 9 6" />}
+      </svg>
+    </button>
+  );
+}
+
 function CollectionCard({
   coll,
   idx,
@@ -28,47 +52,58 @@ function CollectionCard({
   onOpen: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pointerStartX = useRef(0);
+  const scrolledRef = useRef(false);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const hasMultiple = coll.images.length > 1;
   const label = coll.name || `Design ${idx + 1}`;
-  const isAtEnd = currentIdx >= coll.images.length - 1;
+
+  // Check overflow on mount
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setAtEnd(el.scrollWidth <= el.clientWidth + 5);
+  }, []);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
+    scrolledRef.current = true;
+    setAtStart(el.scrollLeft <= 5);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 5);
     setCurrentIdx(Math.round(el.scrollLeft / el.clientWidth));
   }, []);
 
-  const handleCarouselPointerDown = (e: React.PointerEvent) => {
-    pointerStartX.current = e.clientX;
-  };
-
-  const handleCarouselClick = (e: React.MouseEvent) => {
+  const scrollTo = (dir: 1 | -1, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (Math.abs(e.clientX - pointerStartX.current) > 8) return;
-    onOpen();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
   };
 
   return (
-    <div className="group text-left">
-      {/* Image area */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#f0ede8] mb-5">
-        {/* Scrollable carousel */}
+    <div
+      className="group text-left"
+      onPointerDown={() => { scrolledRef.current = false; }}
+    >
+      {/* Card image area */}
+      <div className="relative aspect-[3/4] bg-[#f0ede8] mb-5 overflow-hidden">
+        {/* Scrollable image strip — same free-scroll style as Real Moments */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          onPointerDown={handleCarouselPointerDown}
-          onClick={handleCarouselClick}
-          className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-none cursor-pointer"
+          onClick={() => { if (!scrolledRef.current) onOpen(); }}
+          className="flex h-full overflow-x-auto cursor-pointer"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {coll.images.map((src, i) => (
-            <div key={i} className="flex-shrink-0 w-full h-full snap-start">
+            <div key={i} className="flex-none h-full" style={{ aspectRatio: "3/4" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={optimizeImage(src)}
                 alt={`${label} ${i + 1}`}
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                className="w-full h-full object-cover"
                 loading="lazy"
                 draggable={false}
               />
@@ -77,20 +112,17 @@ function CollectionCard({
         </div>
 
         {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-500 pointer-events-none" />
 
-        {/* Arrow scroll indicator — grayscale/faint at rest, bright on hover */}
-        {hasMultiple && !isAtEnd && (
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-35 group-hover:opacity-90 transition-opacity duration-300">
-            <div className="animate-nudge-x bg-black/30 backdrop-blur-[2px] rounded-full p-1.5 text-white grayscale group-hover:grayscale-0 transition-all duration-300">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
+        {/* Navigation arrows */}
+        {hasMultiple && !atStart && (
+          <ArrowBtn dir="left" onClick={(e) => scrollTo(-1, e)} />
+        )}
+        {hasMultiple && !atEnd && (
+          <ArrowBtn dir="right" onClick={(e) => scrollTo(1, e)} />
         )}
 
-        {/* Dot indicators (≤8 images) or counter (>8) */}
+        {/* Image count indicator */}
         {hasMultiple && (
           <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1 pointer-events-none">
             {coll.images.length <= 8 ? (
@@ -98,12 +130,12 @@ function CollectionCard({
                 <div
                   key={i}
                   className={`h-[3px] rounded-full transition-all duration-300 ${
-                    i === currentIdx ? "w-4 bg-white" : "w-[3px] bg-white/45"
+                    i === currentIdx ? "w-4 bg-white" : "w-[3px] bg-white/50"
                   }`}
                 />
               ))
             ) : (
-              <span className="text-[9px] text-white/70 font-medium tracking-wider bg-black/25 backdrop-blur-[2px] rounded-full px-2 py-0.5">
+              <span className="text-[9px] text-white/80 font-medium tracking-wider bg-black/25 backdrop-blur-[2px] rounded-full px-2 py-0.5">
                 {currentIdx + 1} / {coll.images.length}
               </span>
             )}
@@ -111,7 +143,7 @@ function CollectionCard({
         )}
       </div>
 
-      {/* Collection name */}
+      {/* Collection name — also opens modal */}
       {coll.name && (
         <h2
           onClick={onOpen}
