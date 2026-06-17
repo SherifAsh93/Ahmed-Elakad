@@ -1209,10 +1209,19 @@ function YearCollectionEditor({
             </button>
           </div>
 
+          {/* ── ADD NEW DESIGN — prominent button always visible at top ── */}
+          <button
+            onClick={addCollection}
+            className="w-full min-h-[56px] bg-black text-white text-[10px] tracking-[3px] uppercase font-black rounded-sm flex items-center justify-center gap-3 hover:bg-[#1a1a1a] active:scale-[0.99] transition-all shadow-sm"
+          >
+            <span className="text-[18px] font-thin leading-none">+</span>
+            <span>Add New Design</span>
+          </button>
+
           {/* Collections */}
           {activeCollections.length === 0 && (
             <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs uppercase tracking-widest">
-              No collections yet — add one below
+              No designs yet — click &ldquo;Add New Design&rdquo; above
             </div>
           )}
 

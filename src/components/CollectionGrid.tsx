@@ -413,6 +413,42 @@ export default function CollectionGrid({ collections, section, year }: Collectio
 
   return (
     <>
+      {/* Admin inline controls — inline so they work correctly in the "All" view too */}
+      {isAdminUser && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between gap-3">
+            {editMode ? (
+              <p className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">
+                Drag designs to reorder · click a design to reorder its images
+              </p>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {editMode && hasChanges && (
+                <button
+                  onClick={saveOrder}
+                  disabled={saving}
+                  className="px-4 py-2 bg-[#b3a384] text-white text-[8px] tracking-[2px] uppercase font-bold hover:bg-[#a09072] transition-colors disabled:opacity-60 rounded-sm"
+                >
+                  {saving ? "Saving…" : "✓ Save"}
+                </button>
+              )}
+              <button
+                onClick={() => { setEditMode((v) => !v); setHasChanges(false); }}
+                className={`px-4 py-2 text-[8px] tracking-[2px] uppercase font-bold transition-all rounded-sm border ${
+                  editMode
+                    ? "bg-[#1a1a1a] text-white border-[#1a1a1a]"
+                    : "bg-white text-[#555] border-[#ccc] hover:border-[#1a1a1a] hover:text-[#1a1a1a]"
+                }`}
+              >
+                {editMode ? "✕ Exit Edit" : "⠿ Edit Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={wrap}>
         <div className={`grid ${grid} gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-14`}>
           {displayItems.map((coll, idx) => (
@@ -432,31 +468,6 @@ export default function CollectionGrid({ collections, section, year }: Collectio
           ))}
         </div>
       </div>
-
-      {/* Admin floating controls */}
-      {isAdminUser && (
-        <div className="fixed bottom-6 right-6 z-[200] flex flex-col items-end gap-2">
-          {editMode && hasChanges && (
-            <button
-              onClick={saveOrder}
-              disabled={saving}
-              className="px-5 py-2.5 bg-[#b3a384] text-white text-[9px] tracking-[2px] uppercase font-bold shadow-lg hover:bg-[#a09072] transition-colors disabled:opacity-60 rounded-sm"
-            >
-              {saving ? "Saving…" : "✓ Save Order"}
-            </button>
-          )}
-          <button
-            onClick={() => { setEditMode((v) => !v); setHasChanges(false); }}
-            className={`px-5 py-2.5 text-[9px] tracking-[2px] uppercase font-bold shadow-lg transition-all rounded-sm ${
-              editMode
-                ? "bg-[#1a1a1a] text-white hover:bg-black"
-                : "bg-white text-[#1a1a1a] border border-[#ccc] hover:border-[#1a1a1a]"
-            }`}
-          >
-            {editMode ? "✕ Exit Edit" : "⠿ Edit Order"}
-          </button>
-        </div>
-      )}
 
       {/* Full-screen gallery modal (view mode) */}
       {open && !editMode && (
