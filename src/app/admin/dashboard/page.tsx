@@ -923,6 +923,8 @@ function VideoListEditor({
   videos, onChange,
 }: { videos: VideoItemAdmin[]; onChange: (v: VideoItemAdmin[]) => void }) {
   const [downloading, setDownloading] = React.useState<Record<string, boolean>>({});
+  const [uploading, setUploading] = React.useState<Record<string, boolean>>({});
+  const fileInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
   const add = () => onChange([...videos, { id: `v-${Date.now()}`, url: "", title: "", clientName: "", clientSubtitle: "" }]);
   const update = (i: number, field: keyof VideoItemAdmin, val: string) => {
     const a = [...videos]; a[i] = { ...a[i], [field]: val }; onChange(a);
@@ -942,6 +944,17 @@ function VideoListEditor({
       else alert(data.error || 'Download failed');
     } catch { alert('Download failed'); }
     finally { setDownloading(d => ({ ...d, [videos[i].id]: false })); }
+  };
+  const uploadVideo = async (i: number, file: File) => {
+    setUploading(d => ({ ...d, [videos[i].id]: true }));
+    try {
+      const fd = new FormData(); fd.append('files', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.uploaded?.[0]) { update(i, 'url', data.uploaded[0]); }
+      else alert(data.error || 'Upload failed');
+    } catch { alert('Upload failed'); }
+    finally { setUploading(d => ({ ...d, [videos[i].id]: false })); }
   };
   return (
     <div className="space-y-5">
@@ -988,7 +1001,7 @@ function VideoListEditor({
                   </div>
                 </div>
                 <div>
-                  <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">VIDEO URL</label>
+                  <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">VIDEO URL OR UPLOAD</label>
                   <div className="flex gap-2 items-center">
                     <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm flex-1" placeholder="YouTube, Vimeo, .mp4, or Instagram link" />
                     {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && (
@@ -1000,9 +1013,26 @@ function VideoListEditor({
                         {downloading[v.id] ? 'Downloading…' : '⬇ Save to site'}
                       </button>
                     )}
+                    <input
+                      ref={el => { fileInputRefs.current[v.id] = el; }}
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(i, f); e.target.value = ''; }}
+                    />
+                    <button
+                      onClick={() => fileInputRefs.current[v.id]?.click()}
+                      disabled={uploading[v.id]}
+                      className="shrink-0 text-[9px] uppercase tracking-[2px] font-bold border border-[#b3a384] text-[#b3a384] px-3 py-2 rounded hover:bg-[#b3a384] hover:text-white disabled:opacity-50 transition-colors whitespace-nowrap min-h-[44px]"
+                    >
+                      {uploading[v.id] ? 'Uploading…' : '↑ Upload'}
+                    </button>
                   </div>
                   {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && !downloading[v.id] && (
-                    <p className="text-[9px] text-[#b3a384] mt-1">Instagram link detected — click &quot;Save to site&quot; to download it for inline playback</p>
+                    <p className="text-[9px] text-[#b3a384] mt-1">Instagram link detected — click &quot;Save to site&quot; to download it, or use &quot;Upload&quot; to upload a video file directly</p>
+                  )}
+                  {!v.url && (
+                    <p className="text-[9px] text-gray-400 mt-1">Paste a link above, or click &quot;Upload&quot; to upload an MP4 from your device</p>
                   )}
                 </div>
               </div>
@@ -1078,8 +1108,18 @@ function YearCollectionEditor({
     const newId = `coll-${Date.now()}`;
     const updated = {
       ...years,
-      [activeYear]: { collections: [...existing, { id: newId, name: "", images: [] }] },
+      [activeYear]: { collections: [{ id: newId, name: "", images: [] }, ...existing] },
     };
+    onChange(updated);
+  };
+
+  const moveCollection = (collIdx: number, dir: -1 | 1) => {
+    if (!activeYear) return;
+    const existing = [...(years[activeYear]?.collections ?? [])];
+    const newIdx = collIdx + dir;
+    if (newIdx < 0 || newIdx >= existing.length) return;
+    [existing[collIdx], existing[newIdx]] = [existing[newIdx], existing[collIdx]];
+    const updated = { ...years, [activeYear]: { collections: existing } };
     onChange(updated);
   };
 
@@ -1189,9 +1229,29 @@ function YearCollectionEditor({
             <div key={coll.id} className="border border-gray-100 rounded-lg p-5 sm:p-6 space-y-4 bg-white shadow-sm">
               {/* Design header */}
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-500">
-                  Design {collIdx + 1}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-500">
+                    Design {collIdx + 1}
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => moveCollection(collIdx, -1)}
+                      disabled={collIdx === 0}
+                      title="Move Up"
+                      className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:border-black hover:text-black transition-colors disabled:opacity-20 disabled:cursor-not-allowed text-xs font-bold"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveCollection(collIdx, 1)}
+                      disabled={collIdx === activeCollections.length - 1}
+                      title="Move Down"
+                      className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:border-black hover:text-black transition-colors disabled:opacity-20 disabled:cursor-not-allowed text-xs font-bold"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </div>
                 <button
                   onClick={() => deleteCollection(collIdx)}
                   className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-4 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"
@@ -3932,6 +3992,27 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* Client Videos Section */}
+              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
+                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">CLIENT VIDEOS SECTION</label>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION TITLE</label>
+                      <input value={(content.experience as any)?.videoSectionTitle ?? ""} onChange={(e) => set("experience.videoSectionTitle", e.target.value)} className="admin-input font-display text-xl" placeholder="CLIENT STORIES" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION SUBTITLE (optional)</label>
+                      <input value={(content.experience as any)?.videoSectionSubtitle ?? ""} onChange={(e) => set("experience.videoSectionSubtitle", e.target.value)} className="admin-input" placeholder="A few words from our brides..." />
+                    </div>
+                  </div>
+                  <VideoListEditor
+                    videos={(content.experience as any)?.videos ?? []}
+                    onChange={(v) => set("experience.videos", v)}
+                  />
+                </div>
+              </div>
+
               {/* Hero Section */}
               <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
                 <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">HERO SECTION</label>
@@ -3987,27 +4068,6 @@ export default function AdminDashboard() {
                   <TestimonialsEditor
                     testimonials={(content.experience as any)?.testimonials ?? []}
                     onChange={(t) => set("experience.testimonials", t)}
-                  />
-                </div>
-              </div>
-
-              {/* Client Videos Section */}
-              <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 lg:p-12">
-                <label className="text-xs uppercase tracking-[3px] text-gray-400 font-bold mb-8 block">CLIENT VIDEOS SECTION</label>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION TITLE</label>
-                      <input value={(content.experience as any)?.videoSectionTitle ?? ""} onChange={(e) => set("experience.videoSectionTitle", e.target.value)} className="admin-input font-display text-xl" placeholder="CLIENT STORIES" />
-                    </div>
-                    <div>
-                      <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-2 block">SECTION SUBTITLE (optional)</label>
-                      <input value={(content.experience as any)?.videoSectionSubtitle ?? ""} onChange={(e) => set("experience.videoSectionSubtitle", e.target.value)} className="admin-input" placeholder="A few words from our brides..." />
-                    </div>
-                  </div>
-                  <VideoListEditor
-                    videos={(content.experience as any)?.videos ?? []}
-                    onChange={(v) => set("experience.videos", v)}
                   />
                 </div>
               </div>
