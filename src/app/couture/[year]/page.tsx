@@ -120,7 +120,7 @@ export default async function CoutureYearPage({
                     </div>
                   </div>
                   <div className="px-4 sm:px-8 md:px-12 max-w-screen-xl mx-auto">
-                    <CollectionGrid collections={colls} />
+                    <CollectionGrid collections={colls} section="couture" year={y} />
                   </div>
                 </section>
               ))
@@ -135,7 +135,7 @@ export default async function CoutureYearPage({
         ) : (
           /* Single year */
           <div className="px-4 sm:px-8 md:px-12 pb-20 max-w-screen-xl mx-auto">
-            <CollectionGrid collections={collections} />
+            <CollectionGrid collections={collections} section="couture" year={year} />
           </div>
         )}
       </div>

@@ -1113,15 +1113,6 @@ function YearCollectionEditor({
     onChange(updated);
   };
 
-  const moveCollection = (collIdx: number, dir: -1 | 1) => {
-    if (!activeYear) return;
-    const existing = [...(years[activeYear]?.collections ?? [])];
-    const newIdx = collIdx + dir;
-    if (newIdx < 0 || newIdx >= existing.length) return;
-    [existing[collIdx], existing[newIdx]] = [existing[newIdx], existing[collIdx]];
-    const updated = { ...years, [activeYear]: { collections: existing } };
-    onChange(updated);
-  };
 
   const updateCollectionName = (collIdx: number, name: string) => {
     if (!activeYear) return;
@@ -1229,29 +1220,9 @@ function YearCollectionEditor({
             <div key={coll.id} className="border border-gray-100 rounded-lg p-5 sm:p-6 space-y-4 bg-white shadow-sm">
               {/* Design header */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-500">
-                    Design {collIdx + 1}
-                  </p>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => moveCollection(collIdx, -1)}
-                      disabled={collIdx === 0}
-                      title="Move Up"
-                      className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:border-black hover:text-black transition-colors disabled:opacity-20 disabled:cursor-not-allowed text-xs font-bold"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      onClick={() => moveCollection(collIdx, 1)}
-                      disabled={collIdx === activeCollections.length - 1}
-                      title="Move Down"
-                      className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:border-black hover:text-black transition-colors disabled:opacity-20 disabled:cursor-not-allowed text-xs font-bold"
-                    >
-                      ↓
-                    </button>
-                  </div>
-                </div>
+                <p className="text-[11px] uppercase tracking-[3px] font-black text-gray-500">
+                  Design {collIdx + 1}
+                </p>
                 <button
                   onClick={() => deleteCollection(collIdx)}
                   className="text-[10px] text-red-500 uppercase tracking-[2px] font-black border border-red-200 px-4 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"

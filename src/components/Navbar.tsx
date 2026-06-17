@@ -57,27 +57,29 @@ export default function Navbar({ content }: { content: SiteContent }) {
   return (
     <>
       <header className={`w-full fixed top-0 left-0 z-50 transition-all duration-500 ${
-        transparent ? "bg-transparent" : "bg-[#0d0d0d]/95 backdrop-blur-sm"
+        transparent
+          ? "bg-gradient-to-b from-black/50 to-transparent"
+          : "bg-[#0d0d0d]/96 backdrop-blur-sm"
       }`}>
         <div className="flex items-center justify-between h-[60px] sm:h-[68px] px-5 sm:px-10 md:px-16 max-w-[1440px] mx-auto">
 
           {/* Brand */}
           <Link href="/" onClick={handleLogoClick} className="flex flex-col leading-none gap-[3px]">
-            <span className="font-display text-[10px] sm:text-[11px] tracking-[3px] uppercase text-white">
+            <span className="font-display text-[11px] sm:text-[13px] tracking-[3px] uppercase text-white">
               {brand.toUpperCase()}
             </span>
-            <span className="text-[7px] tracking-[2.5px] uppercase text-white/45">
+            <span className="text-[7px] tracking-[2.5px] uppercase text-white/55">
               Couture House
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-x-6 lg:gap-x-8">
+          <nav className="hidden md:flex items-center gap-x-6 lg:gap-x-9">
             {navLinks.map((l) => (
               <Link
                 key={`${l.href}-${l.label}`}
                 href={l.href}
-                className="text-[8.5px] lg:text-[9px] tracking-[2px] uppercase text-white/70 hover:text-white transition-colors font-medium"
+                className="text-[10px] lg:text-[11px] tracking-[2.5px] uppercase text-white/80 hover:text-white transition-colors font-medium"
               >
                 {l.label}
               </Link>
@@ -87,7 +89,7 @@ export default function Navbar({ content }: { content: SiteContent }) {
           {/* Desktop book btn */}
           <Link
             href="/contact"
-            className="hidden md:inline-flex items-center px-5 py-2 text-[7.5px] tracking-[2px] uppercase border border-white/35 text-white hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
+            className="hidden md:inline-flex items-center px-5 py-2 text-[9px] tracking-[2px] uppercase border border-white/40 text-white hover:bg-white hover:text-black transition-all duration-300 whitespace-nowrap"
           >
             Book Appointment
           </Link>
