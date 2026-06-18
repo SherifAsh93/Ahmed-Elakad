@@ -4,9 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { optimizeImage } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 const ALL_YEARS = ["2026","2025","2024","2023","2022","2021","2020","2019","2018","2017","2016"];
 
 export default async function CoutureYearPage({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { getContent, saveContent, Collection } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
 
   sec.years[year].collections = collections;
   await saveContent(content);
+  revalidatePath(`/${section}`, "layout");
 
   return NextResponse.json({ ok: true });
 }

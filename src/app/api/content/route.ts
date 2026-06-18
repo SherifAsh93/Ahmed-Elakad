@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getContent, saveContent } from "@/lib/content";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     await saveContent(body);
+    revalidatePath("/", "layout");
     const res = NextResponse.json({ ok: true });
     refreshSession(res);
     return res;

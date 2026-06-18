@@ -51,42 +51,32 @@ function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: (e: React.
   );
 }
 
-// ── Edit-mode card (puzzle piece) ───────────────────
+// ── Edit-mode card (drag to reorder) ────────────────
 function EditCard({
   coll,
   idx,
-  isSelected,
-  hasSelection,
-  onTap,
+  isDragging,
+  onPointerDown,
 }: {
   coll: Collection;
   idx: number;
-  isSelected: boolean;
-  hasSelection: boolean;
-  onTap: () => void;
+  isDragging: boolean;
+  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
   const label = coll.name || `Design ${idx + 1}`;
 
   return (
     <div
-      onClick={onTap}
-      className={`relative cursor-pointer select-none transition-all duration-200 ${
-        isSelected
-          ? "scale-[0.94] z-10"
-          : hasSelection
-          ? "hover:scale-[0.97]"
-          : "hover:scale-[0.98]"
+      data-drag-idx={idx}
+      onPointerDown={onPointerDown}
+      className={`relative select-none transition-all duration-150 ${
+        isDragging
+          ? "ring-[3px] ring-[#b3a384] ring-offset-4 scale-[1.04] shadow-2xl z-10 opacity-90"
+          : "cursor-grab hover:scale-[0.98]"
       }`}
     >
-      <div
-        className={`relative aspect-[3/4] overflow-hidden rounded-sm transition-all duration-200 ${
-          isSelected
-            ? "ring-[3px] ring-[#b3a384] ring-offset-4 shadow-2xl"
-            : hasSelection
-            ? "ring-2 ring-dashed ring-[#b3a384]/60 hover:ring-[#b3a384] hover:ring-solid"
-            : "ring-1 ring-black/10 hover:ring-[#b3a384]/40"
-        }`}
-      >
+      <div className="relative aspect-[3/4] overflow-hidden rounded-sm ring-1 ring-black/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={optimizeImage(coll.images[0])}
           alt={label}
@@ -95,72 +85,25 @@ function EditCard({
           draggable={false}
         />
 
-        {/* Overlay */}
-        <div
-          className={`absolute inset-0 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
-            isSelected
-              ? "bg-black/55"
-              : hasSelection
-              ? "bg-black/30 hover:bg-black/40"
-              : "bg-black/20 hover:bg-black/30"
-          }`}
-        >
-          {isSelected ? (
-            <>
-              <div className="w-9 h-9 rounded-full bg-[#b3a384] flex items-center justify-center text-white text-lg font-light">
-                ✦
-              </div>
-              <p className="text-white text-[8px] tracking-[2px] uppercase font-bold text-center px-4 leading-relaxed">
-                Now tap any other card to swap
-              </p>
-              <p className="text-white/60 text-[7px] tracking-[1.5px] uppercase text-center">
-                or tap this again to cancel
-              </p>
-            </>
-          ) : hasSelection ? (
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 rounded-full border-2 border-white/60 border-dashed flex items-center justify-center text-white text-base">
-                ↓
-              </div>
-              <p className="text-white/80 text-[7px] tracking-[2px] uppercase font-medium">
-                Swap here
-              </p>
-            </div>
-          ) : (
-            <div className="w-8 h-8 flex items-center justify-center rounded bg-black/50 text-white/80 shadow">
-              {/* Grip dots */}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="8.5" cy="7" r="1.8" /><circle cx="15.5" cy="7" r="1.8" />
-                <circle cx="8.5" cy="12" r="1.8" /><circle cx="15.5" cy="12" r="1.8" />
-                <circle cx="8.5" cy="17" r="1.8" /><circle cx="15.5" cy="17" r="1.8" />
-              </svg>
-            </div>
-          )}
+        {/* Overlay with grip icon */}
+        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-150 ${isDragging ? "bg-black/40" : "bg-black/20"}`}>
+          <div className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-lg transition-all ${isDragging ? "bg-[#b3a384] text-white scale-110" : "bg-black/50 text-white/80"}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="8.5" cy="7" r="1.8" /><circle cx="15.5" cy="7" r="1.8" />
+              <circle cx="8.5" cy="12" r="1.8" /><circle cx="15.5" cy="12" r="1.8" />
+              <circle cx="8.5" cy="17" r="1.8" /><circle cx="15.5" cy="17" r="1.8" />
+            </svg>
+          </div>
         </div>
 
         {/* Position badge */}
-        <div
-          className={`absolute top-2 left-2 w-6 h-6 rounded text-[9px] font-bold flex items-center justify-center shadow ${
-            isSelected ? "bg-[#b3a384] text-white" : "bg-black/55 text-white"
-          }`}
-        >
+        <div className={`absolute top-2 left-2 w-6 h-6 rounded text-[9px] font-bold flex items-center justify-center shadow ${isDragging ? "bg-[#b3a384] text-white" : "bg-black/55 text-white"}`}>
           {idx + 1}
         </div>
-
-        {/* Selected indicator — count badge */}
-        {isSelected && (
-          <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#b3a384] text-white text-[7px] tracking-[1.5px] uppercase font-bold rounded">
-            Selected
-          </div>
-        )}
       </div>
 
       {coll.name && (
-        <h2
-          className={`mt-3 font-display text-[11px] sm:text-sm uppercase tracking-[0.1em] text-center leading-snug transition-colors ${
-            isSelected ? "text-[#b3a384]" : "text-[#aaa]"
-          }`}
-        >
+        <h2 className={`mt-3 font-display text-[11px] sm:text-sm uppercase tracking-[0.1em] text-center leading-snug transition-colors ${isDragging ? "text-[#b3a384]" : "text-[#aaa]"}`}>
           {coll.name}
         </h2>
       )}
@@ -168,12 +111,9 @@ function EditCard({
   );
 }
 
-// ── View-mode card (browse images, click to open gallery) ──
+// ── View-mode card (browse images, explicit button opens gallery) ──
 function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrolledRef = useRef(false);
-  const ptrDownRef = useRef(false);
-  const ptrStartRef = useRef<{ x: number; y: number } | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -189,7 +129,6 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    scrolledRef.current = true;
     setAtStart(el.scrollLeft <= 5);
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 5);
     setCurrentIdx(Math.round(el.scrollLeft / el.clientWidth));
@@ -201,33 +140,13 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
   };
 
   return (
-    <div
-      className="group text-left relative"
-      onPointerDown={(e) => {
-        scrolledRef.current = false;
-        ptrDownRef.current = true;
-        ptrStartRef.current = { x: e.clientX, y: e.clientY };
-      }}
-      onPointerMove={(e) => {
-        if (!ptrDownRef.current || !ptrStartRef.current) return;
-        const dx = Math.abs(e.clientX - ptrStartRef.current.x);
-        const dy = Math.abs(e.clientY - ptrStartRef.current.y);
-        // Mark as scrolled if finger moved more than 8px in any direction
-        if (dx > 8 || dy > 8) scrolledRef.current = true;
-      }}
-      onPointerUp={() => { ptrDownRef.current = false; }}
-      onPointerCancel={() => {
-        // Browser took over touch (e.g. page scroll) — prevent gallery open
-        ptrDownRef.current = false;
-        scrolledRef.current = true;
-      }}
-    >
-      <div className="relative aspect-[3/4] bg-[#f0ede8] mb-5 overflow-hidden">
+    <div className="group text-left relative">
+      <div className="relative aspect-[3/4] bg-[#f0ede8] overflow-hidden">
+        {/* Image carousel — scroll only, no click-to-open */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          onClick={() => { if (!scrolledRef.current) onOpen(); }}
-          className="flex h-full overflow-x-auto cursor-pointer"
+          className="flex h-full overflow-x-auto"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {coll.images.map((src, i) => (
@@ -244,31 +163,38 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
           ))}
         </div>
 
-        <div className="absolute inset-0 transition-all duration-500 pointer-events-none bg-black/0 group-hover:bg-black/10" />
-
         {hasMultiple && !atStart && <ArrowBtn dir="left" onClick={(e) => scrollTo(-1, e)} />}
         {hasMultiple && !atEnd && <ArrowBtn dir="right" onClick={(e) => scrollTo(1, e)} />}
 
+        {/* Image counter */}
         {hasMultiple && (
-          <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1 pointer-events-none">
+          <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1 pointer-events-none">
             {coll.images.length <= 8 ? (
               coll.images.map((_, i) => (
                 <div key={i} className={`h-[3px] rounded-full transition-all duration-300 ${i === currentIdx ? "w-4 bg-white" : "w-[3px] bg-white/50"}`} />
               ))
             ) : (
-              <span className="text-[9px] text-white/80 font-medium tracking-wider bg-black/25 backdrop-blur-[2px] rounded-full px-2 py-0.5">
+              <span className="text-[9px] text-white/80 font-medium tracking-wider bg-black/25 rounded-full px-2 py-0.5">
                 {currentIdx + 1} / {coll.images.length}
               </span>
             )}
           </div>
         )}
+
+        {/* Dedicated gallery button — unambiguous tap target */}
+        <button
+          onClick={onOpen}
+          className="absolute bottom-0 left-0 right-0 py-2.5 bg-black/50 hover:bg-black/65 transition-colors text-white text-[8px] tracking-[3px] uppercase font-medium flex items-center justify-center gap-1.5"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+          View Gallery
+        </button>
       </div>
 
       {coll.name && (
-        <h2
-          onClick={onOpen}
-          className="font-display text-[11px] sm:text-sm md:text-base uppercase tracking-[0.1em] text-center leading-snug text-[#1a1a1a] cursor-pointer group-hover:text-[#b3a384] transition-colors"
-        >
+        <h2 className="mt-4 font-display text-[11px] sm:text-sm md:text-base uppercase tracking-[0.1em] text-center leading-snug text-[#1a1a1a] group-hover:text-[#b3a384] transition-colors">
           {coll.name}
         </h2>
       )}
@@ -283,11 +209,29 @@ export default function CollectionGrid({ collections, section, year }: Collectio
   const [open, setOpen] = useState<Collection | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  // items only used in edit mode — initialized from filled when entering edit mode
-  const [items, setItems] = useState<Collection[]>([]);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  // View-mode display order — starts from server data, updated after successful saves
+  const [viewOrder, setViewOrder] = useState<Collection[]>(filled);
+  // Sync when server sends fresh data (navigation after revalidatePath)
+  useEffect(() => {
+    setViewOrder(collections.filter((c) => c.images.length > 0));
+  }, [collections]);
+
+  // Edit-mode state
+  const [items, setItemsState] = useState<Collection[]>([]);
+  const itemsRef = useRef<Collection[]>([]); // sync ref for use in async handlers
+  const [dragging, setDragging] = useState<number | null>(null);
+  const draggingRef = useRef<number | null>(null);
+  const preDragRef = useRef<Collection[]>([]); // snapshot for cancel/revert
+  const gridRef = useRef<HTMLDivElement>(null);
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  function setItems(next: Collection[]) {
+    itemsRef.current = next;
+    setItemsState(next);
+  }
 
   // Single shared auth check (module-level cache)
   useEffect(() => {
@@ -303,62 +247,80 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     return () => window.removeEventListener("keydown", h);
   }, [open]);
 
-  // iOS-safe scroll lock: position:fixed preserves scroll position on Safari
+  // Prevent background scroll when gallery is open
   useEffect(() => {
-    if (!open) return;
-    const y = window.scrollY;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${y}px`;
-    document.body.style.overflow = "hidden";
-    document.body.style.width = "100%";
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.overflow = "";
-      document.body.style.width = "";
-      window.scrollTo(0, y);
-    };
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   function enterEdit() {
-    setItems([...filled]); // snapshot current visible order
-    setSelectedIdx(null);
+    const snapshot = [...viewOrder];
+    itemsRef.current = snapshot;
+    setItemsState(snapshot);
+    draggingRef.current = null;
+    setDragging(null);
     setEditMode(true);
   }
 
   function exitEdit() {
-    setSelectedIdx(null);
+    draggingRef.current = null;
+    setDragging(null);
     setEditMode(false);
   }
 
-  async function handleCardTap(idx: number) {
-    if (selectedIdx === null) {
-      // Pick up this card
-      setSelectedIdx(idx);
-    } else if (selectedIdx === idx) {
-      // Tap same card → deselect (put back)
-      setSelectedIdx(null);
-    } else {
-      // Swap selected card with tapped card
-      const next = [...items];
-      [next[selectedIdx], next[idx]] = [next[idx], next[selectedIdx]];
-      setItems(next);
-      setSelectedIdx(null);
-      // Auto-save immediately
-      setSaving(true);
-      try {
-        await fetch("/api/admin/reorder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ section, year, collections: next }),
-        });
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      } finally {
-        setSaving(false);
-      }
+  // ── Drag handlers ────────────────────────────────────
+
+  function handleCardPointerDown(e: React.PointerEvent<HTMLDivElement>, idx: number) {
+    e.preventDefault();
+    gridRef.current?.setPointerCapture(e.pointerId);
+    preDragRef.current = [...itemsRef.current];
+    draggingRef.current = idx;
+    setDragging(idx);
+  }
+
+  function handleGridPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (draggingRef.current === null) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cardEl = el?.closest("[data-drag-idx]") as HTMLElement | null;
+    if (!cardEl) return;
+    const toIdx = Number(cardEl.getAttribute("data-drag-idx"));
+    if (isNaN(toIdx) || toIdx === draggingRef.current) return;
+    const next = [...itemsRef.current];
+    const [dragged] = next.splice(draggingRef.current, 1);
+    next.splice(toIdx, 0, dragged);
+    draggingRef.current = toIdx;
+    setItems(next);
+    setDragging(toIdx);
+  }
+
+  async function handleGridPointerUp() {
+    if (draggingRef.current === null) return;
+    draggingRef.current = null;
+    setDragging(null);
+    const finalItems = itemsRef.current;
+    setSaving(true);
+    try {
+      await fetch("/api/admin/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, year, collections: finalItems }),
+      });
+      setViewOrder(finalItems); // persist new order for view mode
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
     }
   }
+
+  function handleGridPointerCancel() {
+    if (draggingRef.current === null) return;
+    draggingRef.current = null;
+    setDragging(null);
+    setItems(preDragRef.current); // revert to pre-drag state
+  }
+
+  // ── Render ───────────────────────────────────────────
 
   if (filled.length === 0) {
     return (
@@ -371,7 +333,7 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     );
   }
 
-  const displayItems = editMode ? items : filled;
+  const displayItems = editMode ? items : viewOrder;
   const { grid, wrap } = adaptiveGrid(displayItems.length);
 
   return (
@@ -388,14 +350,14 @@ export default function CollectionGrid({ collections, section, year }: Collectio
                 ✓ Saved
               </span>
             )}
-            {editMode && !saving && !saved && selectedIdx !== null && (
+            {editMode && !saving && !saved && dragging !== null && (
               <span className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">
-                Now tap another card to swap
+                Dragging…
               </span>
             )}
-            {editMode && !saving && !saved && selectedIdx === null && (
+            {editMode && !saving && !saved && dragging === null && (
               <span className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">
-                Tap a card to pick it up
+                Hold &amp; drag to reorder
               </span>
             )}
           </div>
@@ -413,16 +375,22 @@ export default function CollectionGrid({ collections, section, year }: Collectio
       )}
 
       <div className={wrap}>
-        <div className={`grid ${grid} gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-14`}>
+        <div
+          ref={gridRef}
+          className={`grid ${grid} gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-14`}
+          style={editMode ? { touchAction: "none", cursor: dragging !== null ? "grabbing" : "grab" } : {}}
+          onPointerMove={editMode ? handleGridPointerMove : undefined}
+          onPointerUp={editMode ? handleGridPointerUp : undefined}
+          onPointerCancel={editMode ? handleGridPointerCancel : undefined}
+        >
           {displayItems.map((coll, idx) =>
             editMode ? (
               <EditCard
                 key={coll.id}
                 coll={coll}
                 idx={idx}
-                isSelected={selectedIdx === idx}
-                hasSelection={selectedIdx !== null}
-                onTap={() => handleCardTap(idx)}
+                isDragging={dragging === idx}
+                onPointerDown={(e) => handleCardPointerDown(e, idx)}
               />
             ) : (
               <ViewCard
