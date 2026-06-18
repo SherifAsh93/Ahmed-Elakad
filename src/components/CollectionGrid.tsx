@@ -172,6 +172,8 @@ function EditCard({
 function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrolledRef = useRef(false);
+  const ptrDownRef = useRef(false);
+  const ptrStartRef = useRef<{ x: number; y: number } | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -201,7 +203,24 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
   return (
     <div
       className="group text-left relative"
-      onPointerDown={() => { scrolledRef.current = false; }}
+      onPointerDown={(e) => {
+        scrolledRef.current = false;
+        ptrDownRef.current = true;
+        ptrStartRef.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerMove={(e) => {
+        if (!ptrDownRef.current || !ptrStartRef.current) return;
+        const dx = Math.abs(e.clientX - ptrStartRef.current.x);
+        const dy = Math.abs(e.clientY - ptrStartRef.current.y);
+        // Mark as scrolled if finger moved more than 8px in any direction
+        if (dx > 8 || dy > 8) scrolledRef.current = true;
+      }}
+      onPointerUp={() => { ptrDownRef.current = false; }}
+      onPointerCancel={() => {
+        // Browser took over touch (e.g. page scroll) — prevent gallery open
+        ptrDownRef.current = false;
+        scrolledRef.current = true;
+      }}
     >
       <div className="relative aspect-[3/4] bg-[#f0ede8] mb-5 overflow-hidden">
         <div
@@ -284,10 +303,21 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     return () => window.removeEventListener("keydown", h);
   }, [open]);
 
-  // Body scroll lock for gallery
+  // iOS-safe scroll lock: position:fixed preserves scroll position on Safari
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!open) return;
+    const y = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${y}px`;
+    document.body.style.overflow = "hidden";
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.overflow = "";
+      document.body.style.width = "";
+      window.scrollTo(0, y);
+    };
   }, [open]);
 
   function enterEdit() {
