@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
 
   sec.years[year].collections = collections;
   await saveContent(content);
-  revalidatePath(`/${section}`, "layout");
+  revalidatePath(`/${section}/[year]`, "page");
+  revalidatePath(`/${section}/all`);
 
   return NextResponse.json({ ok: true });
 }

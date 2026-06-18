@@ -2,8 +2,6 @@
 import { getContent } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default async function AboutPage() {
   const content = await getContent();

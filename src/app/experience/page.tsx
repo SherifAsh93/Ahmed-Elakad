@@ -5,8 +5,6 @@ import Link from "next/link";
 import TestimonialsSection from "./TestimonialsSection";
 import VideosSection from "./VideosSection";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function hasValidUrl(v: VideoItem) {
   return (
