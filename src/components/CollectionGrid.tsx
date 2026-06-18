@@ -8,6 +8,11 @@ interface Collection {
   id: string;
   name?: string;
   images: string[];
+  coverIndex?: number;
+}
+
+function coverImg(coll: Collection): string {
+  return coll.images[coll.coverIndex ?? 0] ?? coll.images[0];
 }
 
 export interface CollectionGridProps {
@@ -51,19 +56,22 @@ function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: (e: React.
   );
 }
 
-// ── Edit-mode card (drag to reorder) ────────────────
+// ── Edit-mode card (drag to reorder + cover picker) ─
 function EditCard({
   coll,
   idx,
   isDragging,
   onPointerDown,
+  onPickCover,
 }: {
   coll: Collection;
   idx: number;
   isDragging: boolean;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onPickCover: () => void;
 }) {
   const label = coll.name || `Design ${idx + 1}`;
+  const hasCover = coll.images.length > 1;
 
   return (
     <div
@@ -78,7 +86,7 @@ function EditCard({
       <div className="relative aspect-[3/4] overflow-hidden rounded-sm ring-1 ring-black/10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={optimizeImage(coll.images[0])}
+          src={optimizeImage(coverImg(coll))}
           alt={label}
           className="w-full h-full object-cover pointer-events-none"
           loading="lazy"
@@ -100,6 +108,28 @@ function EditCard({
         <div className={`absolute top-2 left-2 w-6 h-6 rounded text-[9px] font-bold flex items-center justify-center shadow ${isDragging ? "bg-[#b3a384] text-white" : "bg-black/55 text-white"}`}>
           {idx + 1}
         </div>
+
+        {/* Cover image indicator badge */}
+        {(coll.coverIndex ?? 0) > 0 && (
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-[#b3a384] text-white text-[7px] tracking-[1.5px] uppercase font-bold rounded">
+            Cover #{(coll.coverIndex ?? 0) + 1}
+          </div>
+        )}
+
+        {/* Change cover button — stops drag from starting */}
+        {hasCover && (
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onPickCover}
+            className="absolute bottom-0 left-0 right-0 py-2 bg-black/60 hover:bg-black/80 transition-colors text-white text-[7px] tracking-[2px] uppercase font-medium flex items-center justify-center gap-1"
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Change Cover
+          </button>
+        )}
       </div>
 
       {coll.name && (
@@ -149,7 +179,11 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
           className="flex h-full overflow-x-auto"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {coll.images.map((src, i) => (
+          {/* Show cover image first, then the rest in original order */}
+          {[
+            coll.images[coll.coverIndex ?? 0],
+            ...coll.images.filter((_, i) => i !== (coll.coverIndex ?? 0)),
+          ].map((src, i) => (
             <div key={i} className="flex-none h-full" style={{ aspectRatio: "3/4" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -227,6 +261,13 @@ export default function CollectionGrid({ collections, section, year }: Collectio
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Cover image picker state
+  const [coverPickerFor, setCoverPickerFor] = useState<{
+    collId: string;
+    images: string[];
+    currentIdx: number;
+  } | null>(null);
 
   function setItems(next: Collection[]) {
     itemsRef.current = next;
@@ -320,6 +361,32 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     setItems(preDragRef.current); // revert to pre-drag state
   }
 
+  async function handleSetCover(imageIdx: number) {
+    if (!coverPickerFor) return;
+    const { collId } = coverPickerFor;
+
+    // Update both edit and view order locally
+    const patch = (arr: Collection[]) =>
+      arr.map((c) => (c.id === collId ? { ...c, coverIndex: imageIdx } : c));
+    setItems(patch(itemsRef.current));
+    itemsRef.current = patch(itemsRef.current);
+    setViewOrder((v) => patch(v));
+    setCoverPickerFor(null);
+
+    setSaving(true);
+    try {
+      await fetch("/api/admin/cover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, year, collectionId: collId, coverIndex: imageIdx }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // ── Render ───────────────────────────────────────────
 
   if (filled.length === 0) {
@@ -391,6 +458,11 @@ export default function CollectionGrid({ collections, section, year }: Collectio
                 idx={idx}
                 isDragging={dragging === idx}
                 onPointerDown={(e) => handleCardPointerDown(e, idx)}
+                onPickCover={() => setCoverPickerFor({
+                  collId: coll.id,
+                  images: coll.images,
+                  currentIdx: coll.coverIndex ?? 0,
+                })}
               />
             ) : (
               <ViewCard
@@ -403,6 +475,62 @@ export default function CollectionGrid({ collections, section, year }: Collectio
           )}
         </div>
       </div>
+
+      {/* Cover image picker */}
+      {coverPickerFor && (
+        <div className="fixed inset-0 z-[400] bg-black/95 flex flex-col overscroll-contain">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+            <div>
+              <p className="text-white text-[11px] tracking-[3px] uppercase font-medium">Select Cover Image</p>
+              <p className="text-white/40 text-[9px] tracking-[2px] uppercase mt-0.5">
+                Tap the image you want shown on the card
+              </p>
+            </div>
+            <button
+              onClick={() => setCoverPickerFor(null)}
+              className="text-white/60 hover:text-white transition-colors p-2 -mr-2 text-2xl leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-3 gap-2">
+              {coverPickerFor.images.map((src, i) => {
+                const isActive = i === coverPickerFor.currentIdx;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => handleSetCover(i)}
+                    className={`relative aspect-[3/4] overflow-hidden rounded-sm transition-all ${
+                      isActive ? "ring-[3px] ring-[#b3a384] ring-offset-2" : "ring-1 ring-white/10 hover:ring-white/30"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={optimizeImage(src)}
+                      alt={`Image ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {isActive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="w-8 h-8 rounded-full bg-[#b3a384] flex items-center justify-center shadow-lg">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 py-1 bg-black/50 text-white text-[8px] text-center tracking-wider">
+                      {isActive ? "Current Cover" : `Image ${i + 1}`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Full-screen gallery modal */}
       {open && (

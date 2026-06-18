@@ -22,6 +22,7 @@ export interface Collection {
   id: string;
   name?: string;
   images: string[];
+  coverIndex?: number;
 }
 
 export interface CategoryYear {
