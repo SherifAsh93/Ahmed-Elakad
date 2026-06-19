@@ -41,37 +41,196 @@ function adaptiveGrid(count: number): { grid: string; wrap: string } {
   return { grid: "grid-cols-2 lg:grid-cols-3", wrap: "" };
 }
 
-// ── Arrow nav button ─────────────────────────────────
+// ── Arrow nav button — transparent, animated ─────────
 function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
       aria-label={dir === "left" ? "Previous" : "Next"}
-      className={`absolute top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/85 backdrop-blur-sm border border-black/10 text-[#1a1a1a] shadow-md hover:bg-white hover:scale-105 transition-all duration-150 ${dir === "left" ? "left-2" : "right-2"}`}
+      className={`absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center ${dir === "left" ? "left-1" : "right-1"}`}
     >
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        {dir === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
-      </svg>
+      <span className={dir === "left" ? "animate-nudge-left" : "animate-nudge-x"}>
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.85))" }}
+        >
+          {dir === "left"
+            ? <polyline points="15 18 9 12 15 6" />
+            : <polyline points="9 18 15 12 9 6" />}
+        </svg>
+      </span>
     </button>
   );
 }
 
-// ── Edit-mode card (drag to reorder + cover picker) ─
+// ── Image reorder modal ──────────────────────────────
+function ImageReorderModal({
+  initialImages,
+  coverIndex,
+  onClose,
+  onSave,
+}: {
+  initialImages: string[];
+  coverIndex: number;
+  onClose: () => void;
+  onSave: (images: string[], newCoverIndex: number) => void;
+}) {
+  const coverUrl = initialImages[coverIndex] ?? initialImages[0];
+  const [images, setImagesState] = useState<string[]>(initialImages);
+  const imagesRef = useRef<string[]>(initialImages);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const draggingRef = useRef<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  function setImgs(next: string[]) {
+    imagesRef.current = next;
+    setImagesState(next);
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>, idx: number) {
+    e.preventDefault();
+    gridRef.current?.setPointerCapture(e.pointerId);
+    draggingRef.current = idx;
+    setDragging(idx);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (draggingRef.current === null) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const card = el?.closest("[data-img-idx]") as HTMLElement | null;
+    if (!card) return;
+    const toIdx = Number(card.getAttribute("data-img-idx"));
+    if (isNaN(toIdx) || toIdx === draggingRef.current) return;
+    const next = [...imagesRef.current];
+    const [moved] = next.splice(draggingRef.current, 1);
+    next.splice(toIdx, 0, moved);
+    draggingRef.current = toIdx;
+    setImgs(next);
+    setDragging(toIdx);
+  }
+
+  function handlePointerUp() {
+    draggingRef.current = null;
+    setDragging(null);
+  }
+
+  function handleSave() {
+    const newCoverIdx = imagesRef.current.indexOf(coverUrl);
+    onSave(imagesRef.current, newCoverIdx >= 0 ? newCoverIdx : 0);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[450] bg-black/96 flex flex-col overscroll-contain">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+        <div>
+          <p className="text-white text-[11px] tracking-[3px] uppercase font-medium">Reorder Images</p>
+          <p className="text-white/40 text-[9px] tracking-[2px] uppercase mt-0.5">
+            Hold &amp; drag to reorder · Cover image follows automatically
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-[#b3a384] hover:bg-[#9e8f70] transition-colors text-white text-[9px] tracking-[2px] uppercase font-bold rounded-sm"
+          >
+            Save Order
+          </button>
+          <button
+            onClick={onClose}
+            className="text-white/60 hover:text-white transition-colors p-2 -mr-2 text-2xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div
+          ref={gridRef}
+          className="grid grid-cols-3 gap-2"
+          style={{ touchAction: "none", cursor: dragging !== null ? "grabbing" : "grab" }}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          {images.map((src, i) => {
+            const isDraggingThis = dragging === i;
+            const isCover = src === coverUrl;
+            return (
+              <div
+                key={src}
+                data-img-idx={i}
+                onPointerDown={(e) => handlePointerDown(e, i)}
+                className={`relative aspect-[3/4] overflow-hidden rounded-sm select-none transition-all duration-150 ${
+                  isDraggingThis
+                    ? "ring-[3px] ring-[#b3a384] ring-offset-2 scale-[1.04] shadow-2xl opacity-90 z-10"
+                    : "ring-1 ring-white/10 cursor-grab"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={optimizeImage(src)}
+                  alt={`Image ${i + 1}`}
+                  className="w-full h-full object-cover pointer-events-none"
+                  loading="lazy"
+                  draggable={false}
+                />
+                {/* dim overlay + grip */}
+                <div className={`absolute inset-0 flex items-end justify-center pb-2 transition-all ${isDraggingThis ? "bg-black/45" : "bg-black/20"}`}>
+                  <div className={`w-7 h-7 flex items-center justify-center rounded-md shadow ${isDraggingThis ? "bg-[#b3a384]" : "bg-black/45"}`}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                      <circle cx="8.5" cy="7" r="1.8" /><circle cx="15.5" cy="7" r="1.8" />
+                      <circle cx="8.5" cy="12" r="1.8" /><circle cx="15.5" cy="12" r="1.8" />
+                      <circle cx="8.5" cy="17" r="1.8" /><circle cx="15.5" cy="17" r="1.8" />
+                    </svg>
+                  </div>
+                </div>
+                {/* Position */}
+                <div className={`absolute top-2 left-2 w-5 h-5 rounded text-[8px] font-bold flex items-center justify-center shadow ${isDraggingThis ? "bg-[#b3a384] text-white" : "bg-black/55 text-white"}`}>
+                  {i + 1}
+                </div>
+                {/* Cover badge */}
+                {isCover && (
+                  <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-[#b3a384] text-white text-[7px] tracking-[1.5px] uppercase font-bold rounded shadow">
+                    Cover
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit-mode card (drag to reorder + cover picker + image reorder) ─
 function EditCard({
   coll,
   idx,
   isDragging,
   onPointerDown,
   onPickCover,
+  onReorderImages,
 }: {
   coll: Collection;
   idx: number;
   isDragging: boolean;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
   onPickCover: () => void;
+  onReorderImages: () => void;
 }) {
   const label = coll.name || `Design ${idx + 1}`;
-  const hasCover = coll.images.length > 1;
+  const hasMultiple = coll.images.length > 1;
 
   return (
     <div
@@ -116,19 +275,33 @@ function EditCard({
           </div>
         )}
 
-        {/* Change cover button — stops drag from starting */}
-        {hasCover && (
-          <button
+        {/* Bottom action buttons */}
+        {hasMultiple && (
+          <div
+            className="absolute bottom-0 left-0 right-0 flex"
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={onPickCover}
-            className="absolute bottom-0 left-0 right-0 py-2 bg-black/60 hover:bg-black/80 transition-colors text-white text-[7px] tracking-[2px] uppercase font-medium flex items-center justify-center gap-1"
           >
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            Change Cover
-          </button>
+            <button
+              onClick={onPickCover}
+              className="flex-1 py-2 bg-black/60 hover:bg-black/80 transition-colors text-white text-[7px] tracking-[1.5px] uppercase font-medium flex items-center justify-center gap-1 border-r border-white/15"
+            >
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Cover
+            </button>
+            <button
+              onClick={onReorderImages}
+              className="flex-1 py-2 bg-black/60 hover:bg-black/80 transition-colors text-white text-[7px] tracking-[1.5px] uppercase font-medium flex items-center justify-center gap-1"
+            >
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              Reorder
+            </button>
+          </div>
         )}
       </div>
 
@@ -141,7 +314,7 @@ function EditCard({
   );
 }
 
-// ── View-mode card (browse images, explicit button opens gallery) ──
+// ── View-mode card ────────────────────────────────────
 function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -170,16 +343,16 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
   };
 
   return (
-    <div className="group text-left relative">
+    <div className="group text-left relative cursor-pointer" onClick={onOpen}>
       <div className="relative aspect-[3/4] bg-[#f0ede8] overflow-hidden">
-        {/* Image carousel — scroll only, no click-to-open */}
+        {/* Image carousel */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
+          onClick={(e) => e.stopPropagation()} // scroll area handles its own click
           className="flex h-full overflow-x-auto"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {/* Show cover image first, then the rest in original order */}
           {[
             coll.images[coll.coverIndex ?? 0],
             ...coll.images.filter((_, i) => i !== (coll.coverIndex ?? 0)),
@@ -192,6 +365,7 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
                 className="w-full h-full object-cover"
                 loading="lazy"
                 draggable={false}
+                onClick={onOpen}
               />
             </div>
           ))}
@@ -200,9 +374,9 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
         {hasMultiple && !atStart && <ArrowBtn dir="left" onClick={(e) => scrollTo(-1, e)} />}
         {hasMultiple && !atEnd && <ArrowBtn dir="right" onClick={(e) => scrollTo(1, e)} />}
 
-        {/* Image counter */}
+        {/* Image counter dots */}
         {hasMultiple && (
-          <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1 pointer-events-none">
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1 pointer-events-none">
             {coll.images.length <= 8 ? (
               coll.images.map((_, i) => (
                 <div key={i} className={`h-[3px] rounded-full transition-all duration-300 ${i === currentIdx ? "w-4 bg-white" : "w-[3px] bg-white/50"}`} />
@@ -214,17 +388,6 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
             )}
           </div>
         )}
-
-        {/* Dedicated gallery button — unambiguous tap target */}
-        <button
-          onClick={onOpen}
-          className="absolute bottom-0 left-0 right-0 py-2.5 bg-black/50 hover:bg-black/65 transition-colors text-white text-[8px] tracking-[3px] uppercase font-medium flex items-center justify-center gap-1.5"
-        >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
-          </svg>
-          View Gallery
-        </button>
       </div>
 
       {coll.name && (
@@ -244,29 +407,33 @@ export default function CollectionGrid({ collections, section, year }: Collectio
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  // View-mode display order — starts from server data, updated after successful saves
   const [viewOrder, setViewOrder] = useState<Collection[]>(filled);
-  // Sync when server sends fresh data (navigation after revalidatePath)
   useEffect(() => {
     setViewOrder(collections.filter((c) => c.images.length > 0));
   }, [collections]);
 
-  // Edit-mode state
   const [items, setItemsState] = useState<Collection[]>([]);
-  const itemsRef = useRef<Collection[]>([]); // sync ref for use in async handlers
+  const itemsRef = useRef<Collection[]>([]);
   const [dragging, setDragging] = useState<number | null>(null);
   const draggingRef = useRef<number | null>(null);
-  const preDragRef = useRef<Collection[]>([]); // snapshot for cancel/revert
+  const preDragRef = useRef<Collection[]>([]);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Cover image picker state
+  // Cover picker state
   const [coverPickerFor, setCoverPickerFor] = useState<{
     collId: string;
     images: string[];
     currentIdx: number;
+  } | null>(null);
+
+  // Image reorder state
+  const [imageReorderFor, setImageReorderFor] = useState<{
+    collId: string;
+    images: string[];
+    coverIndex: number;
   } | null>(null);
 
   function setItems(next: Collection[]) {
@@ -274,13 +441,11 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     setItemsState(next);
   }
 
-  // Single shared auth check (module-level cache)
   useEffect(() => {
     if (!section || !year) return;
     getAdminStatus().then((ok) => { if (ok) setIsAdmin(true); });
   }, [section, year]);
 
-  // Gallery keyboard close
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(null); };
@@ -288,11 +453,10 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     return () => window.removeEventListener("keydown", h);
   }, [open]);
 
-  // Prevent background scroll when gallery is open
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    document.body.style.overflow = (open || coverPickerFor || imageReorderFor) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  }, [open, coverPickerFor, imageReorderFor]);
 
   function enterEdit() {
     const snapshot = [...viewOrder];
@@ -309,8 +473,7 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     setEditMode(false);
   }
 
-  // ── Drag handlers ────────────────────────────────────
-
+  // ── Drag handlers (collection reorder) ──
   function handleCardPointerDown(e: React.PointerEvent<HTMLDivElement>, idx: number) {
     e.preventDefault();
     gridRef.current?.setPointerCapture(e.pointerId);
@@ -346,7 +509,7 @@ export default function CollectionGrid({ collections, section, year }: Collectio
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section, year, collections: finalItems }),
       });
-      setViewOrder(finalItems); // persist new order for view mode
+      setViewOrder(finalItems);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } finally {
@@ -358,21 +521,18 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     if (draggingRef.current === null) return;
     draggingRef.current = null;
     setDragging(null);
-    setItems(preDragRef.current); // revert to pre-drag state
+    setItems(preDragRef.current);
   }
 
   async function handleSetCover(imageIdx: number) {
     if (!coverPickerFor) return;
     const { collId } = coverPickerFor;
-
-    // Update both edit and view order locally
     const patch = (arr: Collection[]) =>
       arr.map((c) => (c.id === collId ? { ...c, coverIndex: imageIdx } : c));
     setItems(patch(itemsRef.current));
     itemsRef.current = patch(itemsRef.current);
     setViewOrder((v) => patch(v));
     setCoverPickerFor(null);
-
     setSaving(true);
     try {
       await fetch("/api/admin/cover", {
@@ -387,8 +547,30 @@ export default function CollectionGrid({ collections, section, year }: Collectio
     }
   }
 
-  // ── Render ───────────────────────────────────────────
+  async function handleSaveImageOrder(images: string[], newCoverIndex: number) {
+    if (!imageReorderFor) return;
+    const { collId } = imageReorderFor;
+    const patch = (arr: Collection[]) =>
+      arr.map((c) => (c.id === collId ? { ...c, images, coverIndex: newCoverIndex } : c));
+    setItems(patch(itemsRef.current));
+    itemsRef.current = patch(itemsRef.current);
+    setViewOrder((v) => patch(v));
+    setImageReorderFor(null);
+    setSaving(true);
+    try {
+      await fetch("/api/admin/reorder-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, year, collectionId: collId, images, coverIndex: newCoverIndex }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
+  }
 
+  // ── Render ──
   if (filled.length === 0) {
     return (
       <div className="flex items-center justify-center py-28 text-center">
@@ -405,7 +587,7 @@ export default function CollectionGrid({ collections, section, year }: Collectio
 
   return (
     <>
-      {/* Admin controls bar */}
+      {/* Admin controls */}
       {isAdmin && (
         <div className="mb-5 flex items-center justify-between gap-3 min-h-[36px]">
           <div className="flex items-center gap-2">
@@ -413,14 +595,10 @@ export default function CollectionGrid({ collections, section, year }: Collectio
               <span className="text-[9px] text-[#aaa] tracking-[2px] uppercase">Saving…</span>
             )}
             {editMode && saved && !saving && (
-              <span className="text-[9px] text-green-600 tracking-[2px] uppercase font-bold animate-pulse">
-                ✓ Saved
-              </span>
+              <span className="text-[9px] text-green-600 tracking-[2px] uppercase font-bold animate-pulse">✓ Saved</span>
             )}
             {editMode && !saving && !saved && dragging !== null && (
-              <span className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">
-                Dragging…
-              </span>
+              <span className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">Dragging…</span>
             )}
             {editMode && !saving && !saved && dragging === null && (
               <span className="text-[9px] text-[#b3a384] tracking-[2px] uppercase font-medium">
@@ -463,6 +641,11 @@ export default function CollectionGrid({ collections, section, year }: Collectio
                   images: coll.images,
                   currentIdx: coll.coverIndex ?? 0,
                 })}
+                onReorderImages={() => setImageReorderFor({
+                  collId: coll.id,
+                  images: coll.images,
+                  coverIndex: coll.coverIndex ?? 0,
+                })}
               />
             ) : (
               <ViewCard
@@ -475,6 +658,16 @@ export default function CollectionGrid({ collections, section, year }: Collectio
           )}
         </div>
       </div>
+
+      {/* Image reorder modal */}
+      {imageReorderFor && (
+        <ImageReorderModal
+          initialImages={imageReorderFor.images}
+          coverIndex={imageReorderFor.coverIndex}
+          onClose={() => setImageReorderFor(null)}
+          onSave={handleSaveImageOrder}
+        />
+      )}
 
       {/* Cover image picker */}
       {coverPickerFor && (

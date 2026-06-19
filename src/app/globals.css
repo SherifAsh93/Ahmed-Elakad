@@ -470,3 +470,11 @@ body {
 .animate-nudge-x {
   animation: nudge-x 1.1s ease-in-out infinite;
 }
+
+@keyframes nudge-x-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-5px); }
+}
+.animate-nudge-left {
+  animation: nudge-x-left 1.1s ease-in-out infinite;
+}
