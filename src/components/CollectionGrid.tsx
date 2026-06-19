@@ -51,15 +51,15 @@ function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: (e: React.
     >
       <span className={dir === "left" ? "animate-nudge-left" : "animate-nudge-x"}>
         <svg
-          width="26"
-          height="26"
+          width="30"
+          height="30"
           viewBox="0 0 24 24"
           fill="none"
           stroke="white"
-          strokeWidth="2.2"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.85))" }}
+          style={{ opacity: 0.55, filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.5))" }}
         >
           {dir === "left"
             ? <polyline points="15 18 9 12 15 6" />
