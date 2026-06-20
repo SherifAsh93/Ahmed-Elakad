@@ -363,7 +363,8 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
                 src={optimizeImage(src)}
                 alt={`${label} ${i + 1}`}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                loading={idx < 3 && i === 0 ? "eager" : "lazy"}
+                fetchPriority={idx === 0 && i === 0 ? "high" : "auto"}
                 draggable={false}
                 onClick={onOpen}
               />
