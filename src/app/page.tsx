@@ -1,8 +1,13 @@
 import { getContent } from "@/lib/content";
 import Link from "next/link";
+import Image from "next/image";
 import { optimizeImage } from "@/lib/utils";
 import RealBridesCarousel from "@/components/RealBridesCarousel";
+import LoadingScreen from "@/components/LoadingScreen";
 
+function toAbsolute(url: string): string {
+  return url.startsWith("/media/") ? `https://ahmedelakad.com${url}` : url;
+}
 
 export default async function HomePage() {
   const content = await getContent();
@@ -39,12 +44,25 @@ export default async function HomePage() {
   const ctaBtn   = home.ctaButtonText  || "Reserve Your Consultation";
   const ctaBtnHr = home.ctaButtonHref  || "/contact";
 
+  // Absolute hero URL needed for <Image> and LoadingScreen preload tracking
+  const heroAbsolute = toAbsolute(heroImage);
+
   return (
     <main className="bg-[#f5f2ee] overflow-x-hidden">
+      {/* Loading screen — covers until hero image is ready */}
+      <LoadingScreen heroSrc={heroAbsolute} />
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
       <section className="relative w-full h-screen min-h-[600px]">
-        <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="eager" fetchPriority="high" />
+        <Image
+          src={heroAbsolute}
+          alt=""
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+          quality={85}
+        />
         <div className="absolute inset-0 bg-black/40" />
 
         {/* Bottom-left content */}
@@ -99,8 +117,8 @@ export default async function HomePage() {
           </div>
 
           {/* RIGHT: Image */}
-          <div className="min-h-[200px] sm:min-h-[360px] md:min-h-[480px]">
-            <img src={optimizeImage(houseImg)} alt="Ahmed Elakad craftsmanship" className="w-full h-full object-cover" loading="lazy" />
+          <div className="relative min-h-[200px] sm:min-h-[360px] md:min-h-[480px]">
+            <img src={optimizeImage(houseImg, 1200)} alt="Ahmed Elakad craftsmanship" className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
       </section>
@@ -121,7 +139,7 @@ export default async function HomePage() {
               { img: c3i, label: c3l, href: c3h },
             ].map((card) => (
               <Link key={card.label} href={card.href} className="relative block overflow-hidden group aspect-[3/4]">
-                <img src={optimizeImage(card.img)} alt={card.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                <img src={optimizeImage(card.img, 828)} alt={card.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 md:p-6">
                   <p className="text-[6px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] uppercase text-white font-medium mb-1 sm:mb-1.5">{card.label}</p>
@@ -159,7 +177,7 @@ export default async function HomePage() {
       <section className="relative bg-[#ece6db] overflow-hidden py-12 sm:py-16 md:py-22">
         {/* Left decorative image */}
         <div className="absolute left-0 top-0 bottom-0 w-[80px] sm:w-[160px] md:w-[260px] pointer-events-none select-none">
-          <img src={optimizeImage(ctaImg)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
+          <img src={optimizeImage(ctaImg, 500)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#ece6db]" />
         </div>
         {/* Centered content */}

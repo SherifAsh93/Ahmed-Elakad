@@ -90,7 +90,7 @@ export default function MasonryGallery({
                 <img
                   src={src}
                   alt={`Collection piece ${colIdx + i * colCount + 1}`}
-                  loading="eager"
+                  loading={i === 0 ? "eager" : "lazy"}
                   decoding="async"
                   style={{ width: "100%", height: "auto", display: "block" }}
                   className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
