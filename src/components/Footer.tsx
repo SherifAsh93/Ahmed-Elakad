@@ -16,6 +16,7 @@ export default function Footer({ content }: { content: SiteContent }) {
   const instagram = (social as { instagram?: string }).instagram || "#";
   const whatsapp = (social as { whatsapp?: string }).whatsapp || "";
   const logoSrc = content.siteInfo?.logo ?? "";
+  const brandName = content.siteInfo?.brandName ?? "Ahmed Elakad";
 
   const colHead = "text-[7px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-4 sm:mb-5";
   const colLink = "text-[10px] sm:text-[11px] text-white/45 hover:text-white transition-colors leading-none";
@@ -39,7 +40,7 @@ export default function Footer({ content }: { content: SiteContent }) {
               </div>
             )}
             <div className="text-center md:text-left mt-1">
-              <p className="font-display text-[10px] sm:text-[11px] tracking-[3px] uppercase text-white">Ahmed El Akad</p>
+              <p className="font-display text-[10px] sm:text-[11px] tracking-[3px] uppercase text-white">{brandName}</p>
               <p className="text-[7px] tracking-[2.5px] uppercase text-white/40 mt-0.5">Couture House</p>
             </div>
           </div>
