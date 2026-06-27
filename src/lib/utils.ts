@@ -15,10 +15,17 @@ export function optimizeImage(url: string | undefined, maxWidth: number = 1200):
     target = `https://ahmedelakad.com${url}`;
   }
 
-  // Route through /_next/image for known image origins
+  // Skip PNG files — they are typically logos/icons with transparency.
+  // /_next/image converts them to AVIF/WebP/JPEG which can lose transparency
+  // or alter lossless art. Serve them as-is from the original source.
+  const lowerTarget = target.toLowerCase();
+  const isPng = lowerTarget.endsWith('.png') || lowerTarget.includes('.png?');
+
+  // Route through /_next/image for known photo origins (skip PNGs)
   if (
-    target.startsWith('https://ahmedelakad.com/media/') ||
-    target.includes('res.cloudinary.com')
+    !isPng &&
+    (target.startsWith('https://ahmedelakad.com/media/') ||
+     target.includes('res.cloudinary.com'))
   ) {
     return `/_next/image?url=${encodeURIComponent(target)}&w=${maxWidth}&q=75`;
   }
