@@ -1,13 +1,8 @@
 import { getContent } from "@/lib/content";
 import CollectionGrid from "@/components/CollectionGrid";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { optimizeImage } from "@/lib/utils";
-
-function toAbsolute(url: string): string {
-  return url.startsWith("/media/") ? `https://ahmedelakad.com${url}` : url;
-}
 
 const ALL_YEARS = ["2026","2025","2024","2023","2022"];
 
@@ -45,14 +40,12 @@ export default async function CoutureYearPage({
       {/* Hero Banner */}
       {bannerImage ? (
         <div className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] overflow-hidden">
-          <Image
-            src={toAbsolute(bannerImage)}
+          <img
+            src={optimizeImage(bannerImage)}
             alt="Couture Collection"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-            quality={85}
+            className="w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-black/35" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">

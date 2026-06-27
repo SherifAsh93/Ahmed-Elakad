@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export default function LoadingScreen({ heroSrc }: { heroSrc: string }) {
+export default function LoadingScreen() {
   const [fading, setFading] = useState(false);
   const [gone, setGone] = useState(false);
 
@@ -12,25 +12,21 @@ export default function LoadingScreen({ heroSrc }: { heroSrc: string }) {
       setTimeout(() => setGone(true), 700);
     };
 
-    if (!heroSrc) { triggerHide(); return; }
+    // window.load fires only when ALL resources (images, fonts, scripts) are fully loaded
+    if (document.readyState === "complete") {
+      triggerHide();
+      return;
+    }
 
-    const img = new window.Image() as HTMLImageElement;
-    img.src = heroSrc;
-
-    // Already in browser cache
-    if (img.complete && img.naturalHeight > 0) { triggerHide(); return; }
-
-    img.addEventListener("load", triggerHide);
-    img.addEventListener("error", triggerHide);
-    // Never block longer than 5 seconds
-    const fallback = setTimeout(triggerHide, 5000);
+    window.addEventListener("load", triggerHide);
+    // Safety fallback — never block longer than 10 seconds
+    const fallback = setTimeout(triggerHide, 10000);
 
     return () => {
-      img.removeEventListener("load", triggerHide);
-      img.removeEventListener("error", triggerHide);
+      window.removeEventListener("load", triggerHide);
       clearTimeout(fallback);
     };
-  }, [heroSrc]);
+  }, []);
 
   if (gone) return null;
 
