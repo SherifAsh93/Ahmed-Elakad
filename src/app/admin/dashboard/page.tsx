@@ -22,7 +22,8 @@ type Section =
   | "social"
   | "media"
   | "messages"
-  | "clients";
+  | "clients"
+  | "analytics";
 
 interface Payment {
   id: string;
@@ -3112,6 +3113,529 @@ function PasswordChangeCard({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+// ── Instagram Analytics Panel ─────────────────────────────────────────────────
+
+interface InstagramPost {
+  id: string;
+  date: string;
+  format: "Reel" | "Carousel" | "Image" | "Story";
+  topic: string;
+  reach: number;
+  impressions: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  postTime: string;
+  cta: string;
+}
+
+interface AuditResult {
+  createdAt: string;
+  summary: string;
+  keyInsight: string;
+  topPerformers: { topic: string; avgReach: number; insight: string }[];
+  formatBreakdown: { format: string; count: number; avgReach: number; pctContent: string; pctReach: string }[];
+  bestPostTimes: { time: string; avgReach: number; count: number; insight: string }[];
+  ctaAnalysis: { cta: string; avgEngagement: number; insight: string }[];
+  recommendations: string[];
+  bioSuggestions: string;
+}
+
+interface MonthlyAnalytics {
+  id: string;
+  monthLabel: string;
+  posts: InstagramPost[];
+  audit?: AuditResult;
+}
+
+const EMPTY_POST: Omit<InstagramPost, "id"> = {
+  date: "", format: "Reel", topic: "", reach: 0, impressions: 0,
+  likes: 0, comments: 0, shares: 0, saves: 0, postTime: "", cta: "",
+};
+
+function AnalyticsPanel() {
+  const [months, setMonths] = useState<MonthlyAnalytics[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [newMonthLabel, setNewMonthLabel] = useState("");
+  const [showNewMonth, setShowNewMonth] = useState(false);
+  const [editingPost, setEditingPost] = useState<InstagramPost | null>(null);
+  const [showPostForm, setShowPostForm] = useState(false);
+  const [postDraft, setPostDraft] = useState<Omit<InstagramPost, "id">>(EMPTY_POST);
+
+  const selected = months.find((m) => m.id === selectedId) ?? null;
+
+  useEffect(() => {
+    fetch("/api/admin/analytics")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setMonths(data);
+          if (data.length > 0) setSelectedId(data[0].id);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function saveMonth(month: MonthlyAnalytics) {
+    setSaveStatus("saving");
+    try {
+      const res = await fetch("/api/admin/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setMonths(data);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch {
+      setSaveStatus("error");
+    }
+  }
+
+  function createMonth() {
+    const label = newMonthLabel.trim();
+    if (!label) return;
+    const id = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const month: MonthlyAnalytics = { id, monthLabel: label, posts: [] };
+    setMonths((prev) => [month, ...prev]);
+    setSelectedId(id);
+    setNewMonthLabel("");
+    setShowNewMonth(false);
+    saveMonth(month);
+  }
+
+  async function deleteMonthHandler() {
+    if (!selected || !confirm(`Delete "${selected.monthLabel}" and all its data?`)) return;
+    const res = await fetch("/api/admin/analytics", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ monthId: selected.id }),
+    });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      setMonths(data);
+      setSelectedId(data.length > 0 ? data[0].id : "");
+    }
+  }
+
+  function openAddPost() {
+    setEditingPost(null);
+    setPostDraft(EMPTY_POST);
+    setShowPostForm(true);
+  }
+
+  function openEditPost(post: InstagramPost) {
+    setEditingPost(post);
+    setPostDraft({ ...post });
+    setShowPostForm(true);
+  }
+
+  function savePost() {
+    if (!selected) return;
+    let updatedPosts: InstagramPost[];
+    if (editingPost) {
+      updatedPosts = selected.posts.map((p) =>
+        p.id === editingPost.id ? { ...postDraft, id: editingPost.id } : p
+      );
+    } else {
+      updatedPosts = [...selected.posts, { ...postDraft, id: Date.now().toString() }];
+    }
+    const updated = { ...selected, posts: updatedPosts };
+    setMonths((prev) => prev.map((m) => (m.id === selected.id ? updated : m)));
+    setShowPostForm(false);
+    saveMonth(updated);
+  }
+
+  function deletePost(postId: string) {
+    if (!selected) return;
+    const updated = { ...selected, posts: selected.posts.filter((p) => p.id !== postId) };
+    setMonths((prev) => prev.map((m) => (m.id === selected.id ? updated : m)));
+    saveMonth(updated);
+  }
+
+  async function runAudit() {
+    if (!selected || !selected.posts.length) return;
+    setAuditLoading(true);
+    try {
+      const res = await fetch("/api/admin/analytics", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monthId: selected.id }),
+      });
+      const data = await res.json();
+      if (data.all && Array.isArray(data.all)) {
+        setMonths(data.all);
+      }
+    } catch {
+      alert("Audit failed. Check API key and try again.");
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32 text-gray-400 text-xs tracking-[4px] uppercase">
+        Loading Analytics...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Month Selector */}
+      <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-1">Instagram Analytics</p>
+            <h3 className="text-lg font-display uppercase tracking-widest text-black">Monthly Reports</h3>
+          </div>
+          <div className="flex items-center gap-3">
+            {saveStatus === "saving" && <span className="text-[10px] tracking-[3px] uppercase text-gray-400 animate-pulse">Saving...</span>}
+            {saveStatus === "saved" && <span className="text-[10px] tracking-[3px] uppercase text-green-600">✓ Saved</span>}
+            {saveStatus === "error" && <span className="text-[10px] tracking-[3px] uppercase text-red-500">Save Failed</span>}
+            {selected && (
+              <button onClick={deleteMonthHandler} className="text-[10px] tracking-[2px] uppercase text-red-400 hover:text-red-600 px-3 py-2 border border-red-100 rounded hover:border-red-300 transition-colors">
+                Delete Month
+              </button>
+            )}
+            <button
+              onClick={() => setShowNewMonth(!showNewMonth)}
+              className="text-[10px] tracking-[2px] uppercase bg-black text-white px-4 py-2.5 rounded hover:bg-gray-800 transition-colors"
+            >
+              + New Month
+            </button>
+          </div>
+        </div>
+
+        {showNewMonth && (
+          <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded">
+            <input
+              value={newMonthLabel}
+              onChange={(e) => setNewMonthLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createMonth()}
+              placeholder='e.g. "June 2026"'
+              className="admin-input flex-1 py-3 text-sm"
+            />
+            <button onClick={createMonth} className="bg-black text-white px-5 py-3 text-[10px] tracking-[2px] uppercase rounded hover:bg-gray-800 transition-colors">
+              Create
+            </button>
+            <button onClick={() => setShowNewMonth(false)} className="text-gray-400 hover:text-gray-600 px-3 py-3 text-[10px] tracking-[2px] uppercase">
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {months.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {months.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedId(m.id)}
+                className={`px-5 py-2.5 text-[10px] tracking-[2px] uppercase font-bold rounded transition-all ${
+                  selectedId === m.id
+                    ? "bg-black text-white shadow-lg"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-black border border-gray-100"
+                }`}
+              >
+                {m.monthLabel}
+                {m.audit && <span className="ml-2 text-[8px] text-[#b3a384]">✦ AUDITED</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {months.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            <p className="text-[10px] tracking-[4px] uppercase mb-3">No months yet</p>
+            <p className="text-xs text-gray-300">Create a new month to start tracking your Instagram progress</p>
+          </div>
+        )}
+      </div>
+
+      {/* Posts Table */}
+      {selected && (
+        <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-1">{selected.monthLabel}</p>
+              <h3 className="text-base font-display uppercase tracking-widest text-black">
+                Post Data <span className="text-gray-400 text-sm font-sans normal-case tracking-normal ml-2">({selected.posts.length} posts)</span>
+              </h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={runAudit}
+                disabled={auditLoading || !selected.posts.length}
+                className="flex items-center gap-2 bg-[#b3a384] hover:bg-[#a08e6e] disabled:opacity-40 text-white px-5 py-2.5 text-[10px] tracking-[2px] uppercase rounded transition-colors font-bold"
+              >
+                {auditLoading ? (
+                  <>
+                    <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>✦ Run AI Audit</>
+                )}
+              </button>
+              <button
+                onClick={openAddPost}
+                className="bg-black text-white px-4 py-2.5 text-[10px] tracking-[2px] uppercase rounded hover:bg-gray-800 transition-colors"
+              >
+                + Add Post
+              </button>
+            </div>
+          </div>
+
+          {/* Post Form Modal */}
+          {showPostForm && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-[11px] tracking-[4px] uppercase font-bold text-black">
+                    {editingPost ? "Edit Post" : "Add Post"}
+                  </h3>
+                  <button onClick={() => setShowPostForm(false)} className="text-gray-400 hover:text-black text-xl leading-none">✕</button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Date</label>
+                    <input type="date" value={postDraft.date} onChange={(e) => setPostDraft((p) => ({ ...p, date: e.target.value }))} className="admin-input py-3 text-sm w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Format</label>
+                    <select value={postDraft.format} onChange={(e) => setPostDraft((p) => ({ ...p, format: e.target.value as InstagramPost["format"] }))} className="admin-input py-3 text-sm w-full bg-white">
+                      {["Reel", "Carousel", "Image", "Story"].map((f) => <option key={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Topic / Content Description</label>
+                    <input value={postDraft.topic} onChange={(e) => setPostDraft((p) => ({ ...p, topic: e.target.value }))} placeholder="e.g. Behind the scenes bridal fitting" className="admin-input py-3 text-sm w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Reach</label>
+                    <input type="number" value={postDraft.reach || ""} onChange={(e) => setPostDraft((p) => ({ ...p, reach: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Impressions</label>
+                    <input type="number" value={postDraft.impressions || ""} onChange={(e) => setPostDraft((p) => ({ ...p, impressions: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Likes</label>
+                    <input type="number" value={postDraft.likes || ""} onChange={(e) => setPostDraft((p) => ({ ...p, likes: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Comments</label>
+                    <input type="number" value={postDraft.comments || ""} onChange={(e) => setPostDraft((p) => ({ ...p, comments: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Shares</label>
+                    <input type="number" value={postDraft.shares || ""} onChange={(e) => setPostDraft((p) => ({ ...p, shares: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Saves</label>
+                    <input type="number" value={postDraft.saves || ""} onChange={(e) => setPostDraft((p) => ({ ...p, saves: parseInt(e.target.value) || 0 }))} className="admin-input py-3 text-sm w-full" placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Post Time</label>
+                    <input value={postDraft.postTime} onChange={(e) => setPostDraft((p) => ({ ...p, postTime: e.target.value }))} placeholder="e.g. 8:00 PM" className="admin-input py-3 text-sm w-full" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] tracking-[3px] uppercase text-gray-400 font-bold mb-2 block">Call to Action (CTA)</label>
+                    <input value={postDraft.cta} onChange={(e) => setPostDraft((p) => ({ ...p, cta: e.target.value }))} placeholder='e.g. "Book your appointment now"' className="admin-input py-3 text-sm w-full" />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={savePost} className="flex-1 bg-black text-white py-3 text-[10px] tracking-[3px] uppercase font-bold rounded hover:bg-gray-800 transition-colors">
+                    {editingPost ? "Update Post" : "Add Post"}
+                  </button>
+                  <button onClick={() => setShowPostForm(false)} className="px-6 py-3 text-[10px] tracking-[3px] uppercase text-gray-500 border border-gray-200 rounded hover:border-gray-400 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selected.posts.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+              <p className="text-[10px] tracking-[4px] uppercase mb-3">No posts yet</p>
+              <p className="text-xs text-gray-300 mb-4">Add your Instagram posts to start tracking performance</p>
+              <button onClick={openAddPost} className="text-[10px] tracking-[2px] uppercase text-[#b3a384] hover:text-black transition-colors font-bold underline underline-offset-4">
+                + Add First Post
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    {["Date", "Format", "Topic", "Reach", "Shares", "Saves", "Time", "CTA", ""].map((h) => (
+                      <th key={h} className="text-left text-[8px] tracking-[3px] uppercase text-gray-400 font-bold pb-3 pr-4 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.posts.map((post) => (
+                    <tr key={post.id} className="border-b border-gray-50 hover:bg-gray-50 group">
+                      <td className="py-3 pr-4 text-gray-600 whitespace-nowrap">{post.date}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                          post.format === "Reel" ? "bg-purple-50 text-purple-700" :
+                          post.format === "Carousel" ? "bg-blue-50 text-blue-700" :
+                          post.format === "Story" ? "bg-green-50 text-green-700" :
+                          "bg-gray-50 text-gray-700"
+                        }`}>
+                          {post.format}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-800 max-w-[200px] truncate">{post.topic}</td>
+                      <td className="py-3 pr-4 text-gray-800 font-bold">{post.reach.toLocaleString()}</td>
+                      <td className="py-3 pr-4 text-gray-600">{post.shares.toLocaleString()}</td>
+                      <td className="py-3 pr-4 text-gray-600">{post.saves.toLocaleString()}</td>
+                      <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">{post.postTime}</td>
+                      <td className="py-3 pr-4 text-gray-500 max-w-[120px] truncate">{post.cta}</td>
+                      <td className="py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEditPost(post)} className="text-[9px] tracking-[2px] uppercase text-gray-500 hover:text-black transition-colors">Edit</button>
+                          <button onClick={() => deletePost(post.id)} className="text-[9px] tracking-[2px] uppercase text-red-400 hover:text-red-600 transition-colors">Del</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI Audit Results */}
+      {selected?.audit && (
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8 bg-gradient-to-br from-[#1a1a1a] to-[#333]">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-2">AI Audit Results</p>
+            <h3 className="text-xl font-display uppercase tracking-widest text-white mb-4">Performance Insights</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">{selected.audit.summary}</p>
+            <div className="mt-4 p-4 bg-[#b3a384]/20 border border-[#b3a384]/30 rounded-lg">
+              <p className="text-[9px] tracking-[3px] uppercase text-[#b3a384] font-bold mb-1">Key Insight</p>
+              <p className="text-white font-bold text-base">{selected.audit.keyInsight}</p>
+            </div>
+            <p className="text-gray-500 text-[9px] tracking-[2px] uppercase mt-4">
+              Audited: {new Date(selected.audit.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          </div>
+
+          {/* Format Breakdown + Best Times */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">Format Breakdown</p>
+              <div className="space-y-3">
+                {selected.audit.formatBreakdown.map((f) => (
+                  <div key={f.format} className="flex items-center justify-between gap-3">
+                    <span className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${
+                      f.format === "Reel" ? "bg-purple-50 text-purple-700" :
+                      f.format === "Carousel" ? "bg-blue-50 text-blue-700" :
+                      f.format === "Story" ? "bg-green-50 text-green-700" :
+                      "bg-gray-50 text-gray-700"
+                    }`}>{f.format}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                        <span>{f.count} posts ({f.pctContent} content)</span>
+                        <span className="font-bold text-black">{f.pctReach} reach</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#b3a384] rounded-full" style={{ width: f.pctReach }} />
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-700 whitespace-nowrap">{f.avgReach.toLocaleString()} avg</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">Best Post Times</p>
+              <div className="space-y-3">
+                {selected.audit.bestPostTimes.map((t) => (
+                  <div key={t.time} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-sm font-bold text-black">{t.time}</p>
+                      <p className="text-[9px] text-gray-400 uppercase tracking-wider">{t.count} posts</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-[#b3a384] mb-0.5">{t.avgReach.toLocaleString()} avg reach</p>
+                      <p className="text-[10px] text-gray-500 leading-relaxed">{t.insight}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Top Performers */}
+          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">Top Performing Topics</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {selected.audit.topPerformers.map((tp, i) => (
+                <div key={tp.topic} className="p-4 border border-gray-100 rounded-xl hover:border-[#b3a384] transition-colors">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-5 h-5 rounded-full bg-black text-white text-[9px] flex items-center justify-center font-black">{i + 1}</span>
+                    <p className="text-[10px] font-bold text-black uppercase tracking-wide truncate">{tp.topic}</p>
+                  </div>
+                  <p className="text-lg font-display text-[#b3a384] mb-1">{tp.avgReach.toLocaleString()}</p>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-wider mb-2">avg reach</p>
+                  <p className="text-[10px] text-gray-600 leading-relaxed">{tp.insight}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA Analysis + Bio Suggestions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">CTA Performance</p>
+              <div className="space-y-3">
+                {selected.audit.ctaAnalysis.map((c) => (
+                  <div key={c.cta} className="p-3 border border-gray-100 rounded-lg">
+                    <p className="text-[10px] font-bold text-black mb-1 italic">"{c.cta}"</p>
+                    <p className="text-[10px] text-[#b3a384] font-bold mb-0.5">{c.avgEngagement.toLocaleString()} avg engagement</p>
+                    <p className="text-[10px] text-gray-500">{c.insight}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+              <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">Bio Suggestions</p>
+              <p className="text-sm text-gray-700 leading-relaxed">{selected.audit.bioSuggestions}</p>
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-4">Action Plan</p>
+            <div className="space-y-3">
+              {selected.audit.recommendations.map((rec, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl hover:bg-[#b3a384]/5 transition-colors">
+                  <span className="w-6 h-6 rounded-full bg-[#b3a384] text-white text-[9px] flex items-center justify-center font-black shrink-0 mt-0.5">{i + 1}</span>
+                  <p className="text-sm text-gray-700 leading-relaxed">{rec}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [isLocked, setIsLocked] = useState(true);
   const [lockPw, setLockPw] = useState("");
@@ -3377,6 +3901,7 @@ export default function AdminDashboard() {
                 "media",
                 "messages",
                 "clients",
+                "analytics",
               ] as Section[]
             ).map((s) => (
               <button
@@ -3405,7 +3930,9 @@ export default function AdminDashboard() {
                             ? "MESSAGES"
                             : s === "clients"
                               ? "CLIENTS"
-                              : s.toUpperCase()}
+                              : s === "analytics"
+                                ? "ANALYTICS"
+                                : s.toUpperCase()}
                 {s === "clients" && clients.length > 0 && activeSection !== "clients" && (
                   <span className="absolute top-3 right-3 bg-[#b3a384] text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full">
                     {clients.length}
@@ -3474,7 +4001,9 @@ export default function AdminDashboard() {
                           ? "MEDIA LIBRARY"
                           : activeSection === "clients"
                             ? "CLIENTS"
-                            : activeSection.toUpperCase()}
+                            : activeSection === "analytics"
+                              ? "INSTAGRAM ANALYTICS"
+                              : activeSection.toUpperCase()}
                 </h2>
                 {activeSection === "clients" && clients.length > 0 && (
                   <span className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-full">{clients.length}</span>
@@ -4346,6 +4875,9 @@ export default function AdminDashboard() {
               onUploadComplete={refreshImages}
             />
           )}
+
+          {/* ANALYTICS SECTION */}
+          {activeSection === "analytics" && <AnalyticsPanel />}
         </div>
       </main>
     </div>
