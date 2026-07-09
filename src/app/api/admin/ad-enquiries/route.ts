@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getAdEnquiries } from "@/lib/adEnquiries";
+import { getAdEnquiries, saveAdEnquiries } from "@/lib/adEnquiries";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,25 @@ export async function GET() {
   if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     return NextResponse.json(getAdEnquiries());
+  } catch {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const body = await req.json();
+    if (body.resetAll) {
+      saveAdEnquiries([]);
+      return NextResponse.json([]);
+    }
+    if (body.id) {
+      const remaining = getAdEnquiries().filter((e) => e.id !== body.id);
+      saveAdEnquiries(remaining);
+      return NextResponse.json(remaining);
+    }
+    return NextResponse.json({ error: "Missing id or resetAll" }, { status: 400 });
   } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

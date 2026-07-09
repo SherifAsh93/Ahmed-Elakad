@@ -3447,19 +3447,37 @@ function AnalyticsPanel() {
 
         {/* Recent Enquiries */}
         <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
-          <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Recent Enquiries</p>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold">
+              All Enquiries ({total})
+            </p>
+            <button
+              onClick={async () => {
+                if (!confirm("Reset ALL ad enquiry data? This cannot be undone.")) return;
+                const res = await fetch("/api/admin/ad-enquiries", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ resetAll: true }),
+                });
+                if (res.ok) setAdEnquiries([]);
+              }}
+              className="text-[9px] tracking-[2px] uppercase text-red-400 hover:text-red-600 border border-red-100 hover:border-red-300 px-4 py-2 transition-colors font-bold"
+            >
+              Reset All Data
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Date", "Name", "Phone", "Category", "Event Date", "Budget Tier"].map(h => (
+                  {["Date", "Name", "Phone", "Category", "Event Date", "Budget Tier", ""].map(h => (
                     <th key={h} className="text-left text-[8px] tracking-[3px] uppercase text-gray-400 font-bold pb-3 pr-4 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {adEnquiries.slice(0, 15).map(e => (
-                  <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50">
+                {adEnquiries.map(e => (
+                  <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50 group">
                     <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">
                       {new Date(e.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     </td>
@@ -3471,7 +3489,26 @@ function AnalyticsPanel() {
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">{e.eventDate}</td>
-                    <td className="py-3 pr-4 text-gray-600 max-w-[200px] truncate">{e.investmentTier}</td>
+                    <td className="py-3 pr-4 text-gray-600 max-w-[180px] truncate">{e.investmentTier}</td>
+                    <td className="py-3 whitespace-nowrap">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Delete enquiry from ${e.fullName}?`)) return;
+                          const res = await fetch("/api/admin/ad-enquiries", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: e.id }),
+                          });
+                          if (res.ok) {
+                            const updated = await res.json();
+                            setAdEnquiries(Array.isArray(updated) ? updated : adEnquiries.filter(x => x.id !== e.id));
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] tracking-[2px] uppercase text-red-400 hover:text-red-600 font-bold px-2 py-1"
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

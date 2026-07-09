@@ -32,6 +32,11 @@ export function getAdEnquiries(): AdEnquiry[] {
   }
 }
 
+export function saveAdEnquiries(data: AdEnquiry[]): void {
+  ensureDir();
+  atomicWriteJSON(FILE, data);
+}
+
 export function addAdEnquiry(data: Omit<AdEnquiry, "id" | "createdAt">): AdEnquiry {
   const all = getAdEnquiries();
   const entry: AdEnquiry = {
