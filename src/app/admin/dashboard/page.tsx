@@ -3154,7 +3154,21 @@ const EMPTY_POST: Omit<InstagramPost, "id"> = {
   likes: 0, comments: 0, shares: 0, saves: 0, postTime: "", cta: "",
 };
 
+interface AdEnquiry {
+  id: string;
+  createdAt: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  category: "bridal" | "evening";
+  eventDate: string;
+  silhouette: string;
+  designDetails: string;
+  investmentTier: string;
+}
+
 function AnalyticsPanel() {
+  const [activeTab, setActiveTab] = useState<"content" | "ad">("content");
   const [months, setMonths] = useState<MonthlyAnalytics[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -3165,6 +3179,8 @@ function AnalyticsPanel() {
   const [editingPost, setEditingPost] = useState<InstagramPost | null>(null);
   const [showPostForm, setShowPostForm] = useState(false);
   const [postDraft, setPostDraft] = useState<Omit<InstagramPost, "id">>(EMPTY_POST);
+  const [adEnquiries, setAdEnquiries] = useState<AdEnquiry[]>([]);
+  const [adLoading, setAdLoading] = useState(false);
 
   const selected = months.find((m) => m.id === selectedId) ?? null;
 
@@ -3179,6 +3195,16 @@ function AnalyticsPanel() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "ad" && adEnquiries.length === 0) {
+      setAdLoading(true);
+      fetch("/api/admin/ad-enquiries")
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) setAdEnquiries(data); })
+        .finally(() => setAdLoading(false));
+    }
+  }, [activeTab, adEnquiries.length]);
 
   async function saveMonth(month: MonthlyAnalytics) {
     setSaveStatus("saving");
@@ -3286,8 +3312,201 @@ function AnalyticsPanel() {
     );
   }
 
+  // ── Ad Performance view ──────────────────────────────────────────
+  function AdPerformanceView() {
+    if (adLoading) return (
+      <div className="flex items-center justify-center py-32 text-gray-400 text-xs tracking-[4px] uppercase">
+        Loading Ad Data...
+      </div>
+    );
+
+    const total = adEnquiries.length;
+    const bridal = adEnquiries.filter(e => e.category === "bridal").length;
+    const evening = adEnquiries.filter(e => e.category === "evening").length;
+
+    // This month
+    const now = new Date();
+    const thisMonth = adEnquiries.filter(e => {
+      const d = new Date(e.createdAt);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+
+    // Monthly trend (last 6 months)
+    const monthTrend: { label: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleString("en-US", { month: "short", year: "2-digit" });
+      const count = adEnquiries.filter(e => {
+        const ed = new Date(e.createdAt);
+        return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
+      }).length;
+      monthTrend.push({ label, count });
+    }
+    const maxTrend = Math.max(...monthTrend.map(m => m.count), 1);
+
+    // Silhouette breakdown
+    const silhouetteMap: Record<string, number> = {};
+    adEnquiries.forEach(e => {
+      if (e.silhouette) silhouetteMap[e.silhouette] = (silhouetteMap[e.silhouette] || 0) + 1;
+    });
+    const silhouettes = Object.entries(silhouetteMap).sort((a, b) => b[1] - a[1]);
+
+    // Budget tiers
+    const tierMap: Record<string, number> = {};
+    adEnquiries.forEach(e => {
+      if (e.investmentTier) tierMap[e.investmentTier] = (tierMap[e.investmentTier] || 0) + 1;
+    });
+    const tiers = Object.entries(tierMap).sort((a, b) => b[1] - a[1]);
+
+    if (total === 0) return (
+      <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-8 md:p-12">
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-[10px] tracking-[4px] uppercase mb-3">No leads yet</p>
+          <p className="text-xs text-gray-300">Once people submit the form from your ad, their data will appear here.</p>
+          <p className="text-xs text-gray-300 mt-2">Ad URL: <span className="text-[#b3a384]">ahmedelakad.com/contact?ref=ad</span></p>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="space-y-5">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Total Leads", value: total, sub: "All time" },
+            { label: "This Month", value: thisMonth, sub: "Current month" },
+            { label: "Bridal Couture", value: bridal, sub: `${total > 0 ? Math.round(bridal / total * 100) : 0}% of leads` },
+            { label: "Evening Couture", value: evening, sub: `${total > 0 ? Math.round(evening / total * 100) : 0}% of leads` },
+          ].map(card => (
+            <div key={card.label} className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-6">
+              <p className="text-[8px] tracking-[4px] uppercase text-[#b3a384] font-bold mb-2">{card.label}</p>
+              <p className="text-3xl font-display text-black mb-1">{card.value}</p>
+              <p className="text-[9px] text-gray-400 uppercase tracking-wider">{card.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Monthly Trend */}
+        <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+          <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Monthly Lead Trend</p>
+          <div className="flex items-end gap-3 h-28">
+            {monthTrend.map(m => (
+              <div key={m.label} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-[9px] font-bold text-gray-700">{m.count > 0 ? m.count : ""}</span>
+                <div className="w-full bg-gray-100 rounded-sm overflow-hidden" style={{ height: "80px" }}>
+                  <div
+                    className="w-full bg-[#b3a384] transition-all duration-700 rounded-sm"
+                    style={{ height: `${(m.count / maxTrend) * 80}px`, marginTop: `${80 - (m.count / maxTrend) * 80}px` }}
+                  />
+                </div>
+                <span className="text-[8px] text-gray-400 uppercase tracking-wider">{m.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Silhouette + Budget side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Silhouette Preferences</p>
+            <div className="space-y-3">
+              {silhouettes.map(([name, count], i) => (
+                <div key={name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full bg-black text-white text-[8px] flex items-center justify-center font-black shrink-0">{i + 1}</span>
+                      <span className="text-[10px] text-gray-700 leading-tight">{name}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-500 shrink-0 ml-2">{count}</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#b3a384] rounded-full" style={{ width: `${(count / total) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Investment Tier Distribution</p>
+            <div className="space-y-3">
+              {tiers.map(([tier, count]) => (
+                <div key={tier}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-gray-700 leading-tight flex-1 mr-2">{tier}</span>
+                    <span className="text-[10px] font-bold text-[#b3a384] shrink-0">{Math.round(count / total * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#b3a384] rounded-full" style={{ width: `${(count / total) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Enquiries */}
+        <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+          <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Recent Enquiries</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  {["Date", "Name", "Phone", "Category", "Event Date", "Budget Tier"].map(h => (
+                    <th key={h} className="text-left text-[8px] tracking-[3px] uppercase text-gray-400 font-bold pb-3 pr-4 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {adEnquiries.slice(0, 15).map(e => (
+                  <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">
+                      {new Date(e.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                    </td>
+                    <td className="py-3 pr-4 text-gray-800 font-medium whitespace-nowrap">{e.fullName}</td>
+                    <td className="py-3 pr-4 text-gray-500">{e.phone}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${e.category === "bridal" ? "bg-pink-50 text-pink-700" : "bg-purple-50 text-purple-700"}`}>
+                        {e.category === "bridal" ? "Bridal" : "Evening"}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">{e.eventDate}</td>
+                    <td className="py-3 pr-4 text-gray-600 max-w-[200px] truncate">{e.investmentTier}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex gap-1 border-b border-gray-100 mb-2">
+        {([
+          { id: "content", label: "Content Analytics" },
+          { id: "ad", label: "Ad Campaign" },
+        ] as { id: "content" | "ad"; label: string }[]).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-5 py-3 text-[10px] tracking-[2px] uppercase font-bold transition-all border-b-2 -mb-px ${
+              activeTab === tab.id
+                ? "border-black text-black"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "ad" && <AdPerformanceView />}
+
+      {activeTab === "content" && <>
       {/* Month Selector */}
       <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -3632,6 +3851,7 @@ function AnalyticsPanel() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }
