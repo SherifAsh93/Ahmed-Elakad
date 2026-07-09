@@ -476,3 +476,12 @@ body {
 .animate-nudge-left {
   animation: nudge-x-left 1.1s ease-in-out infinite;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
