@@ -10,7 +10,7 @@ const waSvgPath = "M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 
 export default async function ContactPage() {
   const content = await getContent();
   const contact = content.contact ?? {};
-  const phones: string[] = contact.phones ?? [];
+  const phones: string[] = (contact.phones ?? []).filter(Boolean);
   const heroImage = optimizeImage(contact.heroImage || "");
   const whatsappNumber = content.social?.whatsapp || "201101548030";
   const waHref = "https://wa.me/" + whatsappNumber.replace(/\D/g, "");
