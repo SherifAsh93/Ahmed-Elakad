@@ -78,12 +78,16 @@ export default async function ContactPage() {
                 {phones.length > 0 && (
                   <div className="py-5">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">Call Us</h3>
-                    {phones.map((p, i) => (
-                      <a key={i} href={"tel:" + p}
-                        className="block text-[#555] text-sm font-light tracking-wide hover:text-[#b3a384] transition-colors">
-                        {p}
-                      </a>
-                    ))}
+                    <div className="flex gap-2">
+                      {phones.map((p, i) => (
+                        <a key={i} href={"tel:" + p} aria-label={"Phone " + (i + 1)}
+                          className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.12 6.12l.98-.98a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                          </svg>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {contact.email && (
