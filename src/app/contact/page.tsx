@@ -71,48 +71,41 @@ export default async function ContactPage() {
               <div className="w-12 h-px bg-[#b3a384] mb-6" />
               <p className="text-[#666] font-light text-sm leading-relaxed font-serif mb-10">
                 {(contact as { pageSubtitle?: string }).pageSubtitle ||
-                  "Get in touch with us to reserve an appointment, for more info or inquiries. We are thrilled to safely welcome you to our atelier and look forward to seeing you soon!"}
+                  "Private couture consultations at the House of Ahmed Elakad are available exclusively by appointment. Our tailored consultations are designed to offer an uncompromised luxury experience where we explore your silhouette preference, fabric curation, and custom details."}
               </p>
 
-              <div className="divide-y divide-[#e5e5e5]">
-                {phones.length > 0 && (
-                  <div className="py-5">
-                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">Call Us</h3>
-                    <div className="flex gap-2">
-                      {phones.map((p, i) => (
-                        <a key={i} href={"tel:" + p} aria-label={"Phone " + (i + 1)}
-                          className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.12 6.12l.98-.98a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                          </svg>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {contact.email && (
-                  <div className="py-5">
-                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">Email</h3>
-                    <a href={"mailto:" + contact.email} aria-label="Email"
+              <div>
+                {/* Icon group */}
+                <div className="mb-2">
+                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-4">Get In Touch</h3>
+                  <div className="flex items-center gap-3">
+                    {phones.map((p, i) => (
+                      <a key={i} href={"tel:" + p} aria-label={"Phone " + (i + 1)}
+                        className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.12 6.12l.98-.98a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                      </a>
+                    ))}
+                    {contact.email && (
+                      <a href={"mailto:" + contact.email} aria-label="Email"
+                        className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="4" width="20" height="16" rx="2" />
+                          <path d="m2 7 10 7 10-7" />
+                        </svg>
+                      </a>
+                    )}
+                    <a href={waHref} target="_blank" rel="noreferrer" aria-label="WhatsApp"
                       className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="m2 7 10 7 10-7" />
+                      <svg width="18" height="18" viewBox="0 0 448 512" fill="currentColor">
+                        <path d={waSvgPath} />
                       </svg>
                     </a>
                   </div>
-                )}
-                <div className="py-5">
-                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">WhatsApp</h3>
-                  <a href={waHref} target="_blank" rel="noreferrer" aria-label="WhatsApp"
-                    className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
-                    <svg width="18" height="18" viewBox="0 0 448 512" fill="currentColor">
-                      <path d={waSvgPath} />
-                    </svg>
-                  </a>
                 </div>
                 {(contact as { location?: string }).location && (
-                  <div className="py-5">
+                  <div className="mt-8 pt-6 border-t border-[#e5e5e5]">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">Our Atelier</h3>
                     <p className="text-[#555] text-sm font-light leading-relaxed">
                       {(contact as { location?: string }).location}
