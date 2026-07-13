@@ -89,9 +89,12 @@ export default async function ContactPage() {
                 {contact.email && (
                   <div className="py-5">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#b3a384] mb-2">Email</h3>
-                    <a href={"mailto:" + contact.email}
-                      className="block text-[#555] text-sm font-light break-all hover:text-[#b3a384] transition-colors">
-                      {contact.email}
+                    <a href={"mailto:" + contact.email} aria-label="Email"
+                      className="inline-flex w-10 h-10 rounded-full border border-[#d5d0c8] items-center justify-center text-[#999] hover:border-[#b3a384] hover:text-[#b3a384] transition-all duration-300">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="m2 7 10 7 10-7" />
+                      </svg>
                     </a>
                   </div>
                 )}

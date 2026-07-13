@@ -34,12 +34,6 @@ const SILHOUETTES = [
   "Completely Custom / Undecided",
 ];
 
-const TIERS = [
-  "85,000 EGP – 120,000 EGP",
-  "120,000 EGP – 200,000 EGP",
-  "200,000 EGP+",
-  "Evening Couture: My investment aligns with haute couture pricing standards.",
-];
 
 function RadioOption({
   label,
@@ -106,7 +100,7 @@ function PopupInner() {
     if (step === 1) return !!(form.fullName.trim() && form.phone.trim() && form.email.trim());
     if (step === 2) return !!(form.category && form.eventDate);
     if (step === 3) return !!form.silhouette;
-    if (step === 4) return !!form.investmentTier;
+    if (step === 4) return true;
     return false;
   }
 
@@ -304,10 +298,12 @@ function PopupInner() {
                   Atelier Note
                 </p>
                 <p className="text-[#888] text-[12px] sm:text-[13px] leading-[1.85] font-serif">
-                  Custom wedding gowns require a minimum 4–5 month production
-                  window. Simple custom designs and evening couture require 2–3
-                  months. Rush fees may apply depending on atelier calendar
-                  capacity.
+                  Each bespoke bridal gown is meticulously handcrafted,
+                  requiring a four to five-month creation period. For custom
+                  classic silhouette bridal and evening haute couture, please
+                  allow two to three months. Should your timeline require
+                  immediate priority, expedited requests may be accommodated
+                  depending on current atelier capacity.
                 </p>
               </div>
             </div>
@@ -359,26 +355,12 @@ function PopupInner() {
                   Investment Alignment
                 </p>
                 <p className="text-[#888] text-[12px] sm:text-[13px] leading-[1.85] font-serif">
-                  To maintain an uncompromising standard of manual artistry,
-                  custom bridal gowns require an investment starting from 85,000
-                  EGP. Final pricing is determined following a private design
-                  consultation.
+                  Reflecting our dedication to high-fashion construction, custom
+                  bridal investments are tailored by silhouette: mermaid
+                  silhouettes begin at 85,000 EGP, gowns with detachable
+                  extensions at 120,000 EGP, and grand ballgowns at 150,000 EGP.
+                  Final pricing is determined following your private appointment.
                 </p>
-              </div>
-              <div>
-                <label className="block text-[9px] tracking-[3px] uppercase text-[#999] font-bold mb-3">
-                  Preferred Investment Tier
-                </label>
-                <div className="space-y-2.5">
-                  {TIERS.map((opt) => (
-                    <RadioOption
-                      key={opt}
-                      label={opt}
-                      checked={form.investmentTier === opt}
-                      onSelect={() => set("investmentTier", opt)}
-                    />
-                  ))}
-                </div>
               </div>
               {error && (
                 <p className="text-red-500 text-xs font-serif">{error}</p>
