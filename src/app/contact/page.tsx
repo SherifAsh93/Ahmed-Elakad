@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent } from "@/lib/content";
 import { optimizeImage } from "@/lib/utils";
-import ContactForm from "@/components/ContactForm";
+import AtelierForm from "@/components/AtelierForm";
 import AdInquiryPopup from "@/components/AdInquiryPopup";
 
 
@@ -124,11 +124,7 @@ export default async function ContactPage() {
 
             {/* Form */}
             <div className="md:flex-1 bg-white border border-[#eeeeee] px-6 sm:px-10 py-10 shadow-sm">
-              <h2 className="font-display text-xl uppercase tracking-[0.2em] text-[#1a1a1a] mb-2">
-                Send Us a Message
-              </h2>
-              <div className="w-8 h-px bg-[#b3a384] mb-8" />
-              <ContactForm />
+              <AtelierForm />
             </div>
 
           </div>
