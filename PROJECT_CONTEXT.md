@@ -28,7 +28,7 @@ Ahmed-Elakad/
 │   │   ├── admin/page.tsx          # Admin login
 │   │   ├── admin/dashboard/page.tsx# Full CMS
 │   │   └── api/                    # REST endpoints (auth, content, upload, clients)
-│   ├── components/                 # Navbar, Footer, MasonryGallery, CollectionGrid, ContactForm
+│   ├── components/                 # Navbar, Footer, MasonryGallery, CollectionGrid, AtelierForm, AdInquiryPopup
 │   └── lib/                        # content.ts, clients.ts, messages.ts, cloudinary.ts
 ├── public/                         # Static SVGs
 ├── next.config.ts
@@ -58,7 +58,8 @@ Ahmed-Elakad/
 | `/bridal/[year]` | Bridal collections (year or "all") |
 | `/couture/[year]` | Couture collections (year or "all") |
 | `/experience` | Testimonials + client videos |
-| `/contact` | Booking form |
+| `/contact` | 4-step Private Atelier Enquiry form (always visible) + contact icons |
+| `/contact?ref=ad` | Same page + auto-opens AdInquiryPopup modal (for ad traffic) |
 | `/atelier` | Internal CRM (Arabic RTL, no login) |
 | `/admin` | Admin login — password: `114891` |
 | `/admin/dashboard` | Full CMS — content, images, messages |
@@ -94,14 +95,21 @@ pm2 logs ahmed-elakad      # View logs
 
 ---
 
+## Contact Page (updated 2026-07-13)
+
+- **Form:** Replaced simple ContactForm with `AtelierForm` — a 4-step inline enquiry form (Identity → Timeline → Vision → Investment). Always visible to all visitors. Submits to `/api/ad-enquiry`.
+- **AdInquiryPopup:** Separate modal triggered only when `?ref=ad` is in the URL (for ad traffic). Same 4-step logic as AtelierForm.
+- **Contact icons:** Phone, Email, WhatsApp displayed as circle icon buttons in a single horizontal row ("Get In Touch"). No text shown for contact details.
+- **Step 04 pricing:** Mermaid 85,000 EGP / detachable extension 120,000 EGP / ballgown 150,000 EGP. No tier checkboxes.
+
+---
+
 ## Known Issues
 
 - Cloudinary images only appear in admin media library if `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_SECRET` are set; their public URLs still work without credentials.
-- All pages use `force-dynamic` / `revalidate = 0` — no caching, always fresh reads from JSON files on disk.
 
 ---
 
 ## Next Steps
 
-- No active issues as of 2026-06-14.
-- Storage crisis resolved 2026-06-02 (moved to VPS local disk).
+- No active issues as of 2026-07-13.
