@@ -50,22 +50,6 @@ export default async function HomePage() {
         <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="eager" fetchPriority="high" />
         <div className="absolute inset-0 bg-black/40" />
 
-        {/* Bottom-left content */}
-        <div className="absolute bottom-0 left-0 right-0 pb-14 sm:pb-20 px-6 sm:px-12 md:px-20 max-w-[1440px] mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="block w-7 h-px bg-white/50 shrink-0" />
-            <span className="text-[8px] tracking-[4px] uppercase text-white/70">{heroLabel}</span>
-          </div>
-          <h1 className="font-serif font-light text-white leading-[1.0] whitespace-pre-line mb-4 text-[44px] sm:text-[62px] md:text-[72px] max-w-[520px]">
-            {heroHeading}
-          </h1>
-          <p className="font-serif italic text-white/88 mb-4 text-[16px] sm:text-[21px] leading-snug">{heroSub}</p>
-          <p className="text-[12px] text-white/62 leading-relaxed font-light mb-9 max-w-[300px]">{heroDesc}</p>
-          <Link href={heroCTALink} className="inline-flex items-center gap-3 border border-white/50 text-white text-[8px] tracking-[3px] uppercase px-6 py-4 hover:bg-white hover:text-black transition-all duration-300 w-fit">
-            {heroCTA}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </Link>
-        </div>
         {/* Down arrow */}
         <div className="absolute bottom-6 left-6 sm:left-12 md:left-20">
           <svg width="12" height="22" viewBox="0 0 12 24" fill="none" stroke="white" strokeWidth="1" opacity="0.4">
