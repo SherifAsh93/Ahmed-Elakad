@@ -125,13 +125,6 @@ export default async function HomePage() {
             ].map((card) => (
               <Link key={card.label} href={card.href} className="relative block overflow-hidden group aspect-[3/4]">
                 <img src={optimizeImage(card.img)} alt={card.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 md:p-6">
-                  <p className="text-[6px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] uppercase text-white font-medium mb-1 sm:mb-1.5">{card.label}</p>
-                  <span className="inline-flex items-center gap-1 text-[5.5px] sm:text-[8px] tracking-[2px] uppercase text-white/65 group-hover:text-white transition-colors">
-                    Explore <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </span>
-                </div>
               </Link>
             ))}
           </div>

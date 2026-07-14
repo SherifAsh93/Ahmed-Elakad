@@ -305,11 +305,6 @@ function EditCard({
         )}
       </div>
 
-      {coll.name && (
-        <h2 className={`mt-3 font-display text-[11px] sm:text-sm uppercase tracking-[0.1em] text-center leading-snug transition-colors ${isDragging ? "text-[#b3a384]" : "text-[#aaa]"}`}>
-          {coll.name}
-        </h2>
-      )}
     </div>
   );
 }
@@ -391,11 +386,6 @@ function ViewCard({ coll, idx, onOpen }: { coll: Collection; idx: number; onOpen
         )}
       </div>
 
-      {coll.name && (
-        <h2 className="mt-4 font-display text-[11px] sm:text-sm md:text-base uppercase tracking-[0.1em] text-center leading-snug text-[#1a1a1a] group-hover:text-[#b3a384] transition-colors">
-          {coll.name}
-        </h2>
-      )}
     </div>
   );
 }
