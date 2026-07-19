@@ -19,7 +19,10 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${content.siteInfo?.brandName ?? "Ahmed Elakad Couture"}`,
     },
     description: content.siteInfo?.description ?? "Ahmed Elakad Couture — Luxury fashion design.",
-    other: { "google": "notranslate" },
+    other: {
+      "google": "notranslate",
+      "facebook-domain-verification": "tqxbddfhc3nx52np7coh7e55gjwnwn",
+    },
   };
 }
 
