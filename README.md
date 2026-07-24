@@ -1,49 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with
-[`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ahmed Elakad Couture
 
-## Getting Started
+Luxury Egyptian fashion designer website and internal Atelier CRM.
 
-First, run the development server: try to deply better version
+**Live:** https://ahmedelakad.com
+**Stack:** Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · VPS + PM2 + Nginx
+
+---
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd /home/sherif/sites/Ahmed-Elakad
+npm install
+npm run dev       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the
-result.
+Copy `.env.local` with the required secrets (see PROJECT_CONTEXT.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page
-auto-updates as you edit the file.
+---
 
-This project uses
-[`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts)
-to automatically optimize and load [Geist](https://vercel.com/font), a new font
-family for Vercel.
+## Public Routes
 
-## Learn More
+| Route | Description |
+|-------|-------------|
+| `/` | Home — hero + collection CTAs |
+| `/about` | Designer bio + gallery |
+| `/bridal/[year]` | Bridal collections (year or `all`) |
+| `/couture/[year]` | Couture collections (year or `all`) |
+| `/experience` | Testimonials + client videos |
+| `/contact` | 4-step private Atelier enquiry form |
+| `/contact?ref=ad` | Same page + auto-opens ad enquiry popup |
+| `/atelier` | Internal staff CRM (Arabic RTL, no login) |
+| `/admin` | Admin login — password: `114891` |
+| `/admin/dashboard` | Full CMS |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment (VPS + PM2)
 
-You can check out
-[the Next.js GitHub repository](https://github.com/vercel/next.js) - your
-feedback and contributions are welcome!
+```bash
+git pull origin main
+npm run build
+pm2 restart ahmed-elakad
+pm2 logs ahmed-elakad
+```
 
-## Deploy on Vercel
+> This site is NOT on Vercel. It requires VPS disk access (`/home/sherif/data/ahmed-elakad/`) and local tools (yt-dlp, ffmpeg).
 
-The easiest way to deploy your Next.js app is to use the
-[Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
-from the creators of Next.js.
+---
 
-Check out our
-[Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying)
-for more details.
+## Data Storage
+
+All data is stored as JSON files on VPS disk at `/home/sherif/data/ahmed-elakad/`:
+- `content.json` — site content (all editable text and image URLs)
+- `clients.json` — Atelier CRM records
+- `messages.json` — contact form submissions
+- `ad-enquiries.json` — ad enquiry form submissions
+- `analytics.json` — monthly Instagram analytics
+- `config.json` — admin password
+- `images/` — uploaded media files (~1,700+ files)
+
+Nginx serves `images/` at `https://ahmedelakad.com/media/`.
+
+---
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_PASSWORD` | Fallback admin password |
+| `CLOUDINARY_CLOUD_NAME` | Legacy Cloudinary listing (optional) |
+| `CLOUDINARY_API_SECRET` | Legacy Cloudinary listing (optional) |
+| `ANTHROPIC_API_KEY` | Claude AI analytics audit |
+
+---
+
+See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for full documentation.
