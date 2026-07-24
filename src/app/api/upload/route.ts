@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import fs from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import Busboy from "busboy";
 
+export const dynamic = 'force-dynamic';
+
+const execFileAsync = promisify(execFile);
 const IMAGES_DIR = "/home/sherif/data/ahmed-elakad/images";
 const PUBLIC_BASE = "https://ahmedelakad.com/media";
+const FFMPEG = "/usr/bin/ffmpeg";
 
 // Keep this export so images/route.ts can import it for excluded URL tracking
 export const excludedUrls = new Set<string>();
@@ -15,15 +22,25 @@ async function auth() {
   return session?.value === "authenticated";
 }
 
-function saveToLocal(buffer: Buffer, originalName: string): string {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-  const ext = (originalName.split(".").pop()?.toLowerCase() || "jpg")
-    .replace("jpeg", "jpg");
-  const allowed = ["jpg", "png", "webp", "gif"];
-  const finalExt = allowed.includes(ext) ? ext : "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${finalExt}`;
-  fs.writeFileSync(path.join(IMAGES_DIR, filename), buffer);
-  return `${PUBLIC_BASE}/${filename}`;
+const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif"];
+const VIDEO_EXTS = ["mp4", "webm", "mov", "avi", "mkv", "m4v", "3gp", "hevc", "heic", "wmv", "flv"];
+
+function getExt(filename: string): string {
+  return (filename.split(".").pop() || "").toLowerCase().replace("jpeg", "jpg");
+}
+
+// Convert any video to mp4 using ffmpeg, return new path
+async function toMp4(inputPath: string): Promise<string> {
+  const outputPath = inputPath.replace(/\.[^.]+$/, ".mp4");
+  await execFileAsync(FFMPEG, [
+    "-i", inputPath,
+    "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+    "-c:a", "aac", "-b:a", "128k",
+    "-movflags", "+faststart",
+    "-y", outputPath,
+  ], { timeout: 300000 });
+  fs.unlinkSync(inputPath);
+  return outputPath;
 }
 
 export async function POST(req: NextRequest) {
@@ -31,30 +48,71 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const formData = await req.formData();
-    const files = formData.getAll("files") as File[];
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: "No files provided" }, { status: 400 });
+  const contentType = req.headers.get("content-type") || "";
+
+  return new Promise<NextResponse>((resolve) => {
+    const bb = Busboy({ headers: { "content-type": contentType } });
+    const tasks: Promise<string>[] = [];
+
+    bb.on("file", (_field, stream, info) => {
+      const ext = getExt(info.filename || "upload");
+      const isVideo = VIDEO_EXTS.includes(ext) || (!IMAGE_EXTS.includes(ext) && ext !== "");
+      const saveExt = isVideo ? ext || "mp4" : (IMAGE_EXTS.includes(ext) ? ext : "jpg");
+      const basename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const tmpPath = path.join(IMAGES_DIR, `${basename}.${saveExt}`);
+      const ws = fs.createWriteStream(tmpPath);
+
+      const task = new Promise<string>((res, rej) => {
+        ws.on("finish", async () => {
+          try {
+            if (isVideo && saveExt !== "mp4" && saveExt !== "webm") {
+              // Convert non-mp4/webm video to mp4 for browser compatibility
+              const mp4Path = await toMp4(tmpPath);
+              const filename = path.basename(mp4Path);
+              res(`${PUBLIC_BASE}/${filename}`);
+            } else {
+              res(`${PUBLIC_BASE}/${basename}.${saveExt}`);
+            }
+          } catch (e) {
+            rej(e);
+          }
+        });
+        ws.on("error", rej);
+      });
+
+      tasks.push(task);
+      stream.pipe(ws);
+    });
+
+    bb.on("finish", async () => {
+      try {
+        const uploaded = await Promise.all(tasks);
+        resolve(NextResponse.json({ ok: true, uploaded }));
+      } catch (err) {
+        resolve(NextResponse.json({ error: `Upload Error: ${err instanceof Error ? err.message : "Unknown"}` }, { status: 500 }));
+      }
+    });
+
+    bb.on("error", (err: Error) => {
+      resolve(NextResponse.json({ error: `Upload Error: ${err.message}` }, { status: 500 }));
+    });
+
+    const reader = req.body?.getReader();
+    if (!reader) {
+      resolve(NextResponse.json({ error: "No body" }, { status: 400 }));
+      return;
     }
-
-    const uploaded: string[] = [];
-
-    for (const file of files) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const url = saveToLocal(buffer, file.name);
-      uploaded.push(url);
-    }
-
-    return NextResponse.json({ ok: true, uploaded });
-  } catch (err) {
-    console.error("Upload failure:", err);
-    return NextResponse.json(
-      { error: `Upload Error: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
-    );
-  }
+    const pump = async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { bb.end(); break; }
+        if (!bb.write(value)) await new Promise(r => bb.once("drain", r));
+      }
+    };
+    pump().catch((err: Error) => resolve(NextResponse.json({ error: err.message }, { status: 500 })));
+  });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -69,14 +127,11 @@ export async function DELETE(req: NextRequest) {
     if (url.startsWith(PUBLIC_BASE)) {
       const filename = url.replace(`${PUBLIC_BASE}/`, "");
       const filepath = path.join(IMAGES_DIR, filename);
-      if (fs.existsSync(filepath)) {
-        fs.unlinkSync(filepath);
-      }
+      if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
       excludedUrls.add(url);
       return NextResponse.json({ ok: true });
     }
 
-    // Legacy Cloudinary delete
     const cloudinary = (await import("@/lib/cloudinary")).default;
     const uploadIdx = url.indexOf("/upload/");
     if (uploadIdx === -1) return NextResponse.json({ error: "invalid url" }, { status: 400 });
