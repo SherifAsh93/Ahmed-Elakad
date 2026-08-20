@@ -149,7 +149,7 @@ export interface SiteContent {
   };
 }
 
-const CONTENT_FILE = "/home/sherif/data/ahmed-elakad/content.json";
+const CONTENT_FILE = path.join(process.cwd(), "data", "content.json");
 
 export async function getContent(): Promise<SiteContent> {
   try {
