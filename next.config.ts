@@ -26,6 +26,14 @@ const nextConfig: NextConfig = {
     unoptimized: false,
   },
   experimental: {},
+  async rewrites() {
+    return [
+      {
+        source: "/media/:path*",
+        destination: "/public/media/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
