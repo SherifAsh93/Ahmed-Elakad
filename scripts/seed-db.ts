@@ -7,6 +7,10 @@
  */
 import fs from "fs";
 import path from "path";
+import { config } from "dotenv";
+
+config({ path: path.join(process.cwd(), ".env.local") });
+
 import { getDb } from "../src/lib/db/client";
 import { siteContent, clients } from "../src/lib/db/schema";
 

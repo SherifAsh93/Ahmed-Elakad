@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { messages as messagesTable } from "@/lib/db/schema";
+import { getCollection, saveCollection } from "@/lib/db/store";
 
 export interface ContactMessage {
   id: string;
@@ -12,19 +11,16 @@ export interface ContactMessage {
   read?: boolean;
 }
 
-const MESSAGES_FILE = path.join(process.cwd(), "data", "messages.json");
-
-function readLocal(): ContactMessage[] {
+async function readLocal(): Promise<ContactMessage[]> {
   try {
-    if (fs.existsSync(MESSAGES_FILE)) {
-      return JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
-    }
-  } catch {}
-  return [];
+    return await getCollection<ContactMessage>(messagesTable);
+  } catch {
+    return [];
+  }
 }
 
-function writeLocal(messages: ContactMessage[]): void {
-  atomicWriteJSON(MESSAGES_FILE, messages);
+async function writeLocal(messages: ContactMessage[]): Promise<void> {
+  await saveCollection(messagesTable, messages);
 }
 
 export async function getMessages(): Promise<ContactMessage[]> {
@@ -32,21 +28,21 @@ export async function getMessages(): Promise<ContactMessage[]> {
 }
 
 export async function addMessage(msg: Omit<ContactMessage, "id" | "createdAt">): Promise<ContactMessage> {
-  const messages = readLocal();
+  const messages = await readLocal();
   const newMsg: ContactMessage = {
     ...msg,
     id: Math.random().toString(36).substring(2, 11),
     createdAt: new Date().toISOString(),
     read: false,
   };
-  writeLocal([newMsg, ...messages]);
+  await writeLocal([newMsg, ...messages]);
   return newMsg;
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-  writeLocal(readLocal().filter((m) => m.id !== id));
+  await writeLocal((await readLocal()).filter((m) => m.id !== id));
 }
 
 export async function markMessageRead(id: string, read: boolean): Promise<void> {
-  writeLocal(readLocal().map((m) => (m.id === id ? { ...m, read } : m)));
+  await writeLocal((await readLocal()).map((m) => (m.id === id ? { ...m, read } : m)));
 }

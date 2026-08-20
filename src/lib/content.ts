@@ -1,6 +1,7 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { siteContent } from "@/lib/db/schema";
+import { getSingleton, saveSingleton } from "@/lib/db/store";
+
+const CONTENT_ID = "site";
 
 export interface Testimonial {
   id: string;
@@ -149,25 +150,21 @@ export interface SiteContent {
   };
 }
 
-const CONTENT_FILE = path.join(process.cwd(), "data", "content.json");
-
 export async function getContent(): Promise<SiteContent> {
   try {
-    if (fs.existsSync(CONTENT_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(CONTENT_FILE, "utf-8"));
-      if (parsed && Object.keys(parsed).length > 0) return parsed;
-    }
+    const data = await getSingleton<SiteContent>(siteContent, CONTENT_ID);
+    if (data && Object.keys(data).length > 0) return data;
   } catch (e) {
-    console.error("Error reading content.json:", e);
+    console.error("Error reading content:", e);
   }
   return {};
 }
 
 export async function saveContent(content: SiteContent): Promise<void> {
   try {
-    atomicWriteJSON(CONTENT_FILE, content);
+    await saveSingleton(siteContent, CONTENT_ID, content);
   } catch (e) {
-    console.error("Error saving content.json:", e);
-    throw new Error("Failed to write content file.");
+    console.error("Error saving content:", e);
+    throw new Error("Failed to save content.");
   }
 }

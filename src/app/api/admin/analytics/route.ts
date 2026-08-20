@@ -21,7 +21,7 @@ async function auth() {
 export async function GET() {
   if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    return NextResponse.json(getAnalytics());
+    return NextResponse.json(await getAnalytics());
   } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const month: MonthlyAnalytics = body.month;
     if (!month?.id) return NextResponse.json({ error: "Missing month data" }, { status: 400 });
-    const all = upsertMonth(month);
+    const all = await upsertMonth(month);
     return NextResponse.json(all);
   } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
     const { monthId } = await req.json();
     if (!monthId) return NextResponse.json({ error: "Missing monthId" }, { status: 400 });
 
-    const all = getAnalytics();
+    const all = await getAnalytics();
     const month = all.find((m) => m.id === monthId);
     if (!month) return NextResponse.json({ error: "Month not found" }, { status: 404 });
     if (!month.posts.length) return NextResponse.json({ error: "No posts to analyze" }, { status: 400 });
@@ -109,7 +109,7 @@ Focus on specific numbers and patterns. Group similar topics together. Calculate
     const audit: AuditResult = { ...auditData, createdAt: new Date().toISOString() };
 
     const updatedMonth = { ...month, audit };
-    const updated = upsertMonth(updatedMonth);
+    const updated = await upsertMonth(updatedMonth);
     return NextResponse.json({ all: updated, audit });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
@@ -123,7 +123,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const { monthId } = await req.json();
     if (!monthId) return NextResponse.json({ error: "Missing monthId" }, { status: 400 });
-    const all = deleteMonth(monthId);
+    const all = await deleteMonth(monthId);
     return NextResponse.json(all);
   } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

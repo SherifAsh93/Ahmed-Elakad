@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { analyticsMonths } from "@/lib/db/schema";
+import { getCollection, saveCollection } from "@/lib/db/store";
 
 export interface InstagramPost {
   id: string;
@@ -36,31 +35,20 @@ export interface MonthlyAnalytics {
   audit?: AuditResult;
 }
 
-const ANALYTICS_FILE = path.join(process.cwd(), "data", "analytics.json");
-
-function ensureDir() {
-  const dir = path.dirname(ANALYTICS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-
-export function getAnalytics(): MonthlyAnalytics[] {
-  ensureDir();
-  if (!fs.existsSync(ANALYTICS_FILE)) return [];
+export async function getAnalytics(): Promise<MonthlyAnalytics[]> {
   try {
-    const raw = fs.readFileSync(ANALYTICS_FILE, "utf-8");
-    return JSON.parse(raw);
+    return await getCollection<MonthlyAnalytics>(analyticsMonths);
   } catch {
     return [];
   }
 }
 
-export function saveAnalytics(data: MonthlyAnalytics[]): void {
-  ensureDir();
-  atomicWriteJSON(ANALYTICS_FILE, data);
+export async function saveAnalytics(data: MonthlyAnalytics[]): Promise<void> {
+  await saveCollection(analyticsMonths, data);
 }
 
-export function upsertMonth(month: MonthlyAnalytics): MonthlyAnalytics[] {
-  const all = getAnalytics();
+export async function upsertMonth(month: MonthlyAnalytics): Promise<MonthlyAnalytics[]> {
+  const all = await getAnalytics();
   const idx = all.findIndex((m) => m.id === month.id);
   if (idx === -1) {
     all.push(month);
@@ -68,12 +56,12 @@ export function upsertMonth(month: MonthlyAnalytics): MonthlyAnalytics[] {
     all[idx] = month;
   }
   all.sort((a, b) => b.id.localeCompare(a.id));
-  saveAnalytics(all);
+  await saveAnalytics(all);
   return all;
 }
 
-export function deleteMonth(id: string): MonthlyAnalytics[] {
-  const all = getAnalytics().filter((m) => m.id !== id);
-  saveAnalytics(all);
+export async function deleteMonth(id: string): Promise<MonthlyAnalytics[]> {
+  const all = (await getAnalytics()).filter((m) => m.id !== id);
+  await saveAnalytics(all);
   return all;
 }

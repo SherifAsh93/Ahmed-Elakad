@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { clients as clientsTable } from "@/lib/db/schema";
+import { getCollection, saveCollection } from "@/lib/db/store";
 
 export interface Payment {
   id: string;
@@ -47,62 +46,59 @@ export interface Client {
   sourceMessageId?: string;
 }
 
-const CLIENTS_FILE = path.join(process.cwd(), "data", "clients.json");
-
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
 // Reads every record — never drops entries, used internally for all writes
-function readAll(): Client[] {
+async function readAll(): Promise<Client[]> {
   try {
-    if (fs.existsSync(CLIENTS_FILE)) {
-      const raw = JSON.parse(fs.readFileSync(CLIENTS_FILE, "utf-8")) as Client[];
-      return raw.map((c) => {
-        const payments: Payment[] = c.payments ?? [];
-        const dresses: Dress[] = c.dresses ?? [];
-        const voiceNotes: VoiceNote[] = c.voiceNotes ?? [];
-        const totalPrice: number = c.totalPrice ?? 0;
-        // If phone was lost or is too short, reconstruct it from id so the record stays valid
-        const rawPhone = c.phone ?? "";
-        const phone = rawPhone && normalizePhone(rawPhone).length >= 7 ? rawPhone : (c.id ?? "");
-        const client: Client = {
-          ...c,
-          name: c.name ?? "",
-          email: c.email ?? "",
-          phone,
-          notes: c.notes ?? "",
-          totalPrice,
-          appointmentDate: c.appointmentDate ?? "",
-          appointmentTime: c.appointmentTime ?? "",
-          nextAppointmentDate: c.nextAppointmentDate ?? "",
-          fittingDate: c.fittingDate ?? "",
-          fittingTime: c.fittingTime ?? "",
-          eventDate: c.eventDate ?? "",
-          dressType: c.dressType ?? "",
-          branch: c.branch ?? "",
-          clientImages: c.clientImages ?? [],
-          id: phone ? normalizePhone(phone) : (c.id ?? ""),
-          dresses,
-          voiceNotes,
-          payments,
-          status: "pending",
-        };
-        client.status = autoStatus(client);
-        return client;
-      });
-    }
-  } catch {}
-  return [];
+    const raw = await getCollection<Client>(clientsTable);
+    return raw.map((c) => {
+      const payments: Payment[] = c.payments ?? [];
+      const dresses: Dress[] = c.dresses ?? [];
+      const voiceNotes: VoiceNote[] = c.voiceNotes ?? [];
+      const totalPrice: number = c.totalPrice ?? 0;
+      // If phone was lost or is too short, reconstruct it from id so the record stays valid
+      const rawPhone = c.phone ?? "";
+      const phone = rawPhone && normalizePhone(rawPhone).length >= 7 ? rawPhone : (c.id ?? "");
+      const client: Client = {
+        ...c,
+        name: c.name ?? "",
+        email: c.email ?? "",
+        phone,
+        notes: c.notes ?? "",
+        totalPrice,
+        appointmentDate: c.appointmentDate ?? "",
+        appointmentTime: c.appointmentTime ?? "",
+        nextAppointmentDate: c.nextAppointmentDate ?? "",
+        fittingDate: c.fittingDate ?? "",
+        fittingTime: c.fittingTime ?? "",
+        eventDate: c.eventDate ?? "",
+        dressType: c.dressType ?? "",
+        branch: c.branch ?? "",
+        clientImages: c.clientImages ?? [],
+        id: phone ? normalizePhone(phone) : (c.id ?? ""),
+        dresses,
+        voiceNotes,
+        payments,
+        status: "pending",
+      };
+      client.status = autoStatus(client);
+      return client;
+    });
+  } catch {
+    return [];
+  }
 }
 
 // Public read — only returns fully-valid clients (has phone ≥7 digits)
-function readLocal(): Client[] {
-  return readAll().filter((c) => c.phone && normalizePhone(c.phone).length >= 7);
+async function readLocal(): Promise<Client[]> {
+  return (await readAll()).filter((c) => c.phone && normalizePhone(c.phone).length >= 7);
 }
 
-function writeLocal(clients: Client[]): void {
-  atomicWriteJSON(CLIENTS_FILE, clients);
+async function writeLocal(clients: Client[]): Promise<void> {
+  await saveCollection(clientsTable, clients);
 }
 
 export function paidAmount(client: Client): number {
@@ -130,7 +126,7 @@ export async function addClient(data: Omit<Client, "id" | "createdAt" | "voiceNo
   const id = normalizePhone(data.phone);
   if (id.length < 7) throw new Error("Invalid mobile number");
 
-  const all = readAll();
+  const all = await readAll();
   if (all.some((c) => c.id === id)) throw new Error("A client with this mobile number already exists");
 
   const client: Client = {
@@ -139,12 +135,12 @@ export async function addClient(data: Omit<Client, "id" | "createdAt" | "voiceNo
     voiceNotes: [],
     createdAt: new Date().toISOString(),
   };
-  writeLocal([client, ...all]);
+  await writeLocal([client, ...all]);
   return client;
 }
 
 export async function updateClient(id: string, data: Partial<Omit<Client, "id" | "createdAt">>): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
 
   if (data.phone) {
     const newId = normalizePhone(data.phone);
@@ -171,16 +167,16 @@ export async function updateClient(id: string, data: Partial<Omit<Client, "id" |
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  writeLocal(readAll().filter((c) => c.id !== id));
+  await writeLocal((await readAll()).filter((c) => c.id !== id));
 }
 
 export async function addPayment(clientId: string, payment: Omit<Payment, "id">): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -191,12 +187,12 @@ export async function addPayment(clientId: string, payment: Omit<Payment, "id">)
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function updatePayment(clientId: string, paymentId: string, data: Partial<Omit<Payment, "id">>): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -208,12 +204,12 @@ export async function updatePayment(clientId: string, paymentId: string, data: P
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function deletePayment(clientId: string, paymentId: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -223,12 +219,12 @@ export async function deletePayment(clientId: string, paymentId: string): Promis
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function addDress(clientId: string, label: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -243,12 +239,12 @@ export async function addDress(clientId: string, label: string): Promise<Client 
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function deleteDress(clientId: string, dressId: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -257,12 +253,12 @@ export async function deleteDress(clientId: string, dressId: string): Promise<Cl
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function addDressImages(clientId: string, dressId: string, images: string[]): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -276,12 +272,12 @@ export async function addDressImages(clientId: string, dressId: string, images: 
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function removeDressImage(clientId: string, dressId: string, imageUrl: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -295,12 +291,12 @@ export async function removeDressImage(clientId: string, dressId: string, imageU
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function updateDressLabel(clientId: string, dressId: string, label: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -314,12 +310,12 @@ export async function updateDressLabel(clientId: string, dressId: string, label:
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function addVoiceNote(clientId: string, data: Omit<VoiceNote, "id" | "createdAt">): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   const next = all.map((c) => {
     if (c.id === clientId) {
@@ -333,12 +329,12 @@ export async function addVoiceNote(clientId: string, data: Omit<VoiceNote, "id" 
     }
     return c;
   });
-  if (updated) writeLocal(next);
+  if (updated) await writeLocal(next);
   return updated;
 }
 
 export async function deleteVoiceNote(clientId: string, voiceNoteId: string): Promise<Client | null> {
-  const all = readAll();
+  const all = await readAll();
   let updated: Client | null = null;
   let deletedUrl = "";
 
@@ -353,7 +349,7 @@ export async function deleteVoiceNote(clientId: string, voiceNoteId: string): Pr
   });
 
   if (updated) {
-    writeLocal(next);
+    await writeLocal(next);
     if (deletedUrl.includes("res.cloudinary.com")) {
       try {
         const cloudinary = (await import("@/lib/cloudinary")).default;
