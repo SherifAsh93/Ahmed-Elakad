@@ -5,8 +5,8 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const IMAGES_DIR = "/home/sherif/data/ahmed-elakad/images";
-const PUBLIC_BASE = "https://ahmedelakad.com/media";
+const IMAGES_DIR = path.join(process.cwd(), "public", "media");
+const PUBLIC_BASE = "/media";
 
 async function auth() {
   const cookieStore = await cookies();

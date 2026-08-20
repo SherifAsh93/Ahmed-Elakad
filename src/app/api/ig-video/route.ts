@@ -8,8 +8,8 @@ import fs from 'fs';
 export const dynamic = 'force-dynamic';
 
 const execFileAsync = promisify(execFile);
-const MEDIA_DIR = '/home/sherif/data/ahmed-elakad/images';
-const PUBLIC_BASE = 'https://ahmedelakad.com/media';
+const MEDIA_DIR = path.join(process.cwd(), 'public', 'media');
+const PUBLIC_BASE = '/media';
 const YTDLP = '/home/sherif/yt-dlp';
 const COOKIES_FILE = '/home/sherif/data/ahmed-elakad/ig-cookies.txt';
 const PLAYWRIGHT_PROFILE = '/home/sherif/.cache/ms-playwright/mcp-chrome-d26cd27/Default';
