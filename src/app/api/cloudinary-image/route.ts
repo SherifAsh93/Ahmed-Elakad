@@ -20,8 +20,12 @@ export async function GET(req: NextRequest) {
 
   // Forward the browser's Accept header so Cloudinary's f_auto negotiates
   // the real format (AVIF/WebP/etc) for the actual requesting browser.
+  // cache: "no-store" — otherwise Next's fetch() memoizes by URL alone and
+  // a later request with a different Accept header gets an earlier
+  // request's cached (wrong-format) response.
   const upstream = await fetch(signed, {
     headers: { Accept: req.headers.get("accept") ?? "image/avif,image/webp,image/*,*/*" },
+    cache: "no-store",
   });
 
   if (!upstream.ok || !upstream.body) {
@@ -32,7 +36,12 @@ export async function GET(req: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": upstream.headers.get("content-type") ?? "image/jpeg",
+      // Vary: Accept — our own response caching (CDN/browser) must also key
+      // on Accept, or the same problem happens one layer up: a WebP-capable
+      // visitor could get served a JPEG response cached from a request that
+      // didn't ask for WebP.
       "Cache-Control": "public, max-age=2592000, immutable",
+      "Vary": "Accept",
     },
   });
 }
