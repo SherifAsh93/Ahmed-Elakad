@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent } from "@/lib/content";
-import { optimizeImage } from "@/lib/utils";
+import { signedImageUrl } from "@/lib/cloudinaryImage";
 import AtelierForm from "@/components/AtelierForm";
 import AdInquiryPopup from "@/components/AdInquiryPopup";
 
@@ -11,7 +11,7 @@ export default async function ContactPage() {
   const content = await getContent();
   const contact = content.contact ?? {};
   const phones: string[] = (contact.phones ?? []).filter(Boolean);
-  const heroImage = optimizeImage(contact.heroImage || "");
+  const heroImage = signedImageUrl(contact.heroImage || "", 1600);
   const whatsappNumber = content.social?.whatsapp || "201101548030";
   const waHref = "https://wa.me/" + whatsappNumber.replace(/\D/g, "");
 
@@ -193,7 +193,7 @@ export default async function ContactPage() {
             {intlImage && (
               <div className="md:w-[48%] min-h-[380px] md:min-h-0 overflow-hidden">
                 <img
-                  src={optimizeImage(intlImage)}
+                  src={signedImageUrl(intlImage, 800)}
                   alt="International shipping"
                   className="w-full h-full object-cover"
                   loading="lazy"

@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent, Testimonial, VideoItem } from "@/lib/content";
-import { optimizeImage } from "@/lib/utils";
+import { signedImageUrl } from "@/lib/cloudinaryImage";
 import Link from "next/link";
 import TestimonialsSection from "./TestimonialsSection";
 import VideosSection from "./VideosSection";
@@ -47,7 +47,7 @@ export default async function ExperiencePage() {
       <section className="relative w-full min-h-[60vh] md:min-h-[75vh] flex items-end overflow-hidden">
         {heroImage ? (
           <img
-            src={optimizeImage(heroImage)}
+            src={signedImageUrl(heroImage, 1600)}
             alt="The Elakad Experience"
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
@@ -93,7 +93,7 @@ export default async function ExperiencePage() {
       <section className="relative py-16 sm:py-20 md:py-24 px-5 sm:px-10">
         {/* Same hero image, light warm overlay */}
         {heroImage && (
-          <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          <img src={signedImageUrl(heroImage, 800)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         )}
         <div className="absolute inset-0 bg-[#f5f0e8]/90" />
 
@@ -151,7 +151,7 @@ export default async function ExperiencePage() {
       {/* ── YOUR STORY CTA — single unified layout matching template ── */}
       <section className="relative w-full min-h-[40vh] flex items-center overflow-hidden">
         {ctaImage ? (
-          <img src={optimizeImage(ctaImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          <img src={signedImageUrl(ctaImage, 800)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="absolute inset-0 bg-[#1a1a1a]" />
         )}

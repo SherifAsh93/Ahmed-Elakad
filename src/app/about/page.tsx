@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { getContent } from "@/lib/content";
-import { optimizeImage } from "@/lib/utils";
+import { signedImageUrl } from "@/lib/cloudinaryImage";
 
 
 export default async function AboutPage() {
@@ -21,7 +21,7 @@ export default async function AboutPage() {
       {/* ── HERO: full-width banner with overlay ── */}
       <section className="relative w-full h-[50vh] sm:h-[52vh] flex items-center justify-center overflow-hidden">
         <img
-          src={optimizeImage(heroImage)}
+          src={signedImageUrl(heroImage, 1600)}
           alt="Ahmed Elakad Couture"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
@@ -82,7 +82,7 @@ export default async function AboutPage() {
           {/* Right: image */}
           <div className="w-full overflow-hidden aspect-[3/4] sm:aspect-[4/3] md:aspect-auto md:h-[400px]">
             <img
-              src={optimizeImage(storyImage)}
+              src={signedImageUrl(storyImage, 800)}
               alt="Ahmed Elakad Atelier"
               className="w-full h-full object-cover"
               loading="lazy"
@@ -114,7 +114,7 @@ export default async function AboutPage() {
                 img ? (
                   <div key={i} className="flex-none w-[72vw] sm:w-[48vw] md:w-[calc(25%-9px)] snap-start aspect-[3/4] overflow-hidden">
                     <img
-                      src={optimizeImage(img)}
+                      src={signedImageUrl(img, 800)}
                       alt="Atelier"
                       className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-700"
                       loading="lazy"

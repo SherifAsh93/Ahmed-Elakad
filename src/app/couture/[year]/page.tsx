@@ -2,7 +2,7 @@ import { getContent } from "@/lib/content";
 import CollectionGrid from "@/components/CollectionGrid";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { optimizeImage } from "@/lib/utils";
+import { signedImageUrl } from "@/lib/cloudinaryImage";
 
 const ALL_YEARS = ["2026","2025","2024","2023","2022","2021","2020","2019","2018","2017","2016"];
 
@@ -48,7 +48,7 @@ export default async function CoutureYearPage({
       {bannerImage ? (
         <div className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] overflow-hidden">
           <img
-            src={optimizeImage(bannerImage)}
+            src={signedImageUrl(bannerImage, 1600)}
             alt="Couture Collection"
             className="w-full h-full object-cover"
             loading="eager"

@@ -1,6 +1,6 @@
 import { getContent } from "@/lib/content";
 import Link from "next/link";
-import { optimizeImage } from "@/lib/utils";
+import { signedImageUrl } from "@/lib/cloudinaryImage";
 import RealBridesCarousel from "@/components/RealBridesCarousel";
 import LoadingScreen from "@/components/LoadingScreen";
 
@@ -47,7 +47,7 @@ export default async function HomePage() {
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
       <section className="relative w-full h-screen min-h-[600px]">
-        <img src={optimizeImage(heroImage)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="eager" fetchPriority="high" />
+        <img src={signedImageUrl(heroImage, 1600)} alt="" className="absolute inset-0 w-full h-full object-cover" loading="eager" fetchPriority="high" />
         <div className="absolute inset-0 bg-black/40" />
 
         {/* Down arrow */}
@@ -87,7 +87,7 @@ export default async function HomePage() {
 
           {/* RIGHT: Image */}
           <div className="min-h-[200px] sm:min-h-[360px] md:min-h-[480px]">
-            <img src={optimizeImage(houseImg)} alt="Ahmed Elakad craftsmanship" className="w-full h-full object-cover" loading="lazy" />
+            <img src={signedImageUrl(houseImg, 800)} alt="Ahmed Elakad craftsmanship" className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
       </section>
@@ -108,7 +108,7 @@ export default async function HomePage() {
               { img: c3i, label: c3l, href: c3h },
             ].map((card) => (
               <Link key={card.label} href={card.href} className="relative block overflow-hidden group aspect-[3/4]">
-                <img src={optimizeImage(card.img)} alt={card.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                <img src={signedImageUrl(card.img, 800)} alt={card.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
               </Link>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default async function HomePage() {
       <section className="relative bg-[#ece6db] overflow-hidden py-12 sm:py-16 md:py-22">
         {/* Left decorative image */}
         <div className="absolute left-0 top-0 bottom-0 w-[80px] sm:w-[160px] md:w-[260px] pointer-events-none select-none">
-          <img src={optimizeImage(ctaImg)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
+          <img src={signedImageUrl(ctaImg, 400)} alt="" className="w-full h-full object-cover opacity-35" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#ece6db]" />
         </div>
         {/* Centered content */}

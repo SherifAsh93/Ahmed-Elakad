@@ -17,7 +17,8 @@ export default function MasonryGallery({
   const [visible, setVisible] = useState(48);
   const [colCount, setColCount] = useState(4);
 
-  const srcs = images.map((img) => optimizeImage(typeof img === "string" ? img : img.src));
+  // 1600px — this gallery is a full-screen zoomed lightbox, needs more than a grid thumbnail.
+  const srcs = images.map((img) => optimizeImage(typeof img === "string" ? img : img.src, 1600));
 
   useEffect(() => {
     const update = () => {
