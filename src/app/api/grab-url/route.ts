@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import fs from "fs";
-import path from "path";
+import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
 
 export const dynamic = "force-dynamic";
-
-const IMAGES_DIR = path.join(process.cwd(), "public", "media");
-const PUBLIC_BASE = "/media";
 
 async function auth() {
   const cookieStore = await cookies();
@@ -14,11 +10,17 @@ async function auth() {
   return session?.value === "authenticated";
 }
 
-function saveToLocal(buffer: Buffer, ext: string): string {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-  fs.writeFileSync(path.join(IMAGES_DIR, filename), buffer);
-  return `${PUBLIC_BASE}/${filename}`;
+function saveToCloudinary(buffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: CLOUDINARY_FOLDER, resource_type: "image" },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Cloudinary upload failed"));
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
 }
 
 const FETCH_HEADERS: Record<string, string> = {
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
   const cleanUrl = url.trim();
 
   // Already our own local media URL — use directly
-  if (cleanUrl.startsWith(PUBLIC_BASE)) {
+  if (cleanUrl.startsWith("/media/")) {
     return NextResponse.json({ cloudinaryUrl: cleanUrl, alreadySynced: true });
   }
 
@@ -61,13 +63,9 @@ export async function POST(req: NextRequest) {
 
     const contentType = response.headers.get("content-type") || "";
     let imageBuffer: Buffer | null = null;
-    let ext = "jpg";
 
     if (contentType.startsWith("image/")) {
       imageBuffer = Buffer.from(await response.arrayBuffer());
-      if (contentType.includes("png")) ext = "png";
-      else if (contentType.includes("webp")) ext = "webp";
-      else if (contentType.includes("gif")) ext = "gif";
     } else if (contentType.includes("text/html")) {
       const html = await response.text();
       // Extract og:image from the page (works for Instagram, Facebook, most social posts)
@@ -89,9 +87,6 @@ export async function POST(req: NextRequest) {
       if (!imgRes.ok) {
         return NextResponse.json({ error: "Found image on page but could not download it." }, { status: 422 });
       }
-      const ct = imgRes.headers.get("content-type") || "";
-      if (ct.includes("png")) ext = "png";
-      else if (ct.includes("webp")) ext = "webp";
       imageBuffer = Buffer.from(await imgRes.arrayBuffer());
     } else {
       return NextResponse.json(
@@ -100,8 +95,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const localUrl = saveToLocal(imageBuffer, ext);
-    return NextResponse.json({ cloudinaryUrl: localUrl });
+    const savedUrl = await saveToCloudinary(imageBuffer);
+    return NextResponse.json({ cloudinaryUrl: savedUrl });
   } catch (err) {
     console.error("grab-url error:", err);
     return NextResponse.json(

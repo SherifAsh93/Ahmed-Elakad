@@ -48,8 +48,6 @@ export interface Client {
 }
 
 const CLIENTS_FILE = path.join(process.cwd(), "data", "clients.json");
-const VOICES_DIR = "/home/sherif/data/ahmed-elakad/voices";
-const VOICES_BASE = "https://ahmedelakad.com/voices";
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
@@ -356,11 +354,14 @@ export async function deleteVoiceNote(clientId: string, voiceNoteId: string): Pr
 
   if (updated) {
     writeLocal(next);
-    if (deletedUrl.startsWith(VOICES_BASE)) {
+    if (deletedUrl.includes("res.cloudinary.com")) {
       try {
-        const filename = deletedUrl.replace(`${VOICES_BASE}/`, "");
-        const filepath = path.join(VOICES_DIR, filename);
-        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        const cloudinary = (await import("@/lib/cloudinary")).default;
+        const uploadIdx = deletedUrl.indexOf("/upload/");
+        if (uploadIdx !== -1) {
+          const publicId = deletedUrl.slice(uploadIdx + 8).replace(/^v\d+\//, "").replace(/\.[^/.]+$/, "");
+          await cloudinary.uploader.destroy(publicId, { resource_type: "video" });
+        }
       } catch {}
     }
   }

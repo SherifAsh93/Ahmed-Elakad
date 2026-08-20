@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
 
-const VOICES_DIR = "/home/sherif/data/ahmed-elakad/voices";
-const PUBLIC_BASE = "https://ahmedelakad.com/voices";
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
-const MIME_TO_EXT: Record<string, string> = {
-  "audio/webm": "webm",
-  "audio/webm;codecs=opus": "webm",
-  "audio/ogg": "ogg",
-  "audio/ogg;codecs=opus": "ogg",
-  "audio/mp4": "mp4",
-  "audio/mpeg": "mp3",
-  "audio/wav": "wav",
-  "audio/x-wav": "wav",
-  "audio/aac": "aac",
-};
+const ALLOWED_MIME_BASES = new Set([
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/aac",
+]);
+
+function uploadBuffer(buffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: `${CLOUDINARY_FOLDER}/voices`, resource_type: "video" },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Cloudinary upload failed"));
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,19 +34,14 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_SIZE) return NextResponse.json({ error: "File too large (max 10 MB)" }, { status: 400 });
 
     const mimeBase = (file.type || "audio/webm").split(";")[0].trim();
-    const fullMime = file.type || "audio/webm";
-    const ext = MIME_TO_EXT[fullMime] ?? MIME_TO_EXT[mimeBase] ?? file.name.split(".").pop()?.toLowerCase() ?? "webm";
-    const allowed = ["webm", "mp4", "ogg", "mp3", "wav", "aac"];
-    if (!allowed.includes(ext)) {
+    if (!ALLOWED_MIME_BASES.has(mimeBase)) {
       return NextResponse.json({ error: "Unsupported audio format" }, { status: 400 });
     }
 
-    fs.mkdirSync(VOICES_DIR, { recursive: true });
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(path.join(VOICES_DIR, filename), buffer);
+    const url = await uploadBuffer(buffer);
 
-    return NextResponse.json({ url: `${PUBLIC_BASE}/${filename}` });
+    return NextResponse.json({ url });
   } catch (err) {
     console.error("Voice upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

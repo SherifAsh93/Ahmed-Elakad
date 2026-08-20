@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import fs from "fs";
-import path from "path";
-import { execFile } from "child_process";
-import { promisify } from "util";
 import Busboy from "busboy";
+import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
 
 export const dynamic = 'force-dynamic';
-
-const execFileAsync = promisify(execFile);
-const IMAGES_DIR = path.join(process.cwd(), "public", "media");
-const PUBLIC_BASE = "/media";
-const FFMPEG = "/usr/bin/ffmpeg";
 
 // Keep this export so images/route.ts can import it for excluded URL tracking
 export const excludedUrls = new Set<string>();
@@ -29,26 +21,28 @@ function getExt(filename: string): string {
   return (filename.split(".").pop() || "").toLowerCase().replace("jpeg", "jpg");
 }
 
-// Convert any video to mp4 using ffmpeg, return new path
-async function toMp4(inputPath: string): Promise<string> {
-  const outputPath = inputPath.replace(/\.[^.]+$/, ".mp4");
-  await execFileAsync(FFMPEG, [
-    "-i", inputPath,
-    "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-    "-c:a", "aac", "-b:a", "128k",
-    "-movflags", "+faststart",
-    "-y", outputPath,
-  ], { timeout: 300000 });
-  fs.unlinkSync(inputPath);
-  return outputPath;
+function uploadBuffer(buffer: Buffer, resourceType: "image" | "video"): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: CLOUDINARY_FOLDER,
+        resource_type: resourceType,
+        // Transcode uploaded videos to mp4 for broad browser compatibility
+        ...(resourceType === "video" ? { format: "mp4" } : {}),
+      },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Cloudinary upload failed"));
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
 }
 
 export async function POST(req: NextRequest) {
   if (!(await auth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
   const contentType = req.headers.get("content-type") || "";
 
@@ -59,31 +53,24 @@ export async function POST(req: NextRequest) {
     bb.on("file", (_field, stream, info) => {
       const ext = getExt(info.filename || "upload");
       const isVideo = VIDEO_EXTS.includes(ext) || (!IMAGE_EXTS.includes(ext) && ext !== "");
-      const saveExt = isVideo ? ext || "mp4" : (IMAGE_EXTS.includes(ext) ? ext : "jpg");
-      const basename = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const tmpPath = path.join(IMAGES_DIR, `${basename}.${saveExt}`);
-      const ws = fs.createWriteStream(tmpPath);
+      const chunks: Buffer[] = [];
+
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
 
       const task = new Promise<string>((res, rej) => {
-        ws.on("finish", async () => {
+        stream.on("end", async () => {
           try {
-            if (isVideo && saveExt !== "mp4" && saveExt !== "webm") {
-              // Convert non-mp4/webm video to mp4 for browser compatibility
-              const mp4Path = await toMp4(tmpPath);
-              const filename = path.basename(mp4Path);
-              res(`${PUBLIC_BASE}/${filename}`);
-            } else {
-              res(`${PUBLIC_BASE}/${basename}.${saveExt}`);
-            }
+            const buffer = Buffer.concat(chunks);
+            const url = await uploadBuffer(buffer, isVideo ? "video" : "image");
+            res(url);
           } catch (e) {
             rej(e);
           }
         });
-        ws.on("error", rej);
+        stream.on("error", rej);
       });
 
       tasks.push(task);
-      stream.pipe(ws);
     });
 
     bb.on("finish", async () => {
@@ -124,19 +111,18 @@ export async function DELETE(req: NextRequest) {
     const { url } = await req.json();
     if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
 
-    if (url.startsWith(PUBLIC_BASE)) {
-      const filename = url.replace(`${PUBLIC_BASE}/`, "");
-      const filepath = path.join(IMAGES_DIR, filename);
-      if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    // Historical local media (public/media, shipped with the deployment) —
+    // read-only static asset, just hide it from the library listing.
+    if (url.startsWith("/media/")) {
       excludedUrls.add(url);
       return NextResponse.json({ ok: true });
     }
 
-    const cloudinary = (await import("@/lib/cloudinary")).default;
     const uploadIdx = url.indexOf("/upload/");
     if (uploadIdx === -1) return NextResponse.json({ error: "invalid url" }, { status: 400 });
-    let publicId = url.slice(uploadIdx + 8).replace(/^v\d+\//, "").replace(/\.[^/.]+$/, "");
-    const result = await cloudinary.uploader.destroy(publicId);
+    const publicId = url.slice(uploadIdx + 8).replace(/^v\d+\//, "").replace(/\.[^/.]+$/, "");
+    const resourceType = /\.(mp4|webm|mov|avi|mkv|m4v)(\?|$)/i.test(url) ? "video" : "image";
+    const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
     if (result.result === "ok" || result.result === "not found") {
       excludedUrls.add(url);
       return NextResponse.json({ ok: true, result: result.result });
