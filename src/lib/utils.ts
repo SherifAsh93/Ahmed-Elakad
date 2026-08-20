@@ -1,31 +1,25 @@
 /**
- * Returns an optimized image URL routed through Next.js image optimizer.
- * This resizes, converts to WebP/AVIF, and caches the result on disk.
+ * Returns a display URL for an image.
  *
- * Supported sources:
- *  - /media/...  → local images served from public/media
- *  - res.cloudinary.com/... → Cloudinary images (strict transforms prevent direct resize)
+ * Previously routed Cloudinary/local images through Next's /_next/image
+ * optimizer. That now fails account-wide with 402 Payment Required
+ * (X-Vercel-Error: OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) once the
+ * account's Vercel Image Optimization quota is exhausted — every image
+ * not already cached from a prior request breaks. Cloudinary already
+ * hosts and can resize these images on its own CDN for free, but this
+ * account has "Strict Transformations" enabled, so an unsigned resize
+ * URL 401s; a signed one requires the Cloudinary Node SDK (server-only,
+ * needs the API secret) and this function is also called from client
+ * components. Serving the original URL unchanged is always safe (verified
+ * every current image URL resolves with a plain 200) — it just skips
+ * resizing/format conversion, so images are somewhat larger than optimal.
+ * See scripts/ history for the investigation.
  */
-export function optimizeImage(url: string | undefined, maxWidth: number = 1200): string {
+export function optimizeImage(url: string | undefined): string {
   if (!url || typeof url !== 'string' || url.trim() === '') return '';
-
-  // Skip PNG files — they are typically logos/icons with transparency.
-  // /_next/image converts them to AVIF/WebP/JPEG which can lose transparency
-  // or alter lossless art. Serve them as-is from the original source.
-  const lowerUrl = url.toLowerCase();
-  const isPng = lowerUrl.endsWith('.png') || lowerUrl.includes('.png?');
-
-  // Route through /_next/image for known photo origins (skip PNGs)
-  if (
-    !isPng &&
-    (url.startsWith('/media/') || url.includes('res.cloudinary.com'))
-  ) {
-    return `/_next/image?url=${encodeURIComponent(url)}&w=${maxWidth}&q=75`;
-  }
-
   return url;
 }
 
 export function thumbnailImage(url: string | undefined): string {
-  return optimizeImage(url, 384);
+  return optimizeImage(url);
 }
