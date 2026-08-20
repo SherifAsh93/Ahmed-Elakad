@@ -15,7 +15,7 @@ export interface AdEnquiry {
   investmentTier: string;
 }
 
-const FILE = "/home/sherif/data/ahmed-elakad/ad-enquiries.json";
+const FILE = path.join(process.cwd(), "data", "ad-enquiries.json");
 
 function ensureDir() {
   const dir = path.dirname(FILE);

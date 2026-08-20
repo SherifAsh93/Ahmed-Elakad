@@ -47,7 +47,7 @@ export interface Client {
   sourceMessageId?: string;
 }
 
-const CLIENTS_FILE = "/home/sherif/data/ahmed-elakad/clients.json";
+const CLIENTS_FILE = path.join(process.cwd(), "data", "clients.json");
 const VOICES_DIR = "/home/sherif/data/ahmed-elakad/voices";
 const VOICES_BASE = "https://ahmedelakad.com/voices";
 

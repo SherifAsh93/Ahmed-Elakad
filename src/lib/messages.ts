@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { atomicWriteJSON } from "@/lib/atomicWrite";
 
 export interface ContactMessage {
@@ -11,7 +12,7 @@ export interface ContactMessage {
   read?: boolean;
 }
 
-const MESSAGES_FILE = "/home/sherif/data/ahmed-elakad/messages.json";
+const MESSAGES_FILE = path.join(process.cwd(), "data", "messages.json");
 
 function readLocal(): ContactMessage[] {
   try {

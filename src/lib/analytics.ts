@@ -36,7 +36,7 @@ export interface MonthlyAnalytics {
   audit?: AuditResult;
 }
 
-const ANALYTICS_FILE = "/home/sherif/data/ahmed-elakad/analytics.json";
+const ANALYTICS_FILE = path.join(process.cwd(), "data", "analytics.json");
 
 function ensureDir() {
   const dir = path.dirname(ANALYTICS_FILE);

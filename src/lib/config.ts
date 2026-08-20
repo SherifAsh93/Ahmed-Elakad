@@ -1,7 +1,8 @@
 import fs from "fs";
+import path from "path";
 import { atomicWriteJSON } from "@/lib/atomicWrite";
 
-const CONFIG_FILE = "/home/sherif/data/ahmed-elakad/config.json";
+const CONFIG_FILE = path.join(process.cwd(), "data", "config.json");
 
 interface SiteConfig {
   adminPassword: string;
