@@ -37,7 +37,8 @@ export interface MonthlyAnalytics {
 
 export async function getAnalytics(): Promise<MonthlyAnalytics[]> {
   try {
-    return await getCollection<MonthlyAnalytics>(analyticsMonths);
+    const all = await getCollection<MonthlyAnalytics>(analyticsMonths);
+    return all.sort((a, b) => b.id.localeCompare(a.id));
   } catch {
     return [];
   }

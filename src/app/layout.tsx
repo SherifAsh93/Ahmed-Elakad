@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AsyncFontStylesheet from "@/components/AsyncFontStylesheet";
 import { getContent } from "@/lib/content";
 
 export const viewport: Viewport = {
@@ -41,13 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{__html:`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1740830137346129');fbq('track','PageView');`}} />
         <noscript dangerouslySetInnerHTML={{__html:`<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1740830137346129&ev=PageView&noscript=1"/>`}} />
         {/* Fonts loaded async via <link> instead of render-blocking CSS @import */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Cinzel:wght@400;500&display=swap"
-          media="print"
-          // @ts-ignore — onload trick for async font loading without FOUT blocking
-          onLoad="this.media='all'"
-        />
+        <AsyncFontStylesheet href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Cinzel:wght@400;500&display=swap" />
       </head>
       <body className="antialiased flex flex-col min-h-screen">
         <Navbar content={content} />

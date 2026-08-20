@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
+
+async function auth() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("admin_session");
+  return session?.value === "authenticated";
+}
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -27,6 +34,7 @@ function uploadBuffer(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

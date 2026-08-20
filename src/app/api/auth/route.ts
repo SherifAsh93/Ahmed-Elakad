@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json();
-  const adminPassword = getAdminPassword();
+  const adminPassword = await getAdminPassword();
 
   if (password === adminPassword) {
     const res = NextResponse.json({ ok: true });

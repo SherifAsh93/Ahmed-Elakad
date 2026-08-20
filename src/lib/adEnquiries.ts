@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { adEnquiries as adEnquiriesTable } from "@/lib/db/schema";
+import { getCollection, saveCollection } from "@/lib/db/store";
 
 export interface AdEnquiry {
   id: string;
@@ -15,37 +14,26 @@ export interface AdEnquiry {
   investmentTier: string;
 }
 
-const FILE = path.join(process.cwd(), "data", "ad-enquiries.json");
-
-function ensureDir() {
-  const dir = path.dirname(FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-
-export function getAdEnquiries(): AdEnquiry[] {
-  ensureDir();
-  if (!fs.existsSync(FILE)) return [];
+export async function getAdEnquiries(): Promise<AdEnquiry[]> {
   try {
-    return JSON.parse(fs.readFileSync(FILE, "utf-8"));
+    const all = await getCollection<AdEnquiry>(adEnquiriesTable);
+    return all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch {
     return [];
   }
 }
 
-export function saveAdEnquiries(data: AdEnquiry[]): void {
-  ensureDir();
-  atomicWriteJSON(FILE, data);
+export async function saveAdEnquiries(data: AdEnquiry[]): Promise<void> {
+  await saveCollection(adEnquiriesTable, data);
 }
 
-export function addAdEnquiry(data: Omit<AdEnquiry, "id" | "createdAt">): AdEnquiry {
-  const all = getAdEnquiries();
+export async function addAdEnquiry(data: Omit<AdEnquiry, "id" | "createdAt">): Promise<AdEnquiry> {
+  const all = await getAdEnquiries();
   const entry: AdEnquiry = {
     ...data,
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     createdAt: new Date().toISOString(),
   };
-  all.unshift(entry);
-  ensureDir();
-  atomicWriteJSON(FILE, all);
+  await saveAdEnquiries([entry, ...all]);
   return entry;
 }

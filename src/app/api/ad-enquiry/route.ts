@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       category === "evening" ? "Evening Haute Couture" : category;
 
     // Save structured record for Analytics dashboard
-    addAdEnquiry({
+    await addAdEnquiry({
       fullName, phone, email,
       category: category as "bridal" | "evening",
       eventDate, silhouette,

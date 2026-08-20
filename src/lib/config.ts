@@ -1,32 +1,17 @@
-import fs from "fs";
-import path from "path";
-import { atomicWriteJSON } from "@/lib/atomicWrite";
+import { siteContent } from "@/lib/db/schema";
+import { getSingleton, saveSingleton } from "@/lib/db/store";
 
-const CONFIG_FILE = path.join(process.cwd(), "data", "config.json");
+const CONFIG_ID = "admin-config";
 
 interface SiteConfig {
   adminPassword: string;
 }
 
-function readConfig(): SiteConfig {
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
-    }
-  } catch {}
-  return { adminPassword: process.env.ADMIN_PASSWORD ?? "114891" };
+export async function getAdminPassword(): Promise<string> {
+  const config = await getSingleton<SiteConfig>(siteContent, CONFIG_ID);
+  return config?.adminPassword ?? process.env.ADMIN_PASSWORD ?? "1415";
 }
 
-function writeConfig(config: SiteConfig): void {
-  atomicWriteJSON(CONFIG_FILE, config);
-}
-
-export function getAdminPassword(): string {
-  return readConfig().adminPassword;
-}
-
-export function setAdminPassword(newPassword: string): void {
-  const config = readConfig();
-  config.adminPassword = newPassword;
-  writeConfig(config);
+export async function setAdminPassword(newPassword: string): Promise<void> {
+  await saveSingleton<SiteConfig>(siteContent, CONFIG_ID, { adminPassword: newPassword });
 }

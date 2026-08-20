@@ -13,7 +13,7 @@ async function auth() {
 export async function GET() {
   if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    return NextResponse.json(getAdEnquiries());
+    return NextResponse.json(await getAdEnquiries());
   } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -24,12 +24,12 @@ export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json();
     if (body.resetAll) {
-      saveAdEnquiries([]);
+      await saveAdEnquiries([]);
       return NextResponse.json([]);
     }
     if (body.id) {
-      const remaining = getAdEnquiries().filter((e) => e.id !== body.id);
-      saveAdEnquiries(remaining);
+      const remaining = (await getAdEnquiries()).filter((e) => e.id !== body.id);
+      await saveAdEnquiries(remaining);
       return NextResponse.json(remaining);
     }
     return NextResponse.json({ error: "Missing id or resetAll" }, { status: 400 });

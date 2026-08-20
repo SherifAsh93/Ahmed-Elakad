@@ -16,11 +16,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Password must be at least 4 characters" }, { status: 400 });
   }
 
-  const current = getAdminPassword();
+  const current = await getAdminPassword();
   if (currentPassword !== current) {
     return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
   }
 
-  setAdminPassword(newPassword);
+  await setAdminPassword(newPassword);
   return NextResponse.json({ ok: true });
 }

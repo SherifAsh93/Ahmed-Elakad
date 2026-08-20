@@ -13,7 +13,8 @@ export interface ContactMessage {
 
 async function readLocal(): Promise<ContactMessage[]> {
   try {
-    return await getCollection<ContactMessage>(messagesTable);
+    const all = await getCollection<ContactMessage>(messagesTable);
+    return all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch {
     return [];
   }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { optimizeImage } from "@/lib/utils";
 
-const ALL_YEARS = ["2026","2025","2024","2023","2022"];
+const ALL_YEARS = ["2026","2025","2024","2023","2022","2021","2020","2019","2018","2017","2016"];
 
 export async function generateStaticParams() {
   return ["all", ...ALL_YEARS].map((year) => ({ year }));
@@ -34,6 +34,13 @@ export default async function BridalYearPage({
 
   // Single year collections
   const collections = year !== "all" ? (years[year]?.collections ?? []) : [];
+
+  // Only show tabs for years that actually have published collections,
+  // so the tab bar doesn't fill up with dead years — but keep the current
+  // year visible even if it's still empty, since that's what's being viewed.
+  const visibleYears = ALL_YEARS.filter(
+    (y) => y === year || (years[y]?.collections ?? []).some((c) => c.images.length > 0)
+  );
 
   return (
     <main className="bg-[#f9f7f4]">
@@ -86,7 +93,7 @@ export default async function BridalYearPage({
               >
                 All
               </Link>
-              {ALL_YEARS.map((y) => (
+              {visibleYears.map((y) => (
                 <Link
                   key={y}
                   href={`/bridal/${y}`}

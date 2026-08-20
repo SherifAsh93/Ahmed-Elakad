@@ -24,11 +24,13 @@ async function auth() {
 }
 
 export async function GET() {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const clients = await getClients();
   return NextResponse.json(clients);
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   if (!body.phone) return NextResponse.json({ error: "Mobile number is required" }, { status: 400 });
   try {
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   const { id, action, ...data } = body;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -157,6 +160,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!(await auth())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
   await deleteClient(body.id);

@@ -923,7 +923,6 @@ function getYoutubeThumbnail(url: string): string | null {
 function VideoListEditor({
   videos, onChange,
 }: { videos: VideoItemAdmin[]; onChange: (v: VideoItemAdmin[]) => void }) {
-  const [downloading, setDownloading] = React.useState<Record<string, boolean>>({});
   const [uploading, setUploading] = React.useState<Record<string, boolean>>({});
   const fileInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
   const add = () => onChange([...videos, { id: `v-${Date.now()}`, url: "", title: "", clientName: "", clientSubtitle: "" }]);
@@ -935,16 +934,6 @@ function VideoListEditor({
     const a = [...videos]; const j = i + dir;
     if (j < 0 || j >= a.length) return;
     [a[i], a[j]] = [a[j], a[i]]; onChange(a);
-  };
-  const downloadIg = async (i: number, igUrl: string) => {
-    setDownloading(d => ({ ...d, [videos[i].id]: true }));
-    try {
-      const res = await fetch('/api/ig-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: igUrl }) });
-      const data = await res.json();
-      if (data.url) { update(i, 'url', data.url); }
-      else alert(data.error || 'Download failed');
-    } catch { alert('Download failed'); }
-    finally { setDownloading(d => ({ ...d, [videos[i].id]: false })); }
   };
   const uploadVideo = async (i: number, file: File) => {
     setUploading(d => ({ ...d, [videos[i].id]: true }));
@@ -1004,16 +993,7 @@ function VideoListEditor({
                 <div>
                   <label className="text-[9px] uppercase tracking-[3px] text-gray-400 font-bold mb-1 block">VIDEO URL OR UPLOAD</label>
                   <div className="flex gap-2 items-center">
-                    <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm flex-1" placeholder="YouTube, Vimeo, .mp4, or Instagram link" />
-                    {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && (
-                      <button
-                        onClick={() => downloadIg(i, v.url)}
-                        disabled={downloading[v.id]}
-                        className="shrink-0 text-[9px] uppercase tracking-[2px] font-bold bg-[#b3a384] text-white px-3 py-2 rounded hover:bg-[#9a8b6e] disabled:opacity-50 transition-colors whitespace-nowrap min-h-[44px]"
-                      >
-                        {downloading[v.id] ? 'Downloading…' : '⬇ Save to site'}
-                      </button>
-                    )}
+                    <input value={v.url} onChange={(e) => update(i, "url", e.target.value)} className="admin-input text-sm flex-1" placeholder="YouTube, Vimeo, or .mp4 link" />
                     <input
                       ref={el => { fileInputRefs.current[v.id] = el; }}
                       type="file"
@@ -1029,8 +1009,8 @@ function VideoListEditor({
                       {uploading[v.id] ? 'Uploading…' : '↑ Upload'}
                     </button>
                   </div>
-                  {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && !downloading[v.id] && (
-                    <p className="text-[9px] text-[#b3a384] mt-1">Instagram link detected — click &quot;Save to site&quot; to download it, or use &quot;Upload&quot; to upload a video file directly</p>
+                  {/instagram\.com\/(?:p|reel|tv)\//.test(v.url) && (
+                    <p className="text-[9px] text-[#b3a384] mt-1">Instagram links can&apos;t be imported automatically — download the video from Instagram first, then use &quot;Upload&quot; to add the file directly</p>
                   )}
                   {!v.url && (
                     <p className="text-[9px] text-gray-400 mt-1">Paste a link above, or click &quot;Upload&quot; to upload an MP4 from your device</p>
@@ -1979,8 +1959,13 @@ function FittingCalendar({ clients, onRefresh }: { clients: Client[]; onRefresh:
     const body = editType === "fitting"
       ? { id: clientId, fittingDate: editDate, fittingTime: editTime }
       : { id: clientId, appointmentDate: editDate, appointmentTime: editTime };
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setSaving(false);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || "Failed to save appointment");
+      return;
+    }
     setEditingId(null);
     setSelectedDay(editDate);
     onRefresh();
@@ -2273,14 +2258,21 @@ function ClientsPanel({
     setFormOpen(false);
   };
 
+  // Shared write helper — surfaces failures instead of letting the UI act
+  // as if a save succeeded when the server rejected it (e.g. expired session).
+  const putClient = async (body: object): Promise<boolean> => {
+    const res = await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || "Failed to save changes");
+      return false;
+    }
+    return true;
+  };
+
   const handleUpdate = async (data: Partial<Client>) => {
     if (!editClient) return;
-    const res = await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editClient.id, ...data }) });
-    if (!res.ok) {
-      const err = await res.json();
-      alert(err.error || "Failed to update client");
-      return;
-    }
+    if (!(await putClient({ id: editClient.id, ...data }))) return;
     onRefresh();
     setEditClient(null);
   };
@@ -2288,82 +2280,88 @@ function ClientsPanel({
   const handleDelete = async (id: string) => {
     if (!window.confirm("Delete this client permanently?")) return;
     setDeletingId(id);
-    await fetch("/api/admin/clients", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const res = await fetch("/api/admin/clients", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || "Failed to delete client");
+      setDeletingId(null);
+      return;
+    }
     onRefresh();
     setDeletingId(null);
     if (expandedId === id) setExpandedId(null);
   };
 
   const handleAddPayment = async (clientId: string, amount: number, date: string, note: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addPayment", amount, date, note }) });
+    if (!(await putClient({ id: clientId, action: "addPayment", amount, date, note }))) return;
     onRefresh();
     setPaymentClientId(null);
   };
 
   const handleDeletePayment = async (clientId: string, paymentId: string) => {
     if (!window.confirm("Remove this payment?")) return;
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deletePayment", paymentId }) });
+    if (!(await putClient({ id: clientId, action: "deletePayment", paymentId }))) return;
     onRefresh();
   };
 
   const handleEditPayment = async (clientId: string, paymentId: string, amount: number, date: string, note: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "updatePayment", paymentId, amount, date, note }) });
+    if (!(await putClient({ id: clientId, action: "updatePayment", paymentId, amount, date, note }))) return;
     onRefresh();
     setEditingPayment(null);
   };
 
   const handleDateChange = async (clientId: string, field: "appointmentDate" | "nextAppointmentDate" | "fittingDate", value: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, [field]: value }) });
+    if (!(await putClient({ id: clientId, [field]: value }))) return;
     onRefresh();
   };
 
   const handleFittingUpdate = async (clientId: string, date: string, time: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, fittingDate: date, fittingTime: time }) });
+    if (!(await putClient({ id: clientId, fittingDate: date, fittingTime: time }))) return;
     onRefresh();
   };
 
   const handleAddDress = async (clientId: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addDress", label: "" }) });
+    if (!(await putClient({ id: clientId, action: "addDress", label: "" }))) return;
     onRefresh();
   };
 
   const handleDeleteDress = async (clientId: string, dressId: string) => {
     if (!window.confirm("Remove this dress and all its photos?")) return;
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deleteDress", dressId }) });
+    if (!(await putClient({ id: clientId, action: "deleteDress", dressId }))) return;
     onRefresh();
   };
 
   const handleAddDressImages = async (clientId: string, dressId: string, images: string[]) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addDressImages", dressId, images }) });
+    if (!(await putClient({ id: clientId, action: "addDressImages", dressId, images }))) return;
     onRefresh();
     setDressPickerInfo(null);
   };
 
   const handleRemoveClientImage = async (client: Client, imageUrl: string) => {
     const updated = (client.clientImages ?? []).filter(u => u !== imageUrl);
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: client.id, clientImages: updated }) });
+    if (!(await putClient({ id: client.id, clientImages: updated }))) return;
     onRefresh();
   };
 
   const handleRemoveDressImage = async (clientId: string, dressId: string, imageUrl: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "removeDressImage", dressId, imageUrl }) });
+    if (!(await putClient({ id: clientId, action: "removeDressImage", dressId, imageUrl }))) return;
     fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: imageUrl }) }).catch(() => {});
     onRefresh();
   };
 
   const handleUpdateDressLabel = async (clientId: string, dressId: string, label: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "updateDressLabel", dressId, label }) });
+    if (!(await putClient({ id: clientId, action: "updateDressLabel", dressId, label }))) return;
     onRefresh();
   };
 
   const handleAddVoiceNote = async (clientId: string, url: string) => {
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "addVoiceNote", url, from: "admin" }) });
+    if (!(await putClient({ id: clientId, action: "addVoiceNote", url, from: "admin" }))) return;
     onRefresh();
   };
 
   const handleDeleteVoiceNote = async (clientId: string, voiceNoteId: string) => {
     if (!window.confirm("Delete this voice note?")) return;
-    await fetch("/api/admin/clients", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: clientId, action: "deleteVoiceNote", voiceNoteId }) });
+    if (!(await putClient({ id: clientId, action: "deleteVoiceNote", voiceNoteId }))) return;
     onRefresh();
   };
 
@@ -3215,11 +3213,17 @@ function AnalyticsPanel() {
         body: JSON.stringify({ month }),
       });
       const data = await res.json();
-      if (Array.isArray(data)) setMonths(data);
+      if (!res.ok || !Array.isArray(data)) {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        return;
+      }
+      setMonths(data);
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch {
       setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     }
   }
 
@@ -3242,11 +3246,13 @@ function AnalyticsPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ monthId: selected.id }),
     });
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      setMonths(data);
-      setSelectedId(data.length > 0 ? data[0].id : "");
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !Array.isArray(data)) {
+      alert(data?.error || "Failed to delete month");
+      return;
     }
+    setMonths(data);
+    setSelectedId(data.length > 0 ? data[0].id : "");
   }
 
   function openAddPost() {
@@ -3294,7 +3300,9 @@ function AnalyticsPanel() {
         body: JSON.stringify({ monthId: selected.id }),
       });
       const data = await res.json();
-      if (data.all && Array.isArray(data.all)) {
+      if (!res.ok) {
+        alert(data.error || "Audit failed. Check API key and try again.");
+      } else if (data.all && Array.isArray(data.all)) {
         setMonths(data.all);
       }
     } catch {
@@ -3363,7 +3371,7 @@ function AnalyticsPanel() {
         <div className="text-center py-16 text-gray-400">
           <p className="text-[10px] tracking-[4px] uppercase mb-3">No leads yet</p>
           <p className="text-xs text-gray-300">Once people submit the form from your ad, their data will appear here.</p>
-          <p className="text-xs text-gray-300 mt-2">Ad URL: <span className="text-[#b3a384]">ahmedelakad.com/contact?ref=ad</span></p>
+          <p className="text-xs text-gray-300 mt-2">Ad URL: <span className="text-[#b3a384]">ahmedelakad.com/contact</span></p>
         </div>
       </div>
     );
@@ -3460,6 +3468,7 @@ function AnalyticsPanel() {
                   body: JSON.stringify({ resetAll: true }),
                 });
                 if (res.ok) setAdEnquiries([]);
+                else alert("Failed to reset ad enquiry data");
               }}
               className="text-[9px] tracking-[2px] uppercase text-red-400 hover:text-red-600 border border-red-100 hover:border-red-300 px-4 py-2 transition-colors font-bold"
             >
@@ -3502,6 +3511,8 @@ function AnalyticsPanel() {
                           if (res.ok) {
                             const updated = await res.json();
                             setAdEnquiries(Array.isArray(updated) ? updated : adEnquiries.filter(x => x.id !== e.id));
+                          } else {
+                            alert("Failed to delete enquiry");
                           }
                         }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] tracking-[2px] uppercase text-red-400 hover:text-red-600 font-bold px-2 py-1"
@@ -3937,8 +3948,12 @@ export default function AdminDashboard() {
         Object.entries(imgs.thumbnails).forEach(([url, thumb]) => thumbMap.set(url, thumb as string));
       }
       setLoading(false);
-    } catch {
-      setIsLocked(true);
+    } catch (err) {
+      // Note: /api/content and /api/images don't require auth on GET, so a
+      // failure here is a transient/network problem, not a session expiry —
+      // don't boot the admin back to the login screen for it.
+      console.error("Error fetching dashboard data:", err);
+      setLoading(false);
     }
   }, []);
 
@@ -5093,11 +5108,13 @@ export default function AdminDashboard() {
                     .then((d) => setMessages(Array.isArray(d) ? d : []))
                 }
                 onDelete={async (id) => {
-                  await fetch("/api/admin/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                  const res = await fetch("/api/admin/messages", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                  if (!res.ok) { alert("Failed to delete message"); return; }
                   setMessages((prev: any[]) => prev.filter((m) => m.id !== id));
                 }}
                 onMarkRead={async (id, read) => {
-                  await fetch("/api/admin/messages", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, read }) });
+                  const res = await fetch("/api/admin/messages", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, read }) });
+                  if (!res.ok) { alert("Failed to update message"); return; }
                   setMessages((prev: any[]) => prev.map((m) => m.id === id ? { ...m, read } : m));
                 }}
                 onRegisterClient={(msg) => setRegisterFromMsg(msg)}
