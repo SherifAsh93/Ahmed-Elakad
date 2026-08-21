@@ -86,9 +86,6 @@ const COMING_SOON_HTML = `<!doctype html>
 </html>`;
 
 export function proxy(request: NextRequest) {
-  const isAdmin = request.cookies.get("admin_session")?.value === "authenticated";
-  if (isAdmin) return NextResponse.next();
-
   return new NextResponse(COMING_SOON_HTML, {
     status: 503,
     headers: {
