@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import cloudinary, { CLOUDINARY_FOLDER } from "@/lib/cloudinary";
 import { excludedUrls } from "@/app/api/upload/route";
 import fs from "fs";
 import path from "path";
 
 export const dynamic = "force-dynamic";
+
+async function auth(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return cookieStore.get("admin_session")?.value === "authenticated";
+}
 
 const IMAGES_DIR = path.join(process.cwd(), "public", "media");
 const PUBLIC_BASE = "/media";
@@ -34,6 +40,10 @@ function getLocalImages(): string[] {
 }
 
 export async function GET(req: Request) {
+  if (!(await auth())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const bust = url.searchParams.get("nocache");
   if (bust) { cachedResult = null; cacheTimestamp = 0; }

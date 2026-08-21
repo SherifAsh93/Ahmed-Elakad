@@ -3162,7 +3162,6 @@ interface AdEnquiry {
   eventDate: string;
   silhouette: string;
   designDetails: string;
-  investmentTier: string;
 }
 
 function AnalyticsPanel() {
@@ -3359,13 +3358,6 @@ function AnalyticsPanel() {
     });
     const silhouettes = Object.entries(silhouetteMap).sort((a, b) => b[1] - a[1]);
 
-    // Budget tiers
-    const tierMap: Record<string, number> = {};
-    adEnquiries.forEach(e => {
-      if (e.investmentTier) tierMap[e.investmentTier] = (tierMap[e.investmentTier] || 0) + 1;
-    });
-    const tiers = Object.entries(tierMap).sort((a, b) => b[1] - a[1]);
-
     if (total === 0) return (
       <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-8 md:p-12">
         <div className="text-center py-16 text-gray-400">
@@ -3413,43 +3405,24 @@ function AnalyticsPanel() {
           </div>
         </div>
 
-        {/* Silhouette + Budget side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
-            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Silhouette Preferences</p>
-            <div className="space-y-3">
-              {silhouettes.map(([name, count], i) => (
-                <div key={name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full bg-black text-white text-[8px] flex items-center justify-center font-black shrink-0">{i + 1}</span>
-                      <span className="text-[10px] text-gray-700 leading-tight">{name}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-500 shrink-0 ml-2">{count}</span>
+        {/* Silhouette breakdown */}
+        <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
+          <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Silhouette Preferences</p>
+          <div className="space-y-3">
+            {silhouettes.map(([name, count], i) => (
+              <div key={name}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-black text-white text-[8px] flex items-center justify-center font-black shrink-0">{i + 1}</span>
+                    <span className="text-[10px] text-gray-700 leading-tight">{name}</span>
                   </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#b3a384] rounded-full" style={{ width: `${(count / total) * 100}%` }} />
-                  </div>
+                  <span className="text-[10px] font-bold text-gray-500 shrink-0 ml-2">{count}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="admin-card border-none shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-5 md:p-8">
-            <p className="text-[9px] tracking-[5px] uppercase text-[#b3a384] font-bold mb-5">Investment Tier Distribution</p>
-            <div className="space-y-3">
-              {tiers.map(([tier, count]) => (
-                <div key={tier}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] text-gray-700 leading-tight flex-1 mr-2">{tier}</span>
-                    <span className="text-[10px] font-bold text-[#b3a384] shrink-0">{Math.round(count / total * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#b3a384] rounded-full" style={{ width: `${(count / total) * 100}%` }} />
-                  </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#b3a384] rounded-full" style={{ width: `${(count / total) * 100}%` }} />
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -3479,7 +3452,7 @@ function AnalyticsPanel() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Date", "Name", "Phone", "Category", "Event Date", "Budget Tier", ""].map(h => (
+                  {["Date", "Name", "Phone", "Category", "Event Date", ""].map(h => (
                     <th key={h} className="text-left text-[8px] tracking-[3px] uppercase text-gray-400 font-bold pb-3 pr-4 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -3498,7 +3471,6 @@ function AnalyticsPanel() {
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-gray-500 whitespace-nowrap">{e.eventDate}</td>
-                    <td className="py-3 pr-4 text-gray-600 max-w-[180px] truncate">{e.investmentTier}</td>
                     <td className="py-3 whitespace-nowrap">
                       <button
                         onClick={async () => {

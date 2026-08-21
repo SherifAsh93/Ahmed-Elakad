@@ -11,12 +11,11 @@ interface FormData {
   eventDate: string;
   silhouette: string;
   designDetails: string;
-  investmentTier: string;
 }
 
 const EMPTY: FormData = {
   fullName: "", phone: "", email: "", category: "",
-  eventDate: "", silhouette: "", designDetails: "", investmentTier: "",
+  eventDate: "", silhouette: "", designDetails: "",
 };
 
 const STEPS = [

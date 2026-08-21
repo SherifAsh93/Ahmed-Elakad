@@ -1103,10 +1103,18 @@ export default function AtelierPage() {
   const [paymentClientId, setPaymentClientId] = useState<string | null>(null);
   const [editingPayment, setEditingPayment] = useState<{ clientId: string; payment: Payment } | null>(null);
   const [editClient, setEditClient] = useState<Client | null>(null);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/admin/clients");
+    if (res.status === 401) {
+      setUnauthorized(true);
+      setClients([]);
+      setLoading(false);
+      return;
+    }
     const data = await res.json();
+    setUnauthorized(false);
     setClients(Array.isArray(data) ? data : []);
     setLoading(false);
   }, []);
@@ -1247,6 +1255,14 @@ export default function AtelierPage() {
         {/* Client list */}
         {loading ? (
           <div className="py-20 text-center text-gray-300 text-sm">جاري التحميل...</div>
+        ) : unauthorized ? (
+          <div className="py-20 text-center border-2 border-dashed border-red-100 rounded text-red-400 text-xs tracking-[2px] font-bold px-4">
+            يجب تسجيل الدخول من لوحة التحكم أولاً
+            <br />
+            <a href="/admin" className="underline mt-2 inline-block text-red-500">
+              تسجيل الدخول
+            </a>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded text-gray-300 text-xs tracking-[3px] font-bold">
             {search ? `لم يتم العثور على عميل بالرقم "${search}"` : "لا يوجد عملاء"}

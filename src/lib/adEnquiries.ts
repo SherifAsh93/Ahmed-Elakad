@@ -11,7 +11,6 @@ export interface AdEnquiry {
   eventDate: string;
   silhouette: string;
   designDetails: string;
-  investmentTier: string;
 }
 
 export async function getAdEnquiries(): Promise<AdEnquiry[]> {

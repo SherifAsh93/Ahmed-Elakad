@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const {
       fullName, phone, email,
       category, eventDate,
-      silhouette, designDetails, investmentTier,
+      silhouette, designDetails,
     } = body;
 
     if (!fullName || !phone || !email) {
@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
       category: category as "bridal" | "evening",
       eventDate, silhouette,
       designDetails: designDetails || "",
-      investmentTier,
     });
 
     // Save to Messages panel for admin visibility
@@ -35,7 +34,6 @@ export async function POST(req: NextRequest) {
       `Collection: ${categoryLabel}`,
       `Event Date: ${eventDate}`,
       `Silhouette: ${silhouette}`,
-      `Investment Tier: ${investmentTier}`,
       designDetails ? `\nDesign Vision:\n${designDetails}` : "",
     ].filter(Boolean);
 
