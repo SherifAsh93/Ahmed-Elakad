@@ -51,3 +51,9 @@ logs/last_backup_success
 
 # dev screenshots
 screenshots/
+
+db-export/
+
+# legacy VPS media backup dump (5300+ files, restored to Cloudinary already)
+backup/
+scripts/.restore-media-results.jsonl

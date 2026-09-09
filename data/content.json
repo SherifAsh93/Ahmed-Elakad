@@ -3,10 +3,10 @@
     "brandName": "Ahmed Elakad",
     "labelName": "Ahmed Elakad couture house",
     "description": "Luxury couture house.",
-    "logo": "https://ahmedelakad.com/media/1780611950706-b8jt5.png"
+    "logo": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956180/Ahmed%20Elakad/media-migrated/1780611950706-b8jt5.jpg"
   },
   "homepage": {
-    "heroImage": "https://ahmedelakad.com/media/1780836590185-gkym1.png",
+    "heroImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956196/Ahmed%20Elakad/media-migrated/1780836590185-gkym1.jpg",
     "featuredImages": [
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239834/Ahmed%20Elakad/media-migrated/bygychhoh2smdhjkvedb.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239829/Ahmed%20Elakad/media-migrated/ksxunqmhconw2kkb9kbv.jpg",
@@ -16,15 +16,15 @@
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239832/Ahmed%20Elakad/media-migrated/wn6xkmwgyb8shvnmu1ib.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239832/Ahmed%20Elakad/media-migrated/ifjsr8dm8tgsbn1zavtg.jpg",
       "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239834/Ahmed%20Elakad/media-migrated/owgnfqyjiclzfyaxmkag.jpg",
-      "https://ahmedelakad.com/media/1780832328500-eolip.jpg",
-      "https://ahmedelakad.com/media/1780832329189-rw76e.jpg",
-      "https://ahmedelakad.com/media/1780832328853-6x0f8.jpg"
+      "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956190/Ahmed%20Elakad/media-migrated/1780832328500-eolip.jpg",
+      "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956190/Ahmed%20Elakad/media-migrated/1780832329189-rw76e.jpg",
+      "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956190/Ahmed%20Elakad/media-migrated/1780832328853-6x0f8.jpg"
     ],
-    "collection1Image": "https://ahmedelakad.com/media/1780833693299-rw322.jpg",
+    "collection1Image": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956196/Ahmed%20Elakad/media-migrated/1780833693299-rw322.jpg",
     "collection2Image": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239746/Ahmed%20Elakad/media-migrated/pucyqhz768d4p852cehz.jpg",
-    "collection3Image": "https://ahmedelakad.com/media/1780832330395-gfzf1.jpg",
-    "ctaImage": "https://ahmedelakad.com/media/1780833224293-96yjk.jpg",
-    "houseImage": "https://ahmedelakad.com/media/1780821624301-wqo4h.png",
+    "collection3Image": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956191/Ahmed%20Elakad/media-migrated/1780832330395-gfzf1.jpg",
+    "ctaImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956194/Ahmed%20Elakad/media-migrated/1780833224293-96yjk.jpg",
+    "houseImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956190/Ahmed%20Elakad/media-migrated/1780821624301-wqo4h.jpg",
     "collection3Label": "Bridal experience ",
     "collection3Href": "/experience"
   },
@@ -1026,15 +1026,43 @@
             "id": "coll-1778771801955",
             "name": "",
             "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523862/1_291_fiemol.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523865/1_292_hfnarz.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523879/1_294_izfaxn.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523896/1_295_bzhbtr.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523883/1_296_meiccd.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523873/1_297_yssw2s.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523869/1_298_tya1de.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523879/1_299_et28k5.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523881/1_300_qospgf.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523890/1_301_d32lpe.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523893/1_302_jjgc89.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523897/1_303_hjbqmi.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523925/1_304_lalt5r.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523906/1_305_ildmub.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523921/1_306_eigbvo.jpg",
-              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523922/1_309_ghmvx9.jpg"
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523933/1_307_i5l1yq.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523927/1_308_hdcksh.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523922/1_309_ghmvx9.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523929/1_310_jqhnsy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523949/1_311_p1y8f4.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523951/1_312_s0juyh.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523947/1_313_upj58k.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523961/1_314_sszww6.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523946/1_315_bklez2.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523964/1_316_qzbebi.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523968/1_317_mn72bs.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523961/1_318_ucav7e.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523972/1_319_qd8ykg.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523980/1_320_hlaktr.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523985/1_321_fjrlxr.jpg"
             ]
           },
           {
             "id": "coll-1780439373195",
             "name": "",
             "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522082/1_3_nxoius.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522200/1_33_uo6pqd.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522190/1_28_abdppw.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522207/1_34_vyymhx.jpg",
@@ -1115,6 +1143,125 @@
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239651/Ahmed%20Elakad/media-migrated/bnl0tfanxkmzs0anrmoy.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239654/Ahmed%20Elakad/media-migrated/t8kk775algfcrx9h4xwe.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239655/Ahmed%20Elakad/media-migrated/fug9ztxu7nwah8ge2vfa.jpg"
+            ]
+          },
+          {
+            "id": "coll-1787316823016",
+            "name": "",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522289/1_56_kqmbo9.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522289/1_60_esk3ku.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522292/1_57_y6ujuq.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776522293/1_58_lnzblf.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524191/1_46_vb9cyh.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524200/1_48_b1xr4v.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524201/1_43_qhfbou.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524207/1_44_l1ysss.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524210/1_45_jfjur7.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524219/1_53_rwjxgf.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524220/1_49_izmifp.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524220/1_54_ee3dvw.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524226/1_50_easb39.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524231/1_51_ni8hbg.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776524236/1_52_tcegro.jpg"
+            ]
+          },
+          {
+            "id": "coll-1787316823017",
+            "name": "",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523076/1_124_njcuv8.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523078/1_123_mh3rd8.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523085/1_122_joryfi.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523114/1_126_xbvwu0.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523115/1_129_ovzrpf.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523116/1_127_nugqwy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523118/1_130_k512df.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523121/1_125_vxl9bi.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523135/1_133_f2p7ol.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523137/1_128_bbdwh7.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523137/1_134_kmeiig.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523138/1_131_rf0rs4.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523139/1_135_evupfw.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523139/1_132_gaqnlu.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523160/1_138_lgxjke.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523166/1_136_p1xiad.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523166/1_137_mvkieq.jpg"
+            ]
+          },
+          {
+            "id": "coll-1787316823018",
+            "name": "",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523310/1_167_nqbqhl.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523314/1_169_qzsyuy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523321/1_168_rjkfae.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523327/1_171_hrwwtz.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523329/1_170_q6uht1.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523335/1_172_s1snt8.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523340/1_173_jhksyd.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523342/1_174_nriyab.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523343/1_176_meq5zu.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523345/1_175_dekthk.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523350/1_177_drwfho.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523353/1_178_fkpbdk.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523359/1_180_wcqvoy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523359/1_183_jftusx.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523367/1_181_lunh3f.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523367/1_186_xvigqz.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523371/1_179_l722li.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523375/1_187_o01ptw.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523377/1_182_ve6ayx.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523383/1_185_a4vzdt.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523387/1_188_ssv6pt.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523389/1_184_indpzz.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523400/1_192_w3noef.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523400/1_189_zuhzjb.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523401/1_190_kehvsa.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523403/1_191_ymomqc.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523411/1_194_ezqdqx.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523418/1_193_msifqa.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523419/1_196_bjuicy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523420/1_195_woojky.jpg"
+            ]
+          },
+          {
+            "id": "coll-1787316823019",
+            "name": "",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523604/1_230_zkf3qc.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523615/1_231_uiqppb.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523619/1_232_e7dgvc.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523621/1_234_czbwha.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523626/1_233_e37vtu.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523627/1_235_xnqzge.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523629/1_236_afa9y7.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523630/1_237_vqedmx.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523637/1_243_d6feuw.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523643/1_239_ehh7cv.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523647/1_241_h3catw.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523648/1_238_x5yvnt.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523648/1_240_mfaher.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523663/1_245_obpj3x.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523668/1_242_kbcmcy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523670/1_244_jerhcm.jpg"
+            ]
+          },
+          {
+            "id": "coll-1787316823020",
+            "name": "",
+            "images": [
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523691/1_251_dwye9w.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523691/1_253_pml5f2.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523693/1_252_aiywzm.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523693/1_250_g6hytz.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523698/1_255_ppxnlj.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523702/1_254_ragsv7.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523712/1_259_q199aa.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523714/1_258_asjtpq.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523717/1_257_plf0rm.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523723/1_260_nmpsfy.jpg",
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1776523725/1_256_ukv8sr.jpg"
             ]
           }
         ]
@@ -1913,7 +2060,7 @@
             "images": [
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407545/Ahmed%20Elakad/1780407545259-f6cea237-3fb1-4b81-a82d-c72f715345c6.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407543/Ahmed%20Elakad/1780407542947-18f5ef2b-f10e-47fd-a6b3-4a2ee4c23f71.jpg",
-              "https://ahmedelakad.com/media/1780820328861-cciv5.jpg"
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956189/Ahmed%20Elakad/media-migrated/1780820328861-cciv5.jpg"
             ]
           },
           {
@@ -1922,7 +2069,7 @@
             "images": [
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407517/Ahmed%20Elakad/1780407517472-ccbe4cea-2b05-450d-bd79-c107a76518ba.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407522/Ahmed%20Elakad/1780407521765-238cd3fd-ac4d-4397-934b-881629ce351c.jpg",
-              "https://ahmedelakad.com/media/1780820300965-ql6pj.jpg"
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956189/Ahmed%20Elakad/media-migrated/1780820300965-ql6pj.jpg"
             ]
           },
           {
@@ -1941,7 +2088,7 @@
             "name": "",
             "images": [
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407536/Ahmed%20Elakad/1780407536543-IMG_2399.jpg",
-              "https://ahmedelakad.com/media/1780820272420-47opm.jpg"
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956189/Ahmed%20Elakad/media-migrated/1780820272420-47opm.jpg"
             ]
           },
           {
@@ -1959,7 +2106,7 @@
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407489/Ahmed%20Elakad/1780407488825-f62a2eda-8542-42fc-ad41-6c548535d8c6.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407469/Ahmed%20Elakad/1780407469173-IMG_6737.jpg",
               "https://res.cloudinary.com/dzppk5ylt/image/upload/v1780407468/Ahmed%20Elakad/1780407467655-IMG_6731.jpg",
-              "https://ahmedelakad.com/media/1780820348078-8exdy.jpg"
+              "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956189/Ahmed%20Elakad/media-migrated/1780820348078-8exdy.jpg"
             ]
           },
           {
@@ -2801,7 +2948,7 @@
   },
   "experience": {
     "heroImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1787239834/Ahmed%20Elakad/media-migrated/kpm3tqtxebubsgma6ied.jpg",
-    "ctaImage": "https://ahmedelakad.com/media/1780833679824-84v20.jpg",
+    "ctaImage": "https://res.cloudinary.com/dzppk5ylt/image/upload/v1788956193/Ahmed%20Elakad/media-migrated/1780833679824-84v20.jpg",
     "testimonials": [
       {
         "id": "t-1780528127017",
