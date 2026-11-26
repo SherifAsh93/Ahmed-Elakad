@@ -86,6 +86,12 @@ const COMING_SOON_HTML = `<!doctype html>
 </html>`;
 
 export function proxy(request: NextRequest) {
+  // Preview deployments (VERCEL_ENV === "preview") stay unlocked so clients
+  // can review content; only production is gated behind Coming Soon.
+  if (process.env.VERCEL_ENV !== "production") {
+    return NextResponse.next();
+  }
+
   return new NextResponse(COMING_SOON_HTML, {
     status: 503,
     headers: {
